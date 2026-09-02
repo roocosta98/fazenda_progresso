@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #10b981; /* emerald-500 */
+  --color-primary-dark: #059669; /* emerald-600 */
+  --color-secondary: #facc15; /* yellow-400 */
+  --color-dark: #1f2937; /* gray-800 */
+  --color-light: #f3f4f6; /* gray-100 */
+}
+
+@layer base {
+  body {
+    @apply bg-gray-50 text-gray-900 font-sans antialiased;
+  }
+}
+
+/* Utilitários adicionais de scroll para mobile (esconder barra de rolagem mas permitir scroll) */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
