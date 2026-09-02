@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { List, Clock, LayoutDashboard, Truck, Map as MapIcon, Leaf, MonitorPlay, BarChart3 } from 'lucide-react';
+import { List, Clock, LayoutDashboard, Truck, Map as MapIcon, Leaf, MonitorPlay, BarChart3, Trophy, CircleDollarSign, ClipboardCheck } from 'lucide-react';
 
 export const Sidebar = () => {
   const { usuario } = useAuth();
@@ -16,6 +16,9 @@ export const Sidebar = () => {
         { to: '/logistica/bi', icon: <BarChart3 size={20} />, label: 'Métricas' },
         { to: '/logistica/pendentes', icon: <Clock size={20} />, label: 'Fila de Aprovação', badge: 2 },
         { to: '/logistica/frota', icon: <Truck size={20} />, label: 'Gestão de Frota' },
+        { to: '/logistica/metas', icon: <Trophy size={20} />, label: 'Metas & Ranking' },
+        { to: '/logistica/gastos', icon: <CircleDollarSign size={20} />, label: 'Gastos & Custos' },
+        { to: '/logistica/avaliacao-conducao', icon: <ClipboardCheck size={20} />, label: 'Avaliação de Condução' },
         { to: '/logistica/monitoramento', icon: <MapIcon size={20} />, label: 'Telemetria & Mapa' },
         { to: '/logistica/monitor-tv', icon: <MonitorPlay size={20} />, label: 'Monitor TV' },
       ];

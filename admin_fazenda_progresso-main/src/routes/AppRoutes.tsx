@@ -8,6 +8,9 @@ import { Dashboard } from '../pages/logistica/Dashboard';
 import { DashboardBI } from '../pages/logistica/DashboardBI';
 import { FilaPendentes } from '../pages/logistica/FilaPendentes';
 import { GestaoFrota } from '../pages/logistica/GestaoFrota';
+import { PainelMetas } from '../pages/logistica/PainelMetas';
+import { Gastos } from '../pages/logistica/Gastos';
+import { AvaliacaoConducao } from '../pages/logistica/AvaliacaoConducao';
 import { MapaMonitoramento } from '../pages/logistica/MapaMonitoramento';
 import { TelaTVMonitor } from '../pages/logistica/TelaTVMonitor';
 
@@ -49,9 +52,21 @@ export const AppRoutes = () => {
           path="/logistica/pendentes" 
           element={<ProtectedRoute allowedRoles={['logistica']}><FilaPendentes /></ProtectedRoute>} 
         />
-        <Route 
-          path="/logistica/frota" 
-          element={<ProtectedRoute allowedRoles={['logistica']}><GestaoFrota /></ProtectedRoute>} 
+        <Route
+          path="/logistica/frota"
+          element={<ProtectedRoute allowedRoles={['logistica']}><GestaoFrota /></ProtectedRoute>}
+        />
+        <Route
+          path="/logistica/metas"
+          element={<ProtectedRoute allowedRoles={['logistica']}><PainelMetas /></ProtectedRoute>}
+        />
+        <Route
+          path="/logistica/gastos"
+          element={<ProtectedRoute allowedRoles={['logistica']}><Gastos /></ProtectedRoute>}
+        />
+        <Route
+          path="/logistica/avaliacao-conducao"
+          element={<ProtectedRoute allowedRoles={['logistica']}><AvaliacaoConducao /></ProtectedRoute>}
         />
         <Route 
           path="/logistica/monitoramento" 

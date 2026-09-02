@@ -12,6 +12,9 @@ import { getMssqlPool } from '../_lib/mssql.js';
 //   buraco de comunicação longo (equipamento sem sinal por horas) não virar "horas parado" —
 //   sem o limite, uma única leitura parada seguida de um gap de sinal de 12h contava como 12h parado
 // - horímetro/odômetro e implemento acoplado (última leitura de LeiturasLocalizacao + Implementos)
+// - contagem de eventos de risco nas últimas 24h (AlarmesEquipamento, PRD 5.1/5.2) — só a
+//   contagem aqui (pra não pesar essa consulta em lote); o detalhe de cada alarme é buscado
+//   sob demanda em api/frota/alarmes.ts quando o usuário abre um equipamento específico.
 const QUERY = `
 WITH LeiturasJanela AS (
   SELECT
@@ -46,7 +49,8 @@ SELECT
   oper.TempoMotorLigadoSegundos, oper.TempoMotorOciosoSegundos, oper.AreaOperacional,
   oper.ColetadoEmUtc AS OperacaoColetadoEmUtc,
   rm.VelocidadeMediaCalculadaKmh, rm.TempoParadoSegundosCalculado, rm.QtdLeiturasJanela,
-  loc.HorimetroOdometro, imp.Descricao AS ImplementoAcoplado
+  loc.HorimetroOdometro, imp.Descricao AS ImplementoAcoplado,
+  alr.AlarmesUltimas24h
 FROM vw_UltimaPosicao p
 LEFT JOIN Equipamentos eq ON eq.EquipamentoId = p.EquipamentoId
 LEFT JOIN TiposEquipamento te ON te.TipoEquipamentoId = eq.TipoEquipamentoId
@@ -70,6 +74,12 @@ OUTER APPLY (
 ) loc
 LEFT JOIN Implementos imp ON imp.ImplementoId = loc.ImplementoId
 LEFT JOIN ResumoMovimento rm ON rm.EquipamentoId = p.EquipamentoId
+OUTER APPLY (
+  SELECT COUNT(*) AS AlarmesUltimas24h
+  FROM AlarmesEquipamento al
+  WHERE al.EquipamentoId = p.EquipamentoId
+    AND al.ColetadoEmUtc >= DATEADD(HOUR, -24, SYSUTCDATETIME())
+) alr
 ORDER BY p.CodigoEquipamento
 `;
 
