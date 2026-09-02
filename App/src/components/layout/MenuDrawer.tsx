@@ -1,6 +1,7 @@
 import React from 'react';
-import { X, User, Map, RefreshCw, Settings, LogOut, PlusCircle } from 'lucide-react';
+import { X, User, Map, RefreshCw, Settings, LogOut, PlusCircle, Trophy } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
 interface MenuDrawerProps {
   isOpen: boolean;
@@ -10,9 +11,11 @@ interface MenuDrawerProps {
 
 export const MenuDrawer: React.FC<MenuDrawerProps> = ({ isOpen, onClose, onOpenNovaSolicitacao }) => {
   const navigate = useNavigate();
+  const { motorista, logout } = useAuth();
 
   const handleLogout = () => {
     onClose();
+    logout();
     navigate('/login', { replace: true });
   };
 
@@ -43,19 +46,31 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({ isOpen, onClose, onOpenN
           <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-inner mb-3">
             <User className="w-8 h-8 text-emerald-600" />
           </div>
-          <h2 className="text-white font-bold text-lg leading-tight">Carlos Silva</h2>
-          <p className="text-emerald-100 text-sm font-medium">Motorista (Mat. 9021)</p>
+          <h2 className="text-white font-bold text-lg leading-tight">{motorista ?? 'Motorista'}</h2>
+          <p className="text-emerald-100 text-sm font-medium">Portal do Motorista</p>
         </div>
 
         <div className="flex-1 overflow-y-auto py-4">
           <ul className="space-y-1">
             <li>
-              <button 
-                onClick={onClose} 
+              <button
+                onClick={onClose}
                 className="w-full flex items-center px-6 py-4 text-gray-700 hover:bg-gray-50 active:bg-gray-100 transition-colors font-semibold"
               >
                 <Map className="w-5 h-5 mr-4 text-gray-500" />
                 Minhas Viagens
+              </button>
+            </li>
+            <li>
+              <button
+                onClick={() => {
+                  onClose();
+                  navigate('/minha-meta');
+                }}
+                className="w-full flex items-center px-6 py-4 text-emerald-700 hover:bg-emerald-50 active:bg-emerald-100 transition-colors font-bold"
+              >
+                <Trophy className="w-5 h-5 mr-4 text-emerald-600" />
+                Minha Meta
               </button>
             </li>
             {onOpenNovaSolicitacao && (

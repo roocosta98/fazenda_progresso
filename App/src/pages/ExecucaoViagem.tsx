@@ -17,7 +17,8 @@ import {
   Clock, 
   Navigation,
   UserCheck,
-  AlertTriangle
+  AlertTriangle,
+  ListChecks
 } from 'lucide-react';
 import { useOfflineSync } from '../hooks/useOfflineSync';
 
@@ -586,6 +587,20 @@ export const ExecucaoViagem: React.FC = () => {
           <div className="flex-1 flex items-center justify-center">
             <img src={foto} alt="Comprovante grande" className="max-h-full max-w-full object-contain rounded-xl" />
           </div>
+        </div>
+      )}
+
+      {/* Checklist de Atividade (ICO, PRD 4.5) — oferecido antes de iniciar, não bloqueia o início */}
+      {isAgendada && (
+        <div className="px-4 pb-2">
+          <button
+            type="button"
+            onClick={() => navigate(`/viagem/${viagem.idOS}/checklist`)}
+            className="w-full flex items-center justify-between bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl px-4 py-3 font-bold text-sm hover:bg-emerald-100 transition-colors"
+          >
+            <span className="flex items-center gap-2"><ListChecks size={18} /> Preencher checklist do veículo</span>
+            <span className="text-xs text-emerald-600">Antes de sair →</span>
+          </button>
         </div>
       )}
 
