@@ -1,11 +1,12 @@
 import Dexie, { type Table } from 'dexie';
-import type { ViagemMotorista, SyncAction, GpsPing, Notificacao } from '../types';
+import type { ViagemMotorista, SyncAction, GpsPing, Notificacao, ChecklistAtividadeLocal } from '../types';
 
 export class LogisticaAppDB extends Dexie {
   viagens!: Table<ViagemMotorista, string>; // string = idOS is the primary key
   syncQueue!: Table<SyncAction, number>; // number = auto-increment id
   gpsPings!: Table<GpsPing, number>;
   notificacoes!: Table<Notificacao, number>;
+  checklists!: Table<ChecklistAtividadeLocal, number>;
 
   constructor() {
     super('LogisticaAppDB');
@@ -18,6 +19,13 @@ export class LogisticaAppDB extends Dexie {
       syncQueue: '++id, type, timestamp',
       gpsPings: '++id, idOS, timestamp, synced',
       notificacoes: '++id, tipo, lida, timestamp',
+    });
+    this.version(3).stores({
+      viagens: 'idOS, status, sequencia, sincronizadoOffline',
+      syncQueue: '++id, type, timestamp',
+      gpsPings: '++id, idOS, timestamp, synced',
+      notificacoes: '++id, tipo, lida, timestamp',
+      checklists: '++id, viagemId, sincronizado, timestamp',
     });
   }
 }

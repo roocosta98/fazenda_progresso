@@ -17,7 +17,8 @@ import {
   User,
   Radio,
   Eye,
-  EyeOff
+  EyeOff,
+  AlertTriangle
 } from 'lucide-react';
 
 const API_URL = import.meta.env.VITE_API_URL ?? '';
@@ -41,6 +42,7 @@ interface PosicaoEquipamento {
   ColetadoEm: string | null;
   MinutosSemComunicacao: number | null;
   TipoEquipamento: string | null;
+  AlarmesUltimas24h: number | null;
 }
 
 type StatusComunicacao = 'online' | 'atencao' | 'offline' | 'sem_dados';
@@ -71,6 +73,7 @@ export const TelaTVMonitor = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [autoScroll, setAutoScroll] = useState(true);
   const [showOffline, setShowOffline] = useState(true);
+  const [tipoFiltro, setTipoFiltro] = useState('todos');
   const [currentPage, setCurrentPage] = useState(0);
   const [itemsPerPage, setItemsPerPage] = useState<PageSize>(10);
 
@@ -97,7 +100,11 @@ export const TelaTVMonitor = () => {
   const atencaoCount = posicoes.filter((p) => getStatusComunicacao(p.MinutosSemComunicacao) === 'atencao').length;
   const offlineCount = posicoes.filter((p) => getStatusComunicacao(p.MinutosSemComunicacao) === 'offline').length;
 
-  const allItems = showOffline ? posicoes : posicoes.filter((p) => getStatusComunicacao(p.MinutosSemComunicacao) !== 'offline');
+  const tiposEquipamento = Array.from(new Set(posicoes.map((p) => p.TipoEquipamento).filter(Boolean))) as string[];
+
+  const allItems = posicoes
+    .filter((p) => showOffline || getStatusComunicacao(p.MinutosSemComunicacao) !== 'offline')
+    .filter((p) => tipoFiltro === 'todos' || p.TipoEquipamento === tipoFiltro);
 
   const totalPages = itemsPerPage === 'todos' ? 1 : Math.max(1, Math.ceil(allItems.length / itemsPerPage));
 
@@ -227,6 +234,20 @@ export const TelaTVMonitor = () => {
               )}
             </button>
 
+            {/* Filtro por tipo de equipamento (PRD 5.2: painel/mapa precisa filtrar só caminhão) */}
+            {tiposEquipamento.length > 0 && (
+              <select
+                value={tipoFiltro}
+                onChange={(e) => { setTipoFiltro(e.target.value); setCurrentPage(0); }}
+                className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition-all border border-slate-700 shadow-sm"
+              >
+                <option value="todos">Todos os tipos</option>
+                {tiposEquipamento.map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+            )}
+
             {/* Alternar entre Modo Claro (Branco) e Escuro */}
             <button
               onClick={() => setThemeMode(themeMode === 'light' ? 'dark' : 'light')}
@@ -299,6 +320,7 @@ export const TelaTVMonitor = () => {
                   <th className="py-3.5 px-4">Operador</th>
                   <th className="py-3.5 px-4">Último Rastreio</th>
                   <th className="py-3.5 px-4 w-28 text-center">Velocidade</th>
+                  <th className="py-3.5 px-4 w-32 text-center">Riscos (24h)</th>
                 </tr>
               </thead>
 
@@ -395,6 +417,16 @@ export const TelaTVMonitor = () => {
                         <span className="inline-block px-3 py-0.5 rounded-lg text-xs font-bold border bg-blue-50 text-blue-700 border-blue-200">
                           {item.VelocidadeKmh ?? 0} km/h
                         </span>
+                      </td>
+
+                      <td className="py-3 px-4 text-center whitespace-nowrap">
+                        {item.AlarmesUltimas24h ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border bg-rose-50 text-rose-700 border-rose-200">
+                            <AlertTriangle size={12} className="mr-1" /> {item.AlarmesUltimas24h}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-slate-400">—</span>
+                        )}
                       </td>
                     </tr>
                   );

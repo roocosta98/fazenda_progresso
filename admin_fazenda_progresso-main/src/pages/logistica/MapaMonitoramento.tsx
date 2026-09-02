@@ -92,6 +92,8 @@ interface PosicaoEquipamento {
   // Última leitura de LeiturasLocalizacao + Implementos
   HorimetroOdometro: number | null;
   ImplementoAcoplado: string | null;
+  // Contagem de eventos de risco nas últimas 24h (AlarmesEquipamento) — ver api/frota/posicoes.ts
+  AlarmesUltimas24h: number | null;
   // A API usa p.* — a view do cliente pode trazer outras colunas além das listadas acima
   [campo: string]: unknown;
 }
@@ -193,6 +195,14 @@ interface TrajetoPonto {
   ColetadoEmUtc: string;
 }
 
+// AlarmesEquipamento — eventos de risco (frenagem brusca, aceleração etc.), ver api/frota/alarmes.ts.
+// O schema exato de colunas de justificativa/descrição pode variar por instalação — trata com
+// campos genéricos e cai pro fallback de "todos os campos" quando não reconhece a coluna.
+interface AlarmeEquipamento {
+  ColetadoEmUtc: string;
+  [campo: string]: unknown;
+}
+
 // @vis.gl/react-google-maps não tem um componente <Polyline> pronto — desenha o rastro
 // imperativamente com a API do Google Maps via useMap()
 const RastroPolyline = ({ pontos }: { pontos: TrajetoPonto[] }) => {
@@ -226,6 +236,9 @@ export const MapaMonitoramento = () => {
   const [selectedEquipamento, setSelectedEquipamento] = useState<PosicaoEquipamento | null>(null);
   const [busca, setBusca] = useState('');
   const [statusFiltro, setStatusFiltro] = useState<'todos' | StatusComunicacao>('todos');
+  const [tipoFiltro, setTipoFiltro] = useState('todos');
+  const [alarmes, setAlarmes] = useState<AlarmeEquipamento[]>([]);
+  const [alarmesLoading, setAlarmesLoading] = useState(false);
   const [mapTypeId, setMapTypeId] = useState<'hybrid' | 'roadmap' | 'terrain'>('hybrid');
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number } | null>(null);
   const [trajeto, setTrajeto] = useState<TrajetoPonto[]>([]);
@@ -296,6 +309,34 @@ export const MapaMonitoramento = () => {
     };
   }, [selectedEquipamento?.EquipamentoId]);
 
+  useEffect(() => {
+    const equipamentoId = selectedEquipamento?.EquipamentoId;
+    if (equipamentoId === undefined) {
+      setAlarmes([]);
+      return;
+    }
+    let cancelado = false;
+    setAlarmesLoading(true);
+    fetch(`${API_URL}/api/frota/alarmes?equipamentoId=${equipamentoId}&horas=24`)
+      .then((response) => {
+        if (!response.ok) throw new Error(`API respondeu ${response.status}`);
+        return response.json();
+      })
+      .then((data: AlarmeEquipamento[]) => {
+        if (!cancelado) setAlarmes(data);
+      })
+      .catch((error) => {
+        console.error('Erro ao buscar alarmes:', error);
+        if (!cancelado) setAlarmes([]);
+      })
+      .finally(() => {
+        if (!cancelado) setAlarmesLoading(false);
+      });
+    return () => {
+      cancelado = true;
+    };
+  }, [selectedEquipamento?.EquipamentoId]);
+
   const handleSelectEquipamento = (equipamento: PosicaoEquipamento) => {
     setSelectedEquipamento(equipamento);
     const lat = toNumero(equipamento.Latitude);
@@ -309,9 +350,12 @@ export const MapaMonitoramento = () => {
     (p) => p.Latitude !== null && p.Longitude !== null
   );
 
+  const tiposEquipamento = Array.from(new Set(posicoesComCoordenadas.map((p) => p.TipoEquipamento).filter(Boolean))) as string[];
+
   const posicoesFiltradas = posicoesComCoordenadas.filter((p) => {
     const status = getStatusComunicacao(p.MinutosSemComunicacao);
     const matchesStatus = statusFiltro === 'todos' || status === statusFiltro;
+    const matchesTipo = tipoFiltro === 'todos' || p.TipoEquipamento === tipoFiltro;
 
     const termo = busca.toLowerCase();
     const matchesBusca =
@@ -320,7 +364,7 @@ export const MapaMonitoramento = () => {
       (p.Operador ?? '').toLowerCase().includes(termo) ||
       (p.GrupoFrente ?? '').toLowerCase().includes(termo);
 
-    return matchesStatus && matchesBusca;
+    return matchesStatus && matchesTipo && matchesBusca;
   });
 
   const pinClasses = (status: StatusComunicacao) => {
@@ -581,6 +625,29 @@ export const MapaMonitoramento = () => {
                       <span className="text-slate-400 text-[10px]">{formatDataHora(selectedEquipamento.DataHoraOperacao)}</span>
                     </div>
 
+                    {!alarmesLoading && alarmes.length > 0 && (
+                      <div className="pt-1 border-t border-slate-100">
+                        <p className="text-[9px] font-bold text-rose-500 uppercase tracking-widest mb-1.5 flex items-center">
+                          <AlertTriangle size={11} className="mr-1" /> Eventos de risco (24h) — AlarmesEquipamento
+                        </p>
+                        <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
+                          {alarmes.slice(0, 5).map((alarme, idx) => (
+                            <div key={idx} className="bg-rose-50 border border-rose-100 rounded-lg p-1.5 text-[10px]">
+                              <p className="text-rose-400 font-mono">{formatDataHora(alarme.ColetadoEmUtc)}</p>
+                              {Object.entries(alarme)
+                                .filter(([chave]) => chave !== 'ColetadoEmUtc' && chave !== 'EquipamentoId')
+                                .slice(0, 3)
+                                .map(([chave, valor]) => (
+                                  <p key={chave} className="text-rose-700">
+                                    <span className="text-rose-400">{formatRotuloCampo(chave)}:</span> {formatValorCampo(valor)}
+                                  </p>
+                                ))}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
                     <div className="pt-2 border-t border-slate-100">
                       <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest mb-1.5">Todos os dados do equipamento</p>
                       <div className="space-y-1">
@@ -702,6 +769,19 @@ export const MapaMonitoramento = () => {
                 </button>
               ))}
             </div>
+
+            {tiposEquipamento.length > 0 && (
+              <select
+                value={tipoFiltro}
+                onChange={(e) => setTipoFiltro(e.target.value)}
+                className="w-full text-[11px] font-bold bg-slate-100 border border-slate-200 rounded-lg px-2 py-1.5 text-slate-600"
+              >
+                <option value="todos">Todos os tipos de equipamento</option>
+                {tiposEquipamento.map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+            )}
           </div>
 
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -750,6 +830,11 @@ export const MapaMonitoramento = () => {
                       {p.PorcentagemCargaBateria !== null && (
                         <p className="text-[10px] text-slate-500 font-medium mt-0.5 flex items-center">
                           <BatteryFull size={11} className="mr-1 text-emerald-600" /> {formatNumero(p.PorcentagemCargaBateria, 0)}% bateria
+                        </p>
+                      )}
+                      {!!p.AlarmesUltimas24h && (
+                        <p className="text-[10px] text-rose-600 font-bold mt-0.5 flex items-center">
+                          <AlertTriangle size={11} className="mr-1" /> {p.AlarmesUltimas24h} evento(s) de risco (24h)
                         </p>
                       )}
 
