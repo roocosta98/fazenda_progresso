@@ -35,7 +35,7 @@ Calculado AS (
          ELSE NULL END AS CpkRealizado
   FROM vw_PainelMotoristaVeiculo v
   LEFT JOIN Consumo c ON c.EquipamentoId = v.EquipamentoId
-  WHERE v.CompetenciaMeta = @competencia
+  WHERE v.CompetenciaMeta >= @inicioCompetencia AND v.CompetenciaMeta < @fimCompetencia
 ),
 ComPercentual AS (
   SELECT *,
@@ -78,7 +78,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const result = await pool
       .request()
       .input('motorista', sql.NVarChar, motorista)
-      .input('competencia', sql.NVarChar, competencia)
       .input('inicioCompetencia', sql.DateTime2, inicioCompetencia)
       .input('fimCompetencia', sql.DateTime2, fimCompetencia)
       .query(QUERY);

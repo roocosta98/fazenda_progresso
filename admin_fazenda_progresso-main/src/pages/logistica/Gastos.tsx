@@ -6,7 +6,7 @@ const API_URL = import.meta.env.VITE_API_URL ?? '';
 
 interface LinhaGasto {
   EquipamentoId: number;
-  CompetenciaCustoFixo: string;
+  CompetenciaMeta: string;
   CodigoEquipamento: string;
   NomeEquipamento: string;
   TipoEquipamento: string | null;
@@ -184,7 +184,7 @@ export const Gastos = () => {
       {loading ? (
         <div className="bg-white rounded-2xl border border-slate-200/80 p-12 text-center text-slate-400">Carregando...</div>
       ) : (
-        <DataTable columns={columns} data={filtradas} keyExtractor={(l) => `${l.EquipamentoId}-${l.CompetenciaCustoFixo}`} />
+        <DataTable columns={columns} data={filtradas} keyExtractor={(l) => `${l.EquipamentoId}-${l.CompetenciaMeta}`} />
       )}
     </div>
   );
