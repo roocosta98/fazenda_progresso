@@ -129,14 +129,34 @@ export const PainelMetasDiario: React.FC = () => {
 
         if (respDiario.ok) {
           const json = await respDiario.json();
-          // Mapeamento condicional caso a view retorne dados. Se vazio, mantemos o mock por enquanto.
           if (json.porVeiculo && json.porVeiculo.length > 0) {
-            setDadosGraficoDiario(json.porVeiculo.map((v: any) => ({
-              dia: v.Dia ? new Date(v.Dia).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) : '',
-              previsto: v.CustoEsperadoDia ?? 0,
-              realizado: v.CustoOperacionalRealDia ?? 0,
-              status: (v.CustoOperacionalRealDia ?? 0) <= (v.CustoEsperadoDia ?? 0) ? 'dentro' : 'acima'
-            })));
+            // Agrupar dados por dia (somando todos os veículos no mesmo dia)
+            const dadosPorDia: Record<string, { dataOriginal: string, previsto: number, realizado: number }> = {};
+            
+            json.porVeiculo.forEach((v: any) => {
+              if (!v.Dia) return;
+              const diaReal = v.Dia.split('T')[0];
+              if (!dadosPorDia[diaReal]) {
+                dadosPorDia[diaReal] = { dataOriginal: diaReal, previsto: 0, realizado: 0 };
+              }
+              dadosPorDia[diaReal].previsto += (v.CustoEsperadoDia ?? 0);
+              dadosPorDia[diaReal].realizado += (v.CustoOperacionalRealDia ?? 0);
+            });
+
+            const graficoDiario = Object.values(dadosPorDia)
+              .sort((a, b) => a.dataOriginal.localeCompare(b.dataOriginal))
+              .map(v => {
+                const [yyyy, mm, dd] = v.dataOriginal.split('-');
+                const dateObj = new Date(Number(yyyy), Number(mm) - 1, Number(dd));
+                return {
+                  dia: dateObj.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }),
+                  previsto: v.previsto,
+                  realizado: v.realizado,
+                  status: v.realizado <= v.previsto ? 'dentro' : 'acima'
+                };
+              });
+
+            setDadosGraficoDiario(graficoDiario);
 
             // Calcular Balanço Financeiro (Lucro vs Prejuízo) por Veículo
             const saldoPorVeiculo: Record<number, number> = {};
