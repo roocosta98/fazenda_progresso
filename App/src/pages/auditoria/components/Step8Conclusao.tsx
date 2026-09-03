@@ -158,7 +158,7 @@ function ProgressRow({ label, score }: { label: string, score: number }) {
           className={`h-full rounded-full transition-all duration-500 ${
             score >= 85 ? 'bg-green-500' : score >= 70 ? 'bg-yellow-500' : 'bg-red-500'
           }`} 
-          style={{ width: \`\${score}%\` }}
+          style={{ width: `${score}%` }}
         />
       </div>
       <div className="w-8 text-right text-xs font-bold text-neutral-700">{score}</div>
