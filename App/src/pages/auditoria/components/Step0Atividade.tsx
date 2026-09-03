@@ -1,5 +1,5 @@
 import React from 'react';
-import { TipoAtividadeAuditoria } from '../../../types';
+import type { TipoAtividadeAuditoria } from '../../../types';
 import { Truck, Droplet, User, Package, Sprout, ShieldCheck } from 'lucide-react';
 
 interface Props {

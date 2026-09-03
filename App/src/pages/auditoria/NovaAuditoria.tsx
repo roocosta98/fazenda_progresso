@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
-import { AuditoriaData, TipoAtividadeAuditoria } from '../../types';
+import type { AuditoriaData } from '../../types';
 
 import { Stepper } from './components/Stepper';
 import { Step0Atividade } from './components/Step0Atividade';

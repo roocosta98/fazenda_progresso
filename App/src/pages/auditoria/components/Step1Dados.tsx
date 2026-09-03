@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { AuditoriaData } from '../../../types';
+import { useState } from 'react';
+import type { AuditoriaData } from '../../../types';
 import { MapPin, AlertCircle } from 'lucide-react';
 
 interface Props {
@@ -36,7 +36,7 @@ export function Step1Dados({ data, onChange }: Props) {
         });
         setIsLocating(false);
       },
-      (error) => {
+      () => {
         setIsLocating(false);
         setGeoError('Falha ao obter localização. Verifique as permissões.');
       },

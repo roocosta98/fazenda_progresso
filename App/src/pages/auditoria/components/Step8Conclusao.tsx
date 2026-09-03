@@ -1,5 +1,4 @@
-import React from 'react';
-import { AuditoriaData } from '../../../types';
+import type { AuditoriaData } from '../../../types';
 import { SignaturePad } from './SignaturePad';
 import { ClipboardCheck, AlertTriangle } from 'lucide-react';
 

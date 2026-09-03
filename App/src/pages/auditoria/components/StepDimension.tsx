@@ -1,5 +1,4 @@
-import React from 'react';
-import { AuditoriaDimension } from '../../../types';
+import type { AuditoriaDimension } from '../../../types';
 import { AlertTriangle } from 'lucide-react';
 
 interface Props {

@@ -1,5 +1,4 @@
-import React from 'react';
-import { AuditoriaOTIF } from '../../../types';
+import type { AuditoriaOTIF } from '../../../types';
 import { CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
 
 interface Props {
