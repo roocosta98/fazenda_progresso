@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { List, Clock, LayoutDashboard, Truck, Map as MapIcon, Leaf, MonitorPlay, BarChart3, Trophy, ClipboardCheck, Link2, Settings, ChevronDown } from 'lucide-react';
+import { List, Clock, LayoutDashboard, Truck, Map as MapIcon, Leaf, MonitorPlay, Trophy, ClipboardCheck, Link2, Settings, ChevronDown } from 'lucide-react';
 
 interface LinkItem {
   to: string;
@@ -32,7 +32,6 @@ export const Sidebar = () => {
       ]
     : [
         { to: '/logistica/dashboard', icon: <LayoutDashboard size={20} />, label: 'Dashboard' },
-        { to: '/logistica/bi', icon: <BarChart3 size={20} />, label: 'Métricas' },
         { to: '/logistica/pendentes', icon: <Clock size={20} />, label: 'Fila de Aprovação', badge: 2 },
         { to: '/logistica/metas', icon: <Trophy size={20} />, label: 'Metas & Ranking' },
         { to: '/logistica/avaliacao-conducao', icon: <ClipboardCheck size={20} />, label: 'Avaliação de Condução' },
