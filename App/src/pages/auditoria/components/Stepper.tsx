@@ -1,6 +1,3 @@
-import { useEffect, useRef } from 'react';
-import { Check } from 'lucide-react';
-
 interface Step {
   id: number;
   title: string;
@@ -12,59 +9,31 @@ interface StepperProps {
 }
 
 export function Stepper({ currentStep, steps }: StepperProps) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  // Auto-scroll to current step on mobile
-  useEffect(() => {
-    if (scrollRef.current) {
-      const activeElement = scrollRef.current.children[currentStep] as HTMLElement;
-      if (activeElement) {
-        activeElement.scrollIntoView({
-          behavior: 'smooth',
-          block: 'nearest',
-          inline: 'center',
-        });
-      }
-    }
-  }, [currentStep]);
+  const current = steps[currentStep];
+  const progressPercentage = ((currentStep + 1) / steps.length) * 100;
 
   return (
-    <div className="w-full overflow-x-auto no-scrollbar border-b border-neutral-200">
-      <div 
-        ref={scrollRef}
-        className="flex items-center min-w-max px-4 py-3 gap-2"
-      >
-        {steps.map((step, index) => {
-          const isCompleted = currentStep > index;
-          const isCurrent = currentStep === index;
-          const isPending = currentStep < index;
-
-          return (
-            <div key={step.id} className="flex items-center">
-              {/* Node */}
-              <div
-                className={`
-                  flex items-center justify-center whitespace-nowrap px-3 py-1.5 rounded-full text-sm font-medium transition-colors
-                  ${isCompleted ? 'bg-green-100 text-green-700 border border-green-200' : ''}
-                  ${isCurrent ? 'bg-[#1E3A2F] text-white shadow-sm' : ''}
-                  ${isPending ? 'bg-neutral-100 text-neutral-400' : ''}
-                `}
-              >
-                {isCompleted && <Check className="w-4 h-4 mr-1.5" />}
-                {step.title}
-              </div>
-
-              {/* Line connector */}
-              {index < steps.length - 1 && (
-                <div 
-                  className={`w-6 h-px mx-1 
-                    ${isCompleted ? 'bg-green-300' : 'bg-neutral-200'}
-                  `}
-                />
-              )}
-            </div>
-          );
-        })}
+    <div className="w-full bg-white px-5 py-4 border-b border-neutral-200">
+      <div className="flex justify-between items-end mb-3">
+        <div>
+          <span className="text-[11px] font-extrabold text-[#D4AF37] uppercase tracking-widest block mb-1">
+            Etapa {currentStep + 1} de {steps.length}
+          </span>
+          <h2 className="text-xl font-bold text-[#1E3A2F] leading-none">
+            {current.title}
+          </h2>
+        </div>
+        <div className="text-[11px] font-bold text-neutral-400 mb-0.5">
+          {Math.round(progressPercentage)}%
+        </div>
+      </div>
+      
+      {/* Barra de Progresso */}
+      <div className="w-full h-1.5 bg-neutral-100 rounded-full overflow-hidden flex">
+        <div 
+          className="h-full bg-[#1E3A2F] rounded-full transition-all duration-500 ease-out"
+          style={{ width: `${progressPercentage}%` }}
+        />
       </div>
     </div>
   );
