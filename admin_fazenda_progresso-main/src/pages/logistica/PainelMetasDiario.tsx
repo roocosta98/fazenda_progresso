@@ -189,11 +189,24 @@ export const PainelMetasDiario: React.FC = () => {
           const json = await respMotivos.json();
           if (json.length > 0) {
             const cores = ['#ef4444', '#f97316', '#3b82f6', '#10b981'];
-            setDadosMotivos(json.map((v: any, i: number) => ({
-              motivo: v.MotivoParada ?? 'Outros',
-              minutos: v.MinutosAproximados ?? 0,
-              cor: cores[i % cores.length]
-            })));
+            
+            // Agrupar os motivos
+            const motivosAgrupados: Record<string, number> = {};
+            json.forEach((v: any) => {
+              const m = v.MotivoParada ?? 'Outros';
+              if (!motivosAgrupados[m]) motivosAgrupados[m] = 0;
+              motivosAgrupados[m] += (v.MinutosAproximados ?? 0);
+            });
+
+            const motivosArray = Object.entries(motivosAgrupados)
+              .sort((a, b) => b[1] - a[1]) // ordena por mais tempo primeiro
+              .map(([motivo, minutos], i) => ({
+                motivo,
+                minutos,
+                cor: cores[i % cores.length]
+              }));
+
+            setDadosMotivos(motivosArray);
           }
         }
 
