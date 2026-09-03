@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getMssqlPool } from '../_lib/mssql.js';
 import sql from 'mssql';
+import { FILTRO_TIPO_CAMINHAO_LIKE } from '../_lib/tipoEquipamento.js';
 
 // Módulo Gastos do PRD (seção 6): CustosFixosEquipamento + Motoristas, com
 // CustoOperacionalTotalMes = custo motorista + custo fixo.
@@ -27,6 +28,7 @@ FROM vw_PainelMotoristaVeiculo v
 LEFT JOIN Equipamentos eq ON eq.EquipamentoId = v.EquipamentoId
 LEFT JOIN TiposEquipamento te ON te.TipoEquipamentoId = eq.TipoEquipamentoId
 WHERE v.CompetenciaMeta >= @inicioCompetencia AND v.CompetenciaMeta < @fimCompetencia
+  AND te.Descricao LIKE @tipoCaminhao
 ORDER BY v.NomeEquipamento
 `;
 
@@ -48,6 +50,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .request()
       .input('inicioCompetencia', sql.DateTime2, inicioCompetencia)
       .input('fimCompetencia', sql.DateTime2, fimCompetencia)
+      .input('tipoCaminhao', sql.NVarChar, FILTRO_TIPO_CAMINHAO_LIKE)
       .query(QUERY);
     res.status(200).json(result.recordset);
   } catch (error) {

@@ -9,12 +9,8 @@ import { DashboardBI } from '../pages/logistica/DashboardBI';
 import { FilaPendentes } from '../pages/logistica/FilaPendentes';
 import { GestaoFrota } from '../pages/logistica/GestaoFrota';
 import { PainelMetas } from '../pages/logistica/PainelMetas';
-import { PainelMetasDiario } from '../pages/logistica/PainelMetasDiario';
-import { DashboardExecutivo } from '../pages/logistica/DashboardExecutivo';
 import { MetasOrfas } from '../pages/logistica/MetasOrfas';
-import { Gastos } from '../pages/logistica/Gastos';
 import { AvaliacaoConducao } from '../pages/logistica/AvaliacaoConducao';
-import { InsightsIA } from '../pages/logistica/InsightsIA';
 import { MapaMonitoramento } from '../pages/logistica/MapaMonitoramento';
 import { TelaTVMonitor } from '../pages/logistica/TelaTVMonitor';
 
@@ -65,30 +61,14 @@ export const AppRoutes = () => {
           element={<ProtectedRoute allowedRoles={['logistica']}><PainelMetas /></ProtectedRoute>}
         />
         <Route
-          path="/logistica/metas-diario"
-          element={<ProtectedRoute allowedRoles={['logistica']}><PainelMetasDiario /></ProtectedRoute>}
-        />
-        <Route
           path="/logistica/metas-orfas"
           element={<ProtectedRoute allowedRoles={['logistica']}><MetasOrfas /></ProtectedRoute>}
-        />
-        <Route
-          path="/logistica/dashboard-executivo"
-          element={<ProtectedRoute allowedRoles={['logistica']}><DashboardExecutivo /></ProtectedRoute>}
-        />
-        <Route
-          path="/logistica/gastos"
-          element={<ProtectedRoute allowedRoles={['logistica']}><Gastos /></ProtectedRoute>}
         />
         <Route
           path="/logistica/avaliacao-conducao"
           element={<ProtectedRoute allowedRoles={['logistica']}><AvaliacaoConducao /></ProtectedRoute>}
         />
         <Route
-          path="/logistica/insights"
-          element={<ProtectedRoute allowedRoles={['logistica']}><InsightsIA /></ProtectedRoute>}
-        />
-        <Route 
           path="/logistica/monitoramento" 
           element={<ProtectedRoute allowedRoles={['logistica']}><MapaMonitoramento /></ProtectedRoute>} 
         />

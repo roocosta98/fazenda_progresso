@@ -146,7 +146,7 @@ export const MapaViagemMotorista: React.FC = () => {
     ctx.beginPath();
     ctx.moveTo(origPoint.x, origPoint.y);
     ctx.quadraticCurveTo(width * 0.4, height * 0.4, destPoint.x, destPoint.y);
-    ctx.strokeStyle = '#10b981';
+    ctx.strokeStyle = '#22c55e';
     ctx.lineWidth = 8;
     ctx.lineCap = 'round';
     ctx.stroke();
@@ -162,7 +162,7 @@ export const MapaViagemMotorista: React.FC = () => {
 
     ctx.beginPath();
     ctx.arc(origPoint.x, origPoint.y, 14, 0, Math.PI * 2);
-    ctx.fillStyle = '#10b981';
+    ctx.fillStyle = '#22c55e';
     ctx.fill();
     ctx.strokeStyle = '#ffffff';
     ctx.lineWidth = 3;
@@ -204,7 +204,7 @@ export const MapaViagemMotorista: React.FC = () => {
   if (!viagem) {
     return (
       <div className="flex flex-col h-screen bg-slate-50 items-center justify-center">
-        <div className="animate-spin text-emerald-500 mb-4"><Truck size={40} /></div>
+        <div className="animate-spin text-green-500 mb-4"><Truck size={40} /></div>
         <p className="text-slate-500 font-medium">Carregando mapa da viagem...</p>
       </div>
     );
@@ -237,7 +237,7 @@ export const MapaViagemMotorista: React.FC = () => {
             </button>
             <div>
               <div className="flex items-center space-x-2">
-                <span className="text-[10px] font-black bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded uppercase">
+                <span className="text-[10px] font-black bg-green-500/20 text-green-400 px-2 py-0.5 rounded uppercase">
                   {viagem.idOS}
                 </span>
                 <span className="text-[11px] text-slate-400 font-bold">{viagem.veiculoPlaca}</span>
@@ -278,28 +278,28 @@ export const MapaViagemMotorista: React.FC = () => {
 
             {/* GPS Indicator */}
             <div className={`px-2 py-1 rounded-full text-[9px] font-extrabold flex items-center space-x-1 ${
-              gpsActive ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+              gpsActive ? 'bg-green-500/20 text-green-400 border border-green-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
             }`}>
-              <span className={`w-2 h-2 rounded-full ${gpsActive ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`}></span>
+              <span className={`w-2 h-2 rounded-full ${gpsActive ? 'bg-green-400 animate-pulse' : 'bg-amber-400'}`}></span>
               <span>{gpsActive ? 'GPS' : 'Estimado'}</span>
             </div>
           </div>
         </div>
 
         {/* Route Direction Instruction Banner */}
-        <div className="bg-emerald-600 text-white rounded-xl px-3.5 py-2 shadow-lg flex items-center justify-between">
+        <div className="bg-green-600 text-white rounded-xl px-3.5 py-2 shadow-lg flex items-center justify-between">
           <div className="flex items-center space-x-2.5 min-w-0">
             <Navigation className="w-4 h-4 fill-white rotate-45 shrink-0" />
             <div className="min-w-0 flex-1">
               <p className="text-xs font-bold leading-tight truncate">Rota via Google Maps: {viagem.origem} $\rightarrow$ {viagem.destino}</p>
-              <p className="text-[10px] text-emerald-100 font-medium">Estradas internas Fazenda Progresso - Mucugê/BA</p>
+              <p className="text-[10px] text-green-100 font-medium">Estradas internas Fazenda Progresso - Mucugê/BA</p>
             </div>
           </div>
           <a
             href={googleMapsAppUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[10px] font-black bg-emerald-700 hover:bg-emerald-800 text-white px-2.5 py-1.5 rounded-lg flex items-center space-x-1 shrink-0 ml-2 shadow transition-colors"
+            className="text-[10px] font-black bg-green-700 hover:bg-green-800 text-white px-2.5 py-1.5 rounded-lg flex items-center space-x-1 shrink-0 ml-2 shadow transition-colors"
           >
             <span>Navegar App</span>
             <ExternalLink className="w-3 h-3" />
@@ -333,7 +333,7 @@ export const MapaViagemMotorista: React.FC = () => {
           onClick={() => {
             setGpsActive(true);
           }}
-          className="absolute bottom-48 right-4 p-3 bg-slate-900/90 text-emerald-400 hover:bg-slate-800 active:scale-90 transition-all rounded-full shadow-2xl border border-slate-700 z-10"
+          className="absolute bottom-48 right-4 p-3 bg-slate-900/90 text-green-400 hover:bg-slate-800 active:scale-90 transition-all rounded-full shadow-2xl border border-slate-700 z-10"
           title="Centralizar no GPS"
         >
           <Locate className="w-5 h-5" />
@@ -348,7 +348,7 @@ export const MapaViagemMotorista: React.FC = () => {
           
           {/* ETA */}
           <div className="bg-slate-800/80 border border-slate-700/60 rounded-2xl p-2.5 flex flex-col items-center justify-center">
-            <div className="flex items-center space-x-1 text-emerald-400 text-[10px] font-extrabold mb-0.5">
+            <div className="flex items-center space-x-1 text-green-400 text-[10px] font-extrabold mb-0.5">
               <Clock className="w-3 h-3" />
               <span>ETA CHEGADA</span>
             </div>
@@ -392,7 +392,7 @@ export const MapaViagemMotorista: React.FC = () => {
 
           <button
             onClick={() => navigate(`/viagem/${viagem.idOS}/execucao`)}
-            className="flex-1 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white font-extrabold py-3.5 px-3 rounded-2xl shadow-lg shadow-emerald-500/20 active:scale-98 transition-all flex items-center justify-center space-x-1 text-xs"
+            className="flex-1 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-extrabold py-3.5 px-3 rounded-2xl shadow-lg shadow-green-500/20 active:scale-98 transition-all flex items-center justify-center space-x-1 text-xs"
           >
             <span>CONCLUIR (POD)</span>
             <ChevronRight className="w-4 h-4" />

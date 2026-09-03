@@ -345,7 +345,7 @@ export const NovaSolicitacaoDrawer = ({ isOpen, onClose, onSuccess }: NovaSolici
             {/* Barra de Progresso Superior */}
             <div className="w-full bg-slate-800 h-1.5 rounded-full mt-3 overflow-hidden">
               <div 
-                className="bg-emerald-400 h-full transition-all duration-300 ease-out"
+                className="bg-green-400 h-full transition-all duration-300 ease-out"
                 style={{ width: `${(currentStep / 7) * 100}%` }}
               ></div>
             </div>
@@ -395,15 +395,15 @@ export const NovaSolicitacaoDrawer = ({ isOpen, onClose, onSuccess }: NovaSolici
                     <div 
                       key={loc.id}
                       onClick={() => handleSelectOrigem(loc)}
-                      className="flex items-center justify-between px-5 py-4 hover:bg-emerald-50/70 cursor-pointer transition-all duration-150 group border-b border-slate-100"
+                      className="flex items-center justify-between px-5 py-4 hover:bg-green-50/70 cursor-pointer transition-all duration-150 group border-b border-slate-100"
                     >
                       <div className="flex items-center space-x-3 pr-4">
-                        <MapPin size={18} className="text-emerald-600 group-hover:text-emerald-700 shrink-0" />
-                        <span className="text-sm font-semibold text-slate-800 uppercase tracking-wide group-hover:text-emerald-900 leading-snug">
+                        <MapPin size={18} className="text-green-600 group-hover:text-green-700 shrink-0" />
+                        <span className="text-sm font-semibold text-slate-800 uppercase tracking-wide group-hover:text-green-900 leading-snug">
                           {loc.descricao}
                         </span>
                       </div>
-                      <ChevronRight size={18} className="text-slate-400 group-hover:text-emerald-600 group-hover:translate-x-1 transition-all shrink-0" />
+                      <ChevronRight size={18} className="text-slate-400 group-hover:text-green-600 group-hover:translate-x-1 transition-all shrink-0" />
                     </div>
                   ))
                 )}
@@ -561,15 +561,15 @@ export const NovaSolicitacaoDrawer = ({ isOpen, onClose, onSuccess }: NovaSolici
                 <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm space-y-3">
                   <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                     <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Dados Selecionados</span>
-                    <span className="text-[11px] text-emerald-600 font-bold">Pronto para Enviar</span>
+                    <span className="text-[11px] text-green-600 font-bold">Pronto para Enviar</span>
                   </div>
 
                   <div className="space-y-2 text-xs">
-                    <div className="flex items-center justify-between p-2 rounded-xl bg-emerald-50/60 border border-emerald-100">
-                      <span className="font-semibold text-emerald-800 flex items-center"><MapPin size={14} className="mr-2 text-emerald-600" /> Origem:</span>
+                    <div className="flex items-center justify-between p-2 rounded-xl bg-green-50/60 border border-green-100">
+                      <span className="font-semibold text-green-800 flex items-center"><MapPin size={14} className="mr-2 text-green-600" /> Origem:</span>
                       <div className="flex items-center space-x-2">
-                        <span className="font-bold text-emerald-900">{origemSel?.descricao}</span>
-                        <button onClick={() => setCurrentStep(1)} className="text-emerald-700 hover:text-emerald-900 p-1" title="Alterar">
+                        <span className="font-bold text-green-900">{origemSel?.descricao}</span>
+                        <button onClick={() => setCurrentStep(1)} className="text-green-700 hover:text-green-900 p-1" title="Alterar">
                           <Edit3 size={14} />
                         </button>
                       </div>
@@ -696,7 +696,7 @@ export const NovaSolicitacaoDrawer = ({ isOpen, onClose, onSuccess }: NovaSolici
                         </div>
                       ) : (
                         <>
-                          Salvar <Zap size={16} className="ml-2 text-emerald-400" />
+                          Salvar <Zap size={16} className="ml-2 text-green-400" />
                         </>
                       )}
                     </button>
@@ -713,7 +713,7 @@ export const NovaSolicitacaoDrawer = ({ isOpen, onClose, onSuccess }: NovaSolici
         <div className="flex flex-col items-center justify-center p-8 text-center">
           <div className="w-20 h-20 bg-slate-100 text-slate-900 rounded-full flex items-center justify-center mb-6 relative">
             <div className="absolute inset-0 bg-slate-900 rounded-full animate-ping opacity-20"></div>
-            <CheckCircle2 size={42} className="relative z-10 text-emerald-600" />
+            <CheckCircle2 size={42} className="relative z-10 text-green-600" />
           </div>
           <h3 className="text-2xl font-black text-slate-800 mb-2">OS Gerada com Sucesso!</h3>
           <p className="text-slate-500 mb-8 max-w-sm mx-auto leading-relaxed text-sm">

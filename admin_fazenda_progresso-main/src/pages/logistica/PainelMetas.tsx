@@ -160,7 +160,7 @@ export const PainelMetas = () => {
       header: 'Realizado no mês',
       render: (l: LinhaPainelMetas) => (
         <div className="text-xs space-y-0.5">
-          <p className="flex items-center gap-1"><Fuel size={12} className="text-emerald-500" /> Km/L: <b>{formatNumero(l.KmLRealizado)}</b></p>
+          <p className="flex items-center gap-1"><Fuel size={12} className="text-green-500" /> Km/L: <b>{formatNumero(l.KmLRealizado)}</b></p>
           <p className="flex items-center gap-1"><Gauge size={12} className="text-amber-500" /> CPK: <b>{formatMoeda(l.CpkRealizado)}</b></p>
         </div>
       ),
@@ -168,7 +168,7 @@ export const PainelMetas = () => {
     {
       header: 'Reconhecimento',
       align: 'right' as const,
-      render: (l: LinhaPainelMetas) => <span className="font-bold text-emerald-700">{formatMoeda(l.ReconhecimentoMensal)}</span>,
+      render: (l: LinhaPainelMetas) => <span className="font-bold text-green-700">{formatMoeda(l.ReconhecimentoMensal)}</span>,
     },
   ];
 
@@ -212,7 +212,7 @@ export const PainelMetas = () => {
           <button
             onClick={exportarXlsx}
             disabled={filtradas.length === 0}
-            className="inline-flex items-center px-4 py-2.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl font-bold hover:bg-emerald-100 transition-colors text-sm disabled:opacity-50"
+            className="inline-flex items-center px-4 py-2.5 bg-green-50 text-green-700 border border-green-200 rounded-xl font-bold hover:bg-green-100 transition-colors text-sm disabled:opacity-50"
           >
             <FileSpreadsheet size={16} className="mr-2" />
             Exportar planilha

@@ -79,7 +79,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
         {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
         {payload.map((entry: any, index: number) => (
           <div key={index} className="flex items-center gap-2">
-            <span>Quantidade: <span className="font-bold text-emerald-400">{entry.value}</span></span>
+            <span>Quantidade: <span className="font-bold text-green-400">{entry.value}</span></span>
           </div>
         ))}
       </div>
@@ -114,13 +114,13 @@ export const DashboardBI = () => {
       {/* 1. Barra Lateral de Filtros (Esquerda) */}
       <div className="w-full lg:w-64 shrink-0 bg-white rounded-2xl shadow-sm border border-slate-200/60 p-5 flex flex-col gap-6">
         <div className="flex items-center gap-2 text-slate-800 mb-2 border-b border-slate-100 pb-3">
-          <Filter size={18} className="text-emerald-600" />
+          <Filter size={18} className="text-green-600" />
           <h2 className="font-bold text-sm">Filtros do Painel</h2>
         </div>
 
         <div className="space-y-1.5">
           <label className="text-[11px] font-bold text-slate-600">Mês, Dia</label>
-          <select value={mesDia} onChange={e => setMesDia(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-700 outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all">
+          <select value={mesDia} onChange={e => setMesDia(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-700 outline-none focus:ring-2 focus:ring-green-500/20 transition-all">
             <option value="agosto">agosto</option>
             <option value="julho">julho</option>
           </select>
@@ -128,7 +128,7 @@ export const DashboardBI = () => {
 
         <div className="space-y-1.5">
           <label className="text-[11px] font-bold text-slate-600">Placa</label>
-          <select value={placaFiltro} onChange={e => setPlacaFiltro(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-700 outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all">
+          <select value={placaFiltro} onChange={e => setPlacaFiltro(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-700 outline-none focus:ring-2 focus:ring-green-500/20 transition-all">
             <option>Todos</option>
             {veiculos.map(v => <option key={v.id}>{v.placa}</option>)}
           </select>
@@ -136,7 +136,7 @@ export const DashboardBI = () => {
 
         <div className="space-y-1.5">
           <label className="text-[11px] font-bold text-slate-600">Origem</label>
-          <select value={origemFiltro} onChange={e => setOrigemFiltro(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-700 outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all">
+          <select value={origemFiltro} onChange={e => setOrigemFiltro(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-700 outline-none focus:ring-2 focus:ring-green-500/20 transition-all">
             <option>Todos</option>
             <option>Sede Central</option>
             <option>Galpão Insumos</option>
@@ -145,7 +145,7 @@ export const DashboardBI = () => {
 
         <div className="space-y-1.5">
           <label className="text-[11px] font-bold text-slate-600">Destino</label>
-          <select value={destinoFiltro} onChange={e => setDestinoFiltro(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-700 outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all">
+          <select value={destinoFiltro} onChange={e => setDestinoFiltro(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-700 outline-none focus:ring-2 focus:ring-green-500/20 transition-all">
             <option>Todos</option>
             <option>Pivô 04</option>
             <option>Campo de Batata</option>
@@ -154,7 +154,7 @@ export const DashboardBI = () => {
 
         <div className="space-y-1.5">
           <label className="text-[11px] font-bold text-slate-600">Projeto</label>
-          <select value={projetoFiltro} onChange={e => setProjetoFiltro(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-700 outline-none focus:ring-2 focus:ring-emerald-500/20 transition-all">
+          <select value={projetoFiltro} onChange={e => setProjetoFiltro(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs font-medium text-slate-700 outline-none focus:ring-2 focus:ring-green-500/20 transition-all">
             <option>Todos</option>
             {projetos.map(p => <option key={p.id}>{p.nome}</option>)}
           </select>

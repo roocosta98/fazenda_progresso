@@ -53,7 +53,7 @@ export const CentralEmExecucao = () => {
         return (
           <div className="flex items-center">
              {status === 'online' ? (
-                <span className="flex items-center text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2.5 py-1 rounded-full w-fit">
+                <span className="flex items-center text-xs font-bold bg-green-50 text-green-700 border border-green-200 px-2.5 py-1 rounded-full w-fit">
                   <Wifi size={12} className="mr-1.5" /> Conectado ({time})
                 </span>
              ) : (

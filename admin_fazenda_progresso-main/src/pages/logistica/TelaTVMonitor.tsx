@@ -152,13 +152,13 @@ export const TelaTVMonitor = () => {
 
         {/* LOGO DA FAZENDA PROGRESSO */}
         <div className="flex items-center space-x-4">
-          <div className="p-2 bg-emerald-500/20 rounded-xl border border-emerald-500/30">
-            <Leaf className="w-6 h-6 text-emerald-400" />
+          <div className="p-2 bg-green-500/20 rounded-xl border border-green-500/30">
+            <Leaf className="w-6 h-6 text-green-400" />
           </div>
           <div>
-            <span className="text-[10px] font-bold tracking-widest text-emerald-400 uppercase">AgroTech Logística</span>
+            <span className="text-[10px] font-bold tracking-widest text-green-400 uppercase">AgroTech Logística</span>
             <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white leading-none">
-              FAZENDA<span className="text-emerald-400">PROGRESSO</span>
+              FAZENDA<span className="text-green-400">PROGRESSO</span>
             </h1>
           </div>
         </div>
@@ -166,10 +166,10 @@ export const TelaTVMonitor = () => {
         {/* CARDS DE KPIS EM TEMPO REAL (baseados em MinutosSemComunicacao de vw_UltimaPosicao) */}
         <div className="hidden lg:flex items-center space-x-4">
           <div className="bg-slate-800/90 border border-slate-700/80 px-4 py-2 rounded-2xl flex items-center space-x-3 shadow-inner">
-            <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse"></div>
+            <div className="w-3 h-3 rounded-full bg-green-500 animate-pulse"></div>
             <div>
               <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Online</p>
-              <p className="text-lg font-black text-emerald-400 leading-none">{onlineCount} equip.</p>
+              <p className="text-lg font-black text-green-400 leading-none">{onlineCount} equip.</p>
             </div>
           </div>
 
@@ -198,7 +198,7 @@ export const TelaTVMonitor = () => {
             <p className="text-2xl sm:text-3xl font-black font-mono tracking-tight text-white">
               {time.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
             </p>
-            <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest flex items-center justify-end">
+            <p className="text-[10px] font-bold text-green-400 uppercase tracking-widest flex items-center justify-end">
               <Activity size={10} className="mr-1 animate-pulse" /> Ao Vivo TV
             </p>
           </div>
@@ -217,7 +217,7 @@ export const TelaTVMonitor = () => {
               className={`flex items-center space-x-2 px-3 py-2 rounded-xl text-xs font-bold transition-all border shadow-sm ${
                 showOffline
                   ? 'bg-slate-800 hover:bg-slate-700 text-slate-200 border-slate-700'
-                  : 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border-emerald-500/40'
+                  : 'bg-green-500/20 hover:bg-green-500/30 text-green-400 border-green-500/40'
               }`}
               title={showOffline ? 'Clique para esconder equipamentos offline' : 'Clique para exibir equipamentos offline'}
             >
@@ -271,7 +271,7 @@ export const TelaTVMonitor = () => {
             <button
               onClick={() => setAutoScroll(!autoScroll)}
               className={`p-2 rounded-xl text-xs font-bold transition-all border ${
-                autoScroll ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400' : 'bg-slate-800 border-slate-700 text-slate-400'
+                autoScroll ? 'bg-green-500/20 border-green-500/40 text-green-400' : 'bg-slate-800 border-slate-700 text-slate-400'
               }`}
               title={autoScroll ? 'Pausar rotação' : 'Iniciar rotação'}
             >
@@ -330,8 +330,8 @@ export const TelaTVMonitor = () => {
                   const isEven = index % 2 === 0;
                   const status = getStatusComunicacao(item.MinutosSemComunicacao);
 
-                  let badgeStatus = 'bg-emerald-50 text-emerald-700 border-emerald-200';
-                  let dotStatus = 'bg-emerald-500';
+                  let badgeStatus = 'bg-green-50 text-green-700 border-green-200';
+                  let dotStatus = 'bg-green-500';
                   let statusTexto = 'Online';
 
                   if (status === 'atencao') {
@@ -372,7 +372,7 @@ export const TelaTVMonitor = () => {
 
                       <td className="py-3 px-5 whitespace-nowrap">
                         <span className="inline-flex items-center text-xs font-bold text-slate-800">
-                          <Truck size={14} className="mr-1.5 text-emerald-700 shrink-0" />
+                          <Truck size={14} className="mr-1.5 text-green-700 shrink-0" />
                           {item.Nome}
                         </span>
                         {item.TipoEquipamento && (
@@ -389,8 +389,8 @@ export const TelaTVMonitor = () => {
                         {item.CodigoTalhao && (
                           <>
                             <span className="text-xs font-semibold text-slate-400 mx-2">•</span>
-                            <span className="text-xs font-semibold text-emerald-700 inline-flex items-center">
-                              <MapPin size={12} className="mr-1 text-emerald-600 shrink-0 inline" />
+                            <span className="text-xs font-semibold text-green-700 inline-flex items-center">
+                              <MapPin size={12} className="mr-1 text-green-600 shrink-0 inline" />
                               Talhão {item.CodigoTalhao}
                             </span>
                           </>
@@ -406,9 +406,9 @@ export const TelaTVMonitor = () => {
 
                       <td className="py-3 px-4 text-xs font-mono font-semibold text-slate-600 whitespace-nowrap">
                         <span className={`inline-flex items-center px-2 py-0.5 rounded-lg border ${
-                          status === 'online' ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-slate-500 bg-slate-50 border-slate-200'
+                          status === 'online' ? 'text-green-700 bg-green-50 border-green-200' : 'text-slate-500 bg-slate-50 border-slate-200'
                         }`}>
-                          <Radio size={12} className={`mr-1.5 ${status === 'online' ? 'text-emerald-600 animate-pulse' : 'text-slate-400'}`} />
+                          <Radio size={12} className={`mr-1.5 ${status === 'online' ? 'text-green-600 animate-pulse' : 'text-slate-400'}`} />
                           {formatUltimoRastreio(item.MinutosSemComunicacao)}
                         </span>
                       </td>
@@ -440,7 +440,7 @@ export const TelaTVMonitor = () => {
             themeMode === 'light' ? 'bg-slate-50 text-slate-600 border-slate-200' : 'bg-slate-950 text-slate-400 border-slate-800'
           }`}>
             <div className="flex items-center space-x-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+              <span className="w-2 h-2 rounded-full bg-green-500 animate-ping"></span>
               <span>
                 Exibindo {allItems.length === 0 ? 0 : currentPage * (itemsPerPage === 'todos' ? allItems.length : itemsPerPage) + 1} a{' '}
                 {itemsPerPage === 'todos' ? allItems.length : Math.min((currentPage + 1) * itemsPerPage, allItems.length)} de {allItems.length} equipamentos (vw_UltimaPosicao)
@@ -459,7 +459,7 @@ export const TelaTVMonitor = () => {
                       onClick={() => handleChangeItemsPerPage(opcao)}
                       className={`px-2.5 py-1 text-[11px] font-bold rounded-md transition-all ${
                         itemsPerPage === opcao
-                          ? 'bg-emerald-600 text-white shadow-sm'
+                          ? 'bg-green-600 text-white shadow-sm'
                           : themeMode === 'light' ? 'text-slate-600 hover:text-slate-900' : 'text-slate-400 hover:text-slate-100'
                       }`}
                     >

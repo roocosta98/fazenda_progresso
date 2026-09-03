@@ -30,7 +30,7 @@ export const DetalheViagem: React.FC = () => {
   if (!viagem) {
     return (
       <div className="flex flex-col h-screen bg-gray-50 items-center justify-center">
-        <div className="animate-spin text-emerald-500 mb-4"><Clock size={40} /></div>
+        <div className="animate-spin text-green-500 mb-4"><Clock size={40} /></div>
         <p className="text-gray-500 font-medium">Carregando detalhes...</p>
       </div>
     );
@@ -52,21 +52,21 @@ export const DetalheViagem: React.FC = () => {
     <div className="flex flex-col min-h-screen bg-slate-50 pb-28">
       
       {/* App Bar */}
-      <div className="bg-emerald-600 text-white px-4 py-5 shadow-md flex items-center justify-between sticky top-0 z-10">
+      <div className="bg-green-600 text-white px-4 py-5 shadow-md flex items-center justify-between sticky top-0 z-10">
         <div className="flex items-center">
-          <button onClick={() => navigate(-1)} className="mr-3 p-1 rounded-full hover:bg-emerald-700 active:bg-emerald-800 transition-colors">
+          <button onClick={() => navigate(-1)} className="mr-3 p-1 rounded-full hover:bg-green-700 active:bg-green-800 transition-colors">
             <ArrowLeft size={24} />
           </button>
           <div>
             <h1 className="text-lg font-bold leading-tight">Detalhes da Viagem</h1>
-            <p className="text-emerald-100 text-xs font-medium uppercase tracking-wider">{viagem.idOS}</p>
+            <p className="text-green-100 text-xs font-medium uppercase tracking-wider">{viagem.idOS}</p>
           </div>
         </div>
 
         {/* Map Button in Header */}
         <button
           onClick={() => navigate(`/viagem/${viagem.idOS}/mapa`)}
-          className="flex items-center space-x-1 bg-emerald-700 hover:bg-emerald-800 border border-emerald-500/40 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-sm transition-all"
+          className="flex items-center space-x-1 bg-green-700 hover:bg-green-800 border border-green-500/40 text-white px-3 py-1.5 rounded-full text-xs font-bold shadow-sm transition-all"
         >
           <Navigation className="w-3.5 h-3.5 fill-white rotate-45" />
           <span>Ver Mapa</span>
@@ -81,7 +81,7 @@ export const DetalheViagem: React.FC = () => {
             <div>
               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wide">Status</p>
               <div className={`mt-1 inline-flex items-center px-2.5 py-1 rounded-md text-xs font-black uppercase ${
-                isConcluida ? 'bg-emerald-100 text-emerald-800' : isEmExecucao ? 'bg-blue-100 text-blue-800' : 'bg-slate-100 text-slate-800'
+                isConcluida ? 'bg-green-100 text-green-800' : isEmExecucao ? 'bg-blue-100 text-blue-800' : 'bg-slate-100 text-slate-800'
               }`}>
                 {viagem.status.replace('_', ' ')}
               </div>
@@ -94,7 +94,7 @@ export const DetalheViagem: React.FC = () => {
           
           <div className="space-y-3 pt-3 border-t border-slate-100">
             <div className="flex items-center space-x-3 text-slate-700">
-              <Calendar className="w-4 h-4 text-emerald-600" />
+              <Calendar className="w-4 h-4 text-green-600" />
               <div>
                 <p className="text-[10px] text-slate-400 font-bold uppercase">Programada para</p>
                 <p className="font-bold text-sm text-slate-800">{formatData(viagem.dataHoraProgramada)}</p>
@@ -113,7 +113,7 @@ export const DetalheViagem: React.FC = () => {
 
             {viagem.dataHoraChegada && (
               <div className="flex items-center space-x-3 text-slate-700">
-                <CheckCircle className="w-4 h-4 text-emerald-600" />
+                <CheckCircle className="w-4 h-4 text-green-600" />
                 <div>
                   <p className="text-[10px] text-slate-400 font-bold uppercase">Horário de Término (Real)</p>
                   <p className="font-bold text-sm text-slate-800">{formatData(viagem.dataHoraChegada)}</p>
@@ -126,7 +126,7 @@ export const DetalheViagem: React.FC = () => {
         {/* Hodômetro Card */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-3">
           <h3 className="text-xs font-black text-slate-800 uppercase tracking-wide flex items-center">
-            <Gauge className="w-4 h-4 mr-2 text-emerald-600" />
+            <Gauge className="w-4 h-4 mr-2 text-green-600" />
             Hodômetro & Divergência
           </h3>
           <div className="grid grid-cols-2 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
@@ -155,7 +155,7 @@ export const DetalheViagem: React.FC = () => {
         {isConcluida && (viagem.assinaturaRecebedor || viagem.fotoComprovante || viagem.nomeRecebedor) && (
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
             <h3 className="text-xs font-black text-slate-800 uppercase tracking-wide flex items-center">
-              <CheckCircle className="w-4 h-4 mr-2 text-emerald-600" />
+              <CheckCircle className="w-4 h-4 mr-2 text-green-600" />
               Comprovação de Entrega (POD)
             </h3>
 
@@ -169,7 +169,7 @@ export const DetalheViagem: React.FC = () => {
             {viagem.assinaturaRecebedor && (
               <div>
                 <p className="text-[10px] text-slate-400 font-bold uppercase mb-1 flex items-center">
-                  <PenTool className="w-3 h-3 mr-1 text-emerald-600" /> Assinatura Digital
+                  <PenTool className="w-3 h-3 mr-1 text-green-600" /> Assinatura Digital
                 </p>
                 <div className="bg-slate-50 border border-slate-200 rounded-xl p-2 flex justify-center">
                   <img src={viagem.assinaturaRecebedor} alt="Assinatura" className="max-h-28 object-contain" />
@@ -180,7 +180,7 @@ export const DetalheViagem: React.FC = () => {
             {viagem.fotoComprovante && (
               <div>
                 <p className="text-[10px] text-slate-400 font-bold uppercase mb-1 flex items-center">
-                  <Camera className="w-3 h-3 mr-1 text-emerald-600" /> Foto do Comprovante
+                  <Camera className="w-3 h-3 mr-1 text-green-600" /> Foto do Comprovante
                 </p>
                 <div 
                   onClick={() => setPhotoModalOpen(true)}
@@ -197,19 +197,19 @@ export const DetalheViagem: React.FC = () => {
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
           <div className="bg-slate-50 px-5 py-3 border-b border-slate-100 font-bold text-slate-800 flex items-center justify-between">
             <div className="flex items-center space-x-2">
-              <MapPin className="w-5 h-5 text-emerald-600" />
+              <MapPin className="w-5 h-5 text-green-600" />
               <span className="text-xs uppercase tracking-wide font-black">Trajeto da Viagem</span>
             </div>
             <button 
               onClick={() => navigate(`/viagem/${viagem.idOS}/mapa`)}
-              className="text-xs font-extrabold text-emerald-700 hover:underline"
+              className="text-xs font-extrabold text-green-700 hover:underline"
             >
               Abrir Mapa Rota →
             </button>
           </div>
           <div className="p-5">
             <div className="relative pl-6 pb-6 border-l-2 border-slate-200 ml-2">
-              <div className="absolute w-4 h-4 bg-emerald-500 rounded-full -left-[9px] top-0 ring-4 ring-white"></div>
+              <div className="absolute w-4 h-4 bg-green-500 rounded-full -left-[9px] top-0 ring-4 ring-white"></div>
               <p className="text-[10px] text-slate-400 font-bold uppercase">Origem</p>
               <p className="text-base font-bold text-slate-900 mt-0.5">{viagem.origem}</p>
             </div>
@@ -248,7 +248,7 @@ export const DetalheViagem: React.FC = () => {
             </div>
             <div>
               <p className="text-[10px] text-slate-400 font-bold uppercase">Projeto Vinculado</p>
-              <p className="text-xs font-bold text-emerald-700 bg-emerald-50 inline-block px-2.5 py-1 rounded-lg mt-1">{viagem.projeto}</p>
+              <p className="text-xs font-bold text-green-700 bg-green-50 inline-block px-2.5 py-1 rounded-lg mt-1">{viagem.projeto}</p>
             </div>
           </div>
         </div>
@@ -273,7 +273,7 @@ export const DetalheViagem: React.FC = () => {
                 <span>Ligar</span>
               </button>
               <button 
-                className="flex-1 flex items-center justify-center space-x-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 py-2.5 rounded-xl font-bold text-xs transition-colors"
+                className="flex-1 flex items-center justify-center space-x-2 bg-green-100 hover:bg-green-200 text-green-800 py-2.5 rounded-xl font-bold text-xs transition-colors"
                 onClick={() => alert('Abrindo WhatsApp...')}
               >
                 <MessageCircle className="w-4 h-4" />
@@ -308,7 +308,7 @@ export const DetalheViagem: React.FC = () => {
         <div className="sticky bottom-0 left-0 right-0 p-4 bg-white border-t border-slate-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-20 mt-auto">
           <Link
             to={`/viagem/${viagem.idOS}/execucao`}
-            className="w-full flex items-center justify-center bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-2xl font-black text-base transition-all shadow-lg shadow-emerald-600/30"
+            className="w-full flex items-center justify-center bg-green-600 hover:bg-green-700 text-white py-4 rounded-2xl font-black text-base transition-all shadow-lg shadow-green-600/30"
           >
             {isEmExecucao ? 'FINALIZAR VIAGEM / REGISTRAR POD' : 'INICIAR VIAGEM'}
           </Link>

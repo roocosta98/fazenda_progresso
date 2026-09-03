@@ -1,5 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import sql from 'mssql';
 import { getMssqlPool } from '../_lib/mssql.js';
+import { FILTRO_TIPO_CAMINHAO_LIKE } from '../_lib/tipoEquipamento.js';
 
 // Parte de vw_UltimaPosicao (exatamente como o cliente indicou: ORDER BY 2 = CodigoEquipamento),
 // enriquecida com:
@@ -80,13 +82,16 @@ OUTER APPLY (
   WHERE al.EquipamentoId = p.EquipamentoId
     AND al.ColetadoEmUtc >= DATEADD(HOUR, -24, SYSUTCDATETIME())
 ) alr
+WHERE te.Descricao LIKE @tipoCaminhao
 ORDER BY p.CodigoEquipamento
 `;
 
 export default async function handler(_req: VercelRequest, res: VercelResponse) {
   try {
     const pool = await getMssqlPool();
-    const result = await pool.request().query(QUERY);
+    const result = await pool.request()
+      .input('tipoCaminhao', sql.NVarChar, FILTRO_TIPO_CAMINHAO_LIKE)
+      .query(QUERY);
     res.status(200).json(result.recordset);
   } catch (error) {
     console.error('Erro ao consultar posições enriquecidas:', error);

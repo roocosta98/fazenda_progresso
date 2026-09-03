@@ -214,7 +214,7 @@ const RastroPolyline = ({ pontos }: { pontos: TrajetoPonto[] }) => {
     const polyline = new google.maps.Polyline({
       path: pontos.map((p) => ({ lat: toNumero(p.Latitude) ?? 0, lng: toNumero(p.Longitude) ?? 0 })),
       geodesic: true,
-      strokeColor: '#059669',
+      strokeColor: '#16a34a',
       strokeOpacity: 0.85,
       strokeWeight: 3,
     });
@@ -370,7 +370,7 @@ export const MapaMonitoramento = () => {
   const pinClasses = (status: StatusComunicacao) => {
     switch (status) {
       case 'online':
-        return 'bg-white border-emerald-600 text-emerald-700 shadow-lg';
+        return 'bg-white border-green-600 text-green-700 shadow-lg';
       case 'atencao':
         return 'bg-white border-amber-500 text-amber-700 shadow-lg';
       case 'offline':
@@ -383,7 +383,7 @@ export const MapaMonitoramento = () => {
   const statusBadge = (status: StatusComunicacao) => {
     switch (status) {
       case 'online':
-        return <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold border border-emerald-200 flex items-center"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span> Online</span>;
+        return <span className="text-[10px] bg-green-100 text-green-800 px-2 py-0.5 rounded-full font-bold border border-green-200 flex items-center"><span className="w-1.5 h-1.5 rounded-full bg-green-500 mr-1.5 animate-pulse"></span> Online</span>;
       case 'atencao':
         return <span className="text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-bold border border-amber-200 flex items-center"><AlertCircle size={10} className="mr-1" /> Sem sinal recente</span>;
       case 'offline':
@@ -424,9 +424,9 @@ export const MapaMonitoramento = () => {
                   zIndex={isSelected ? 100 : 10}
                 >
                   <div className={`relative cursor-pointer transition-all duration-300 group ${isSelected ? 'scale-125' : 'hover:scale-110'}`}>
-                    <div className={`absolute inset-0 rounded-full animate-ping opacity-40 ${status === 'offline' ? 'bg-rose-500' : 'bg-emerald-500'}`}></div>
+                    <div className={`absolute inset-0 rounded-full animate-ping opacity-40 ${status === 'offline' ? 'bg-rose-500' : 'bg-green-500'}`}></div>
 
-                    <div className={`relative w-11 h-11 rounded-2xl flex items-center justify-center border-2 shadow-xl transition-all ${pinClasses(status)} ${isSelected ? 'ring-8 ring-emerald-500/30 border-emerald-600 bg-emerald-50 scale-110' : 'hover:border-emerald-600'}`}>
+                    <div className={`relative w-11 h-11 rounded-2xl flex items-center justify-center border-2 shadow-xl transition-all ${pinClasses(status)} ${isSelected ? 'ring-8 ring-green-500/30 border-green-600 bg-green-50 scale-110' : 'hover:border-green-600'}`}>
                       <Truck size={16} />
                       {toNumero(p.VelocidadeKmh) !== null && (
                         <span className="absolute -top-2 -right-2 text-[9px] font-black px-1.5 py-0.5 rounded-full bg-slate-900 border border-slate-700 text-white shadow-md">
@@ -436,7 +436,7 @@ export const MapaMonitoramento = () => {
                     </div>
 
                     <div className="absolute top-14 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-900 text-white text-[11px] font-bold px-3 py-1.5 rounded-xl shadow-xl whitespace-nowrap border border-slate-700 pointer-events-none z-50">
-                      <p className="font-mono text-emerald-400">{p.CodigoEquipamento}</p>
+                      <p className="font-mono text-green-400">{p.CodigoEquipamento}</p>
                       <p className="text-slate-300 text-[10px]">{p.Nome}</p>
                     </div>
                   </div>
@@ -461,7 +461,7 @@ export const MapaMonitoramento = () => {
                     <h4 className="text-sm font-black text-slate-900 leading-tight">{selectedEquipamento.Nome}</h4>
                     <button
                       onClick={() => setHistoricoAberto(true)}
-                      className="shrink-0 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-lg hover:bg-emerald-100 transition-colors flex items-center"
+                      className="shrink-0 text-[10px] font-bold text-green-700 bg-green-50 border border-green-200 px-2 py-1 rounded-lg hover:bg-green-100 transition-colors flex items-center"
                     >
                       <History size={11} className="mr-1" /> Histórico
                     </button>
@@ -483,7 +483,7 @@ export const MapaMonitoramento = () => {
 
                     {(selectedEquipamento.OperacaoDescricao || selectedEquipamento.CodigoTalhao) && (
                       <div className="flex justify-between items-center bg-slate-50 p-1.5 rounded-lg border border-slate-100">
-                        <span className="text-slate-500 flex items-center"><MapPin size={12} className="mr-1 text-emerald-600" /> Operação:</span>
+                        <span className="text-slate-500 flex items-center"><MapPin size={12} className="mr-1 text-green-600" /> Operação:</span>
                         <span className="font-bold text-slate-800 truncate max-w-[140px]">
                           {selectedEquipamento.OperacaoDescricao ?? '—'}{selectedEquipamento.CodigoTalhao ? ` · Talhão ${selectedEquipamento.CodigoTalhao}` : ''}
                         </span>
@@ -537,7 +537,7 @@ export const MapaMonitoramento = () => {
                         <div className="grid grid-cols-2 gap-1.5">
                           {selectedEquipamento.PorcentagemCargaBateria !== null && (
                             <div className="bg-slate-50 p-1.5 rounded-lg flex items-center justify-between border border-slate-200">
-                              <span className="text-slate-500 flex items-center text-[10px]"><BatteryFull size={12} className="mr-1 text-emerald-600" /> Bateria:</span>
+                              <span className="text-slate-500 flex items-center text-[10px]"><BatteryFull size={12} className="mr-1 text-green-600" /> Bateria:</span>
                               <span className="font-mono font-bold text-slate-900 text-xs">{formatNumero(selectedEquipamento.PorcentagemCargaBateria, 0)}%</span>
                             </div>
                           )}
@@ -669,8 +669,8 @@ export const MapaMonitoramento = () => {
         {/* PAINEL CLARO FLUTUANTE DE CONTROLES DO GOOGLE MAPS (SUPERIOR ESQUERDO) */}
         <div className="absolute top-8 left-6 z-30 flex flex-col space-y-3 pointer-events-auto max-w-[calc(100vw-27rem)]">
           <div className="bg-white/90 backdrop-blur-md p-2 rounded-2xl shadow-xl border border-slate-200/80 flex flex-wrap items-center gap-2">
-            <div className="flex items-center space-x-1 px-2 py-1 bg-emerald-50 text-emerald-800 rounded-xl font-bold text-xs border border-emerald-200">
-              <MapIcon size={14} className="mr-1 text-emerald-600" />
+            <div className="flex items-center space-x-1 px-2 py-1 bg-green-50 text-green-800 rounded-xl font-bold text-xs border border-green-200">
+              <MapIcon size={14} className="mr-1 text-green-600" />
               <span>Google Maps Ativo</span>
             </div>
 
@@ -679,27 +679,27 @@ export const MapaMonitoramento = () => {
             <div className="flex flex-wrap items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
               <button
                 onClick={() => setMapTypeId('hybrid')}
-                className={`px-3 py-1 text-xs font-bold rounded-lg transition-all flex items-center ${mapTypeId === 'hybrid' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+                className={`px-3 py-1 text-xs font-bold rounded-lg transition-all flex items-center ${mapTypeId === 'hybrid' ? 'bg-green-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
               >
                 <Layers size={13} className="mr-1.5" /> Satélite / Híbrido
               </button>
               <button
                 onClick={() => setMapTypeId('terrain')}
-                className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${mapTypeId === 'terrain' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+                className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${mapTypeId === 'terrain' ? 'bg-green-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
               >
                 Relevo / Topografia
               </button>
               <button
                 onClick={() => setMapTypeId('roadmap')}
-                className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${mapTypeId === 'roadmap' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
+                className={`px-3 py-1 text-xs font-bold rounded-lg transition-all ${mapTypeId === 'roadmap' ? 'bg-green-600 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
               >
                 Vetor / Vias
               </button>
             </div>
           </div>
 
-          <div className={`flex items-center px-4 py-2 backdrop-blur-md rounded-xl font-bold text-xs border shadow-lg w-fit ${erro ? 'bg-rose-50/95 text-rose-700 border-rose-200' : 'bg-white/90 text-emerald-700 border-slate-200/80'}`}>
-            {erro ? <WifiOff size={14} className="mr-2 text-rose-600" /> : <Navigation2 size={14} className="mr-2 animate-pulse text-emerald-600" />}
+          <div className={`flex items-center px-4 py-2 backdrop-blur-md rounded-xl font-bold text-xs border shadow-lg w-fit ${erro ? 'bg-rose-50/95 text-rose-700 border-rose-200' : 'bg-white/90 text-green-700 border-slate-200/80'}`}>
+            {erro ? <WifiOff size={14} className="mr-2 text-rose-600" /> : <Navigation2 size={14} className="mr-2 animate-pulse text-green-600" />}
             {erro
               ? 'Sem conexão com o banco de dados'
               : `Fazenda Progresso — ${posicoesComCoordenadas.length} equipamento(s) com posição`}
@@ -708,14 +708,14 @@ export const MapaMonitoramento = () => {
                 atualizado {ultimaAtualizacao.toLocaleTimeString('pt-BR')}
               </span>
             )}
-            <button onClick={carregarPosicoes} className="ml-2 text-slate-400 hover:text-emerald-600" title="Atualizar agora">
+            <button onClick={carregarPosicoes} className="ml-2 text-slate-400 hover:text-green-600" title="Atualizar agora">
               <RefreshCw size={13} />
             </button>
             <button
               onClick={() => setAutoAtualizar((atual) => !atual)}
               className={`ml-2 flex items-center gap-1 px-2 py-0.5 rounded-lg border text-[11px] font-bold transition-colors ${
                 autoAtualizar
-                  ? 'text-emerald-700 border-emerald-200 bg-emerald-50 hover:bg-emerald-100'
+                  ? 'text-green-700 border-green-200 bg-green-50 hover:bg-green-100'
                   : 'text-amber-700 border-amber-200 bg-amber-50 hover:bg-amber-100'
               }`}
               title={autoAtualizar ? 'Pausar atualizações automáticas' : 'Iniciar atualizações automáticas'}
@@ -737,7 +737,7 @@ export const MapaMonitoramento = () => {
 
           <div className="p-5 pt-6 border-b border-slate-100 bg-white/90">
             <h3 className="text-lg font-black text-slate-800 tracking-tight flex items-center">
-              <Truck className="mr-2.5 text-emerald-600" size={20} /> Frota em Monitoramento
+              <Truck className="mr-2.5 text-green-600" size={20} /> Frota em Monitoramento
             </h3>
             <p className="text-xs text-slate-500 font-medium mt-1">Última posição de cada equipamento (vw_UltimaPosicao)</p>
           </div>
@@ -750,7 +750,7 @@ export const MapaMonitoramento = () => {
                 placeholder="Buscar equipamento, código ou operador..."
                 value={busca}
                 onChange={(e) => setBusca(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-medium"
+                className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 placeholder-slate-400 focus:ring-2 focus:ring-green-500/20 focus:border-green-500 transition-all font-medium"
               />
             </div>
 
@@ -761,7 +761,7 @@ export const MapaMonitoramento = () => {
                   onClick={() => setStatusFiltro(status)}
                   className={`px-3 py-1 text-[11px] font-bold rounded-lg capitalize whitespace-nowrap transition-colors ${
                     statusFiltro === status
-                      ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm'
+                      ? 'bg-green-50 text-green-700 border border-green-200 shadow-sm'
                       : 'text-slate-500 hover:text-slate-800 bg-slate-100'
                   }`}
                 >
@@ -811,12 +811,12 @@ export const MapaMonitoramento = () => {
                       onClick={() => handleSelectEquipamento(p)}
                       className={`p-3.5 rounded-2xl border cursor-pointer transition-all ${
                         isSelected
-                          ? 'border-emerald-500 bg-emerald-50/70 shadow-md ring-1 ring-emerald-500/20'
+                          ? 'border-green-500 bg-green-50/70 shadow-md ring-1 ring-green-500/20'
                           : 'border-slate-200/80 bg-white hover:bg-slate-50 hover:border-slate-300 shadow-sm'
                       }`}
                     >
                       <div className="flex justify-between items-center mb-1.5">
-                        <span className="font-mono font-bold text-emerald-700 text-xs">{p.CodigoEquipamento}</span>
+                        <span className="font-mono font-bold text-green-700 text-xs">{p.CodigoEquipamento}</span>
                         {statusBadge(status)}
                       </div>
 
@@ -829,7 +829,7 @@ export const MapaMonitoramento = () => {
                       </p>
                       {p.PorcentagemCargaBateria !== null && (
                         <p className="text-[10px] text-slate-500 font-medium mt-0.5 flex items-center">
-                          <BatteryFull size={11} className="mr-1 text-emerald-600" /> {formatNumero(p.PorcentagemCargaBateria, 0)}% bateria
+                          <BatteryFull size={11} className="mr-1 text-green-600" /> {formatNumero(p.PorcentagemCargaBateria, 0)}% bateria
                         </p>
                       )}
                       {!!p.AlarmesUltimas24h && (
@@ -840,10 +840,10 @@ export const MapaMonitoramento = () => {
 
                       <div className="flex justify-between items-center text-[11px] font-medium border-t border-slate-100 pt-2.5 mt-2.5">
                         <span className="text-slate-500 flex items-center">
-                          <MapPin size={11} className="mr-1 text-emerald-600" />
+                          <MapPin size={11} className="mr-1 text-green-600" />
                           {p.CodigoTalhao ? `Talhão ${p.CodigoTalhao}` : p.OperacaoDescricao ?? '—'}
                         </span>
-                        <span className={`font-mono font-bold ${status === 'online' ? 'text-emerald-700' : 'text-amber-600'}`} title={status === 'online' ? undefined : 'Última leitura conhecida — pode estar desatualizada'}>
+                        <span className={`font-mono font-bold ${status === 'online' ? 'text-green-700' : 'text-amber-600'}`} title={status === 'online' ? undefined : 'Última leitura conhecida — pode estar desatualizada'}>
                           {formatNumero(p.VelocidadeKmh, 1)} km/h{status === 'online' ? '' : '*'}
                         </span>
                       </div>
@@ -885,7 +885,7 @@ export const MapaMonitoramento = () => {
                     <XAxis dataKey="hora" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
                     <YAxis tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} unit=" km/h" />
                     <RechartsTooltip formatter={(value) => [`${value} km/h`, 'Velocidade']} labelFormatter={(label) => `Horário: ${label}`} />
-                    <Line type="monotone" dataKey="velocidade" stroke="#059669" strokeWidth={2} dot={false} activeDot={{ r: 5 }} />
+                    <Line type="monotone" dataKey="velocidade" stroke="#16a34a" strokeWidth={2} dot={false} activeDot={{ r: 5 }} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>

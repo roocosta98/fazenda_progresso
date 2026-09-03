@@ -2,18 +2,24 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
 @theme {
-  --color-brand-primary: #1b4332;
-  --color-brand-secondary: #2d6a4f;
+  /* Paleta puxada da logo da Fazenda Progresso: verde-grama do círculo, marrom escuro do "FP" */
+  --color-brand-primary: #14532d;
+  --color-brand-secondary: #16a34a;
 
-  /* Premium Agro Palette */
+  /* Premium Agro Palette — verde-grama (Tailwind green), não mais o verde-azulado (emerald) */
   --color-agro-50: #f0fdf4;
   --color-agro-100: #dcfce7;
-  --color-agro-500: #10b981;
-  --color-agro-600: #059669;
-  --color-agro-800: #065f46;
-  --color-agro-900: #064e3b;
-  --color-agro-950: #022c22;
-  
+  --color-agro-500: #22c55e;
+  --color-agro-600: #16a34a;
+  --color-agro-800: #166534;
+  --color-agro-900: #14532d;
+  --color-agro-950: #052e16;
+
+  /* Acentos direto da logo: creme da folha, marrom escuro do "FP" (usado no fundo da Sidebar) */
+  --color-fp-cream: #f3efe0;
+  --color-fp-brown-800: #3b2e28;
+  --color-fp-brown-900: #2e2620;
+
   --color-brand-dark: #0f172a;
   --color-brand-card: #ffffff;
   --color-brand-border: #e2e8f0;
@@ -21,7 +27,7 @@
   --color-status-pending: #f59e0b; /* Amber-500 */
   --color-status-scheduled: #3b82f6; /* Blue-500 */
   --color-status-running: #8b5cf6; /* Violet-500 */
-  --color-status-completed: #10b981; /* Emerald-500 */
+  --color-status-completed: #22c55e; /* Green-500 */
   --color-status-cancelled: #ef4444; /* Red-500 */
 
   --font-sans: 'Inter', system-ui, sans-serif;

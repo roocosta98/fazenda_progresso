@@ -62,14 +62,14 @@ export const ChecklistAtividade: React.FC = () => {
   if (concluido) {
     return (
       <div className="flex flex-col h-screen bg-slate-50 items-center justify-center p-6 text-center">
-        <CheckCircle2 className="text-emerald-500 w-16 h-16 mb-4" />
+        <CheckCircle2 className="text-green-500 w-16 h-16 mb-4" />
         <h2 className="text-2xl font-bold text-slate-800 mb-2">Checklist enviado</h2>
         <p className="text-slate-500 mb-6">
           Guardado no aparelho — se estiver sem conexão agora, sincroniza automático assim que voltar o sinal.
         </p>
         <button
           onClick={() => navigate(-1)}
-          className="bg-emerald-600 text-white px-6 py-3.5 rounded-xl font-bold w-full max-w-xs shadow-lg shadow-emerald-500/20"
+          className="bg-green-600 text-white px-6 py-3.5 rounded-xl font-bold w-full max-w-xs shadow-lg shadow-green-500/20"
         >
           Voltar
         </button>
@@ -79,17 +79,17 @@ export const ChecklistAtividade: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-50">
-      <div className="bg-emerald-600 text-white px-4 py-4 shadow-md flex items-center justify-between sticky top-0 z-20">
+      <div className="bg-green-600 text-white px-4 py-4 shadow-md flex items-center justify-between sticky top-0 z-20">
         <div className="flex items-center">
-          <button onClick={() => navigate(-1)} className="mr-3 p-1.5 rounded-full hover:bg-emerald-700 active:bg-emerald-800 transition-colors">
+          <button onClick={() => navigate(-1)} className="mr-3 p-1.5 rounded-full hover:bg-green-700 active:bg-green-800 transition-colors">
             <ArrowLeft size={24} />
           </button>
           <div>
             <h1 className="text-lg font-bold leading-tight">Checklist de Atividade</h1>
-            <p className="text-xs text-emerald-100">{viagem?.veiculoNome ?? 'Veículo'} {viagem?.veiculoPlaca ? `· ${viagem.veiculoPlaca}` : ''}</p>
+            <p className="text-xs text-green-100">{viagem?.veiculoNome ?? 'Veículo'} {viagem?.veiculoPlaca ? `· ${viagem.veiculoPlaca}` : ''}</p>
           </div>
         </div>
-        <ListChecks size={22} className="text-emerald-100" />
+        <ListChecks size={22} className="text-green-100" />
       </div>
 
       <div className="flex-1 p-4 space-y-3 pb-10">
@@ -103,15 +103,15 @@ export const ChecklistAtividade: React.FC = () => {
             type="button"
             onClick={() => toggleItem(idx)}
             className={`w-full text-left bg-white rounded-2xl border p-4 flex items-start gap-3 transition-colors ${
-              it.conforme ? 'border-emerald-300 bg-emerald-50/60' : 'border-slate-200'
+              it.conforme ? 'border-green-300 bg-green-50/60' : 'border-slate-200'
             }`}
           >
             {it.conforme ? (
-              <CheckCircle2 className="text-emerald-600 shrink-0 mt-0.5" size={22} />
+              <CheckCircle2 className="text-green-600 shrink-0 mt-0.5" size={22} />
             ) : (
               <Circle className="text-slate-300 shrink-0 mt-0.5" size={22} />
             )}
-            <span className={`text-sm font-semibold ${it.conforme ? 'text-emerald-800' : 'text-slate-700'}`}>{it.item}</span>
+            <span className={`text-sm font-semibold ${it.conforme ? 'text-green-800' : 'text-slate-700'}`}>{it.item}</span>
           </button>
         ))}
 
@@ -122,7 +122,7 @@ export const ChecklistAtividade: React.FC = () => {
             onChange={(e) => setObservacaoGeral(e.target.value)}
             rows={3}
             placeholder="Alguma coisa fora do padrão pra registrar?"
-            className="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl p-3 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+            className="w-full text-sm bg-slate-50 border border-slate-200 rounded-xl p-3 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20"
           />
         </div>
 
@@ -137,7 +137,7 @@ export const ChecklistAtividade: React.FC = () => {
         <button
           onClick={handleEnviar}
           disabled={enviando}
-          className="w-full max-w-lg mx-auto flex items-center justify-center py-4 rounded-2xl font-black text-base tracking-wide transition-all shadow-lg active:scale-[0.98] bg-emerald-600 text-white shadow-emerald-500/30 disabled:opacity-60"
+          className="w-full max-w-lg mx-auto flex items-center justify-center py-4 rounded-2xl font-black text-base tracking-wide transition-all shadow-lg active:scale-[0.98] bg-green-600 text-white shadow-green-500/30 disabled:opacity-60"
         >
           {enviando ? 'Enviando...' : 'Concluir checklist'}
         </button>

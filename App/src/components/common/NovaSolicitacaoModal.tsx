@@ -307,7 +307,7 @@ export const NovaSolicitacaoModal: React.FC<NovaSolicitacaoModalProps> = ({
       <div className="bg-white w-full h-full sm:h-auto sm:max-h-[90vh] sm:max-w-lg sm:rounded-3xl shadow-2xl flex flex-col overflow-hidden">
         
         {/* Header Verde Premium */}
-        <div className="bg-gradient-to-r from-emerald-700 via-emerald-600 to-emerald-800 text-white px-4 pt-6 pb-4 shrink-0">
+        <div className="bg-gradient-to-r from-green-700 via-green-600 to-green-800 text-white px-4 pt-6 pb-4 shrink-0">
           <div className="flex items-center justify-between">
             <button 
               type="button" 
@@ -322,7 +322,7 @@ export const NovaSolicitacaoModal: React.FC<NovaSolicitacaoModalProps> = ({
               <h2 className="text-base sm:text-lg font-extrabold tracking-wider uppercase">
                 {getHeaderTitle()}
               </h2>
-              <div className="text-[11px] font-medium text-emerald-100/90 tracking-wide mt-0.5">
+              <div className="text-[11px] font-medium text-green-100/90 tracking-wide mt-0.5">
                 Etapa {currentStep} de 7
               </div>
             </div>
@@ -338,9 +338,9 @@ export const NovaSolicitacaoModal: React.FC<NovaSolicitacaoModalProps> = ({
           </div>
 
           {/* Barra de Progresso Superior */}
-          <div className="w-full bg-emerald-950/40 h-1.5 rounded-full mt-3 overflow-hidden">
+          <div className="w-full bg-green-950/40 h-1.5 rounded-full mt-3 overflow-hidden">
             <div 
-              className="bg-emerald-300 h-full transition-all duration-300 ease-out"
+              className="bg-green-300 h-full transition-all duration-300 ease-out"
               style={{ width: `${(currentStep / 7) * 100}%` }}
             ></div>
           </div>
@@ -349,8 +349,8 @@ export const NovaSolicitacaoModal: React.FC<NovaSolicitacaoModalProps> = ({
         {/* Campo de Pesquisa no Topo (Passos 1 a 6) */}
         {currentStep >= 1 && currentStep <= 6 && (
           <div className="p-3.5 bg-white border-b border-slate-200 shadow-sm shrink-0">
-            <div className="relative flex items-center bg-slate-50 rounded-2xl border border-slate-200 px-3 py-2 focus-within:bg-white focus-within:border-emerald-600 focus-within:ring-2 focus-within:ring-emerald-500/20 transition-all">
-              <div className="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center mr-2.5 shrink-0">
+            <div className="relative flex items-center bg-slate-50 rounded-2xl border border-slate-200 px-3 py-2 focus-within:bg-white focus-within:border-green-600 focus-within:ring-2 focus-within:ring-green-500/20 transition-all">
+              <div className="w-7 h-7 rounded-lg bg-green-50 text-green-700 flex items-center justify-center mr-2.5 shrink-0">
                 <Search size={16} />
               </div>
               <input 
@@ -386,15 +386,15 @@ export const NovaSolicitacaoModal: React.FC<NovaSolicitacaoModalProps> = ({
                   <div 
                     key={loc}
                     onClick={() => handleSelectOrigem(loc)}
-                    className="flex items-center justify-between px-5 py-3.5 hover:bg-emerald-50/70 cursor-pointer transition-all duration-150 group border-b border-slate-100"
+                    className="flex items-center justify-between px-5 py-3.5 hover:bg-green-50/70 cursor-pointer transition-all duration-150 group border-b border-slate-100"
                   >
                     <div className="flex items-center space-x-3 pr-4">
-                      <MapPin size={18} className="text-emerald-600 shrink-0" />
-                      <span className="text-sm font-semibold text-slate-800 uppercase tracking-wide group-hover:text-emerald-900 leading-snug">
+                      <MapPin size={18} className="text-green-600 shrink-0" />
+                      <span className="text-sm font-semibold text-slate-800 uppercase tracking-wide group-hover:text-green-900 leading-snug">
                         {loc}
                       </span>
                     </div>
-                    <ChevronRight size={18} className="text-slate-400 group-hover:text-emerald-600 group-hover:translate-x-1 transition-all shrink-0" />
+                    <ChevronRight size={18} className="text-slate-400 group-hover:text-green-600 group-hover:translate-x-1 transition-all shrink-0" />
                   </div>
                 ))
               )}
@@ -411,15 +411,15 @@ export const NovaSolicitacaoModal: React.FC<NovaSolicitacaoModalProps> = ({
                   <div 
                     key={loc}
                     onClick={() => handleSelectDestino(loc)}
-                    className="flex items-center justify-between px-5 py-3.5 hover:bg-emerald-50/70 cursor-pointer transition-all duration-150 group border-b border-slate-100"
+                    className="flex items-center justify-between px-5 py-3.5 hover:bg-green-50/70 cursor-pointer transition-all duration-150 group border-b border-slate-100"
                   >
                     <div className="flex items-center space-x-3 pr-4">
                       <MapPin size={18} className="text-red-500 shrink-0" />
-                      <span className="text-sm font-semibold text-slate-800 uppercase tracking-wide group-hover:text-emerald-900 leading-snug">
+                      <span className="text-sm font-semibold text-slate-800 uppercase tracking-wide group-hover:text-green-900 leading-snug">
                         {loc}
                       </span>
                     </div>
-                    <ChevronRight size={18} className="text-slate-400 group-hover:text-emerald-600 group-hover:translate-x-1 transition-all shrink-0" />
+                    <ChevronRight size={18} className="text-slate-400 group-hover:text-green-600 group-hover:translate-x-1 transition-all shrink-0" />
                   </div>
                 ))
               )}
@@ -435,14 +435,14 @@ export const NovaSolicitacaoModal: React.FC<NovaSolicitacaoModalProps> = ({
                   <div 
                     key={cat.id}
                     onClick={() => handleSelectCategoria(cat)}
-                    className="flex items-center justify-between p-4 rounded-2xl border border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/50 cursor-pointer transition-all shadow-sm group bg-white"
+                    className="flex items-center justify-between p-4 rounded-2xl border border-slate-200 hover:border-green-500 hover:bg-green-50/50 cursor-pointer transition-all shadow-sm group bg-white"
                   >
                     <div className="flex items-center space-x-3.5">
-                      <div className="w-11 h-11 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+                      <div className="w-11 h-11 rounded-xl bg-green-100 text-green-700 flex items-center justify-center shrink-0 group-hover:bg-green-600 group-hover:text-white transition-colors">
                         <IconeCat size={20} />
                       </div>
                       <div>
-                        <h4 className="text-sm font-bold text-slate-800 group-hover:text-emerald-900">
+                        <h4 className="text-sm font-bold text-slate-800 group-hover:text-green-900">
                           {cat.nome}
                         </h4>
                         <p className="text-xs text-slate-500 mt-0.5">
@@ -450,7 +450,7 @@ export const NovaSolicitacaoModal: React.FC<NovaSolicitacaoModalProps> = ({
                         </p>
                       </div>
                     </div>
-                    <ChevronRight size={18} className="text-slate-400 group-hover:text-emerald-600 group-hover:translate-x-1 transition-all shrink-0" />
+                    <ChevronRight size={18} className="text-slate-400 group-hover:text-green-600 group-hover:translate-x-1 transition-all shrink-0" />
                   </div>
                 );
               })}
@@ -460,7 +460,7 @@ export const NovaSolicitacaoModal: React.FC<NovaSolicitacaoModalProps> = ({
           {/* ETAPA 4: TIPO DE SERVIÇO (CAMADA 2) */}
           {currentStep === 4 && (
             <div className="divide-y divide-slate-100">
-              <div className="bg-emerald-50 px-5 py-2 text-xs font-bold text-emerald-800 uppercase tracking-wide border-b border-emerald-100">
+              <div className="bg-green-50 px-5 py-2 text-xs font-bold text-green-800 uppercase tracking-wide border-b border-green-100">
                 Categoria: {categoriaSel?.nome}
               </div>
               {filteredServicos.length === 0 ? (
@@ -470,15 +470,15 @@ export const NovaSolicitacaoModal: React.FC<NovaSolicitacaoModalProps> = ({
                   <div 
                     key={s.id}
                     onClick={() => handleSelectServico(s)}
-                    className="flex items-center justify-between px-5 py-3.5 hover:bg-emerald-50/70 cursor-pointer transition-all duration-150 group border-b border-slate-100"
+                    className="flex items-center justify-between px-5 py-3.5 hover:bg-green-50/70 cursor-pointer transition-all duration-150 group border-b border-slate-100"
                   >
                     <div className="flex items-center space-x-3 pr-4">
-                      <Wrench size={18} className="text-slate-400 group-hover:text-emerald-600 shrink-0" />
-                      <span className="text-sm font-semibold text-slate-800 uppercase tracking-wide group-hover:text-emerald-900 leading-snug">
+                      <Wrench size={18} className="text-slate-400 group-hover:text-green-600 shrink-0" />
+                      <span className="text-sm font-semibold text-slate-800 uppercase tracking-wide group-hover:text-green-900 leading-snug">
                         {s.descricao}
                       </span>
                     </div>
-                    <ChevronRight size={18} className="text-slate-400 group-hover:text-emerald-600 group-hover:translate-x-1 transition-all shrink-0" />
+                    <ChevronRight size={18} className="text-slate-400 group-hover:text-green-600 group-hover:translate-x-1 transition-all shrink-0" />
                   </div>
                 ))
               )}
@@ -495,15 +495,15 @@ export const NovaSolicitacaoModal: React.FC<NovaSolicitacaoModalProps> = ({
                   <div 
                     key={p.id}
                     onClick={() => handleSelectProjeto(p)}
-                    className="flex items-center justify-between px-5 py-3.5 hover:bg-emerald-50/70 cursor-pointer transition-all duration-150 group border-b border-slate-100"
+                    className="flex items-center justify-between px-5 py-3.5 hover:bg-green-50/70 cursor-pointer transition-all duration-150 group border-b border-slate-100"
                   >
                     <div className="flex items-center space-x-3 pr-4">
-                      <FolderKanban size={18} className="text-slate-400 group-hover:text-emerald-600 shrink-0" />
-                      <span className="text-sm font-semibold text-slate-800 uppercase tracking-wide group-hover:text-emerald-900 leading-snug">
+                      <FolderKanban size={18} className="text-slate-400 group-hover:text-green-600 shrink-0" />
+                      <span className="text-sm font-semibold text-slate-800 uppercase tracking-wide group-hover:text-green-900 leading-snug">
                         {p.descricao}
                       </span>
                     </div>
-                    <ChevronRight size={18} className="text-slate-400 group-hover:text-emerald-600 group-hover:translate-x-1 transition-all shrink-0" />
+                    <ChevronRight size={18} className="text-slate-400 group-hover:text-green-600 group-hover:translate-x-1 transition-all shrink-0" />
                   </div>
                 ))
               )}
@@ -522,19 +522,19 @@ export const NovaSolicitacaoModal: React.FC<NovaSolicitacaoModalProps> = ({
                     <div 
                       key={sol.id}
                       onClick={() => handleSelectSolicitante(sol)}
-                      className={`flex items-center justify-between px-5 py-3.5 hover:bg-emerald-50/70 cursor-pointer transition-all duration-150 group border-b border-slate-100 ${
-                        isEu ? 'bg-emerald-50/60 font-bold' : ''
+                      className={`flex items-center justify-between px-5 py-3.5 hover:bg-green-50/70 cursor-pointer transition-all duration-150 group border-b border-slate-100 ${
+                        isEu ? 'bg-green-50/60 font-bold' : ''
                       }`}
                     >
                       <div className="flex items-center space-x-3 pr-4">
-                        <User size={18} className={`${isEu ? 'text-emerald-700 font-bold' : 'text-slate-400'} group-hover:text-emerald-600 shrink-0`} />
-                        <span className={`text-sm tracking-wide uppercase group-hover:text-emerald-900 leading-snug ${
-                          isEu ? 'font-black text-emerald-950' : 'font-semibold text-slate-800'
+                        <User size={18} className={`${isEu ? 'text-green-700 font-bold' : 'text-slate-400'} group-hover:text-green-600 shrink-0`} />
+                        <span className={`text-sm tracking-wide uppercase group-hover:text-green-900 leading-snug ${
+                          isEu ? 'font-black text-green-950' : 'font-semibold text-slate-800'
                         }`}>
                           {sol.descricao}
                         </span>
                       </div>
-                      <ChevronRight size={18} className="text-slate-400 group-hover:text-emerald-600 group-hover:translate-x-1 transition-all shrink-0" />
+                      <ChevronRight size={18} className="text-slate-400 group-hover:text-green-600 group-hover:translate-x-1 transition-all shrink-0" />
                     </div>
                   );
                 })
@@ -550,15 +550,15 @@ export const NovaSolicitacaoModal: React.FC<NovaSolicitacaoModalProps> = ({
               <div className="bg-white rounded-2xl p-3.5 border border-slate-200 shadow-sm space-y-2.5">
                 <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                   <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Resumo da Solicitação</span>
-                  <span className="text-[11px] text-emerald-600 font-bold">6 de 6 Definidos</span>
+                  <span className="text-[11px] text-green-600 font-bold">6 de 6 Definidos</span>
                 </div>
 
                 <div className="space-y-1.5 text-xs">
                   <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-100">
-                    <span className="font-semibold text-slate-600 flex items-center"><MapPin size={14} className="mr-2 text-emerald-600" /> Origem:</span>
+                    <span className="font-semibold text-slate-600 flex items-center"><MapPin size={14} className="mr-2 text-green-600" /> Origem:</span>
                     <div className="flex items-center space-x-2">
                       <span className="font-bold text-slate-800 truncate max-w-[170px]">{origemSel}</span>
-                      <button onClick={() => setCurrentStep(1)} className="text-emerald-600 hover:text-emerald-800 p-1" title="Alterar">
+                      <button onClick={() => setCurrentStep(1)} className="text-green-600 hover:text-green-800 p-1" title="Alterar">
                         <Edit3 size={14} />
                       </button>
                     </div>
@@ -568,37 +568,37 @@ export const NovaSolicitacaoModal: React.FC<NovaSolicitacaoModalProps> = ({
                     <span className="font-semibold text-slate-600 flex items-center"><MapPin size={14} className="mr-2 text-red-500" /> Destino:</span>
                     <div className="flex items-center space-x-2">
                       <span className="font-bold text-slate-800 truncate max-w-[170px]">{destinoSel}</span>
-                      <button onClick={() => setCurrentStep(2)} className="text-emerald-600 hover:text-emerald-800 p-1" title="Alterar">
+                      <button onClick={() => setCurrentStep(2)} className="text-green-600 hover:text-green-800 p-1" title="Alterar">
                         <Edit3 size={14} />
                       </button>
                     </div>
                   </div>
 
                   <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-100">
-                    <span className="font-semibold text-slate-600 flex items-center"><Wrench size={14} className="mr-2 text-emerald-600" /> Serviço:</span>
+                    <span className="font-semibold text-slate-600 flex items-center"><Wrench size={14} className="mr-2 text-green-600" /> Serviço:</span>
                     <div className="flex items-center space-x-2">
                       <span className="font-bold text-slate-800 truncate max-w-[170px]">{servicoSel?.descricao}</span>
-                      <button onClick={() => setCurrentStep(3)} className="text-emerald-600 hover:text-emerald-800 p-1" title="Alterar">
+                      <button onClick={() => setCurrentStep(3)} className="text-green-600 hover:text-green-800 p-1" title="Alterar">
                         <Edit3 size={14} />
                       </button>
                     </div>
                   </div>
 
                   <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-100">
-                    <span className="font-semibold text-slate-600 flex items-center"><FolderKanban size={14} className="mr-2 text-emerald-600" /> Projeto:</span>
+                    <span className="font-semibold text-slate-600 flex items-center"><FolderKanban size={14} className="mr-2 text-green-600" /> Projeto:</span>
                     <div className="flex items-center space-x-2">
                       <span className="font-bold text-slate-800 truncate max-w-[170px]">{projetoSel?.descricao}</span>
-                      <button onClick={() => setCurrentStep(5)} className="text-emerald-600 hover:text-emerald-800 p-1" title="Alterar">
+                      <button onClick={() => setCurrentStep(5)} className="text-green-600 hover:text-green-800 p-1" title="Alterar">
                         <Edit3 size={14} />
                       </button>
                     </div>
                   </div>
 
                   <div className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-100">
-                    <span className="font-semibold text-slate-600 flex items-center"><User size={14} className="mr-2 text-emerald-600" /> Solicitante:</span>
+                    <span className="font-semibold text-slate-600 flex items-center"><User size={14} className="mr-2 text-green-600" /> Solicitante:</span>
                     <div className="flex items-center space-x-2">
                       <span className="font-bold text-slate-800 truncate max-w-[170px]">{solicitanteSel?.descricao}</span>
-                      <button onClick={() => setCurrentStep(6)} className="text-emerald-600 hover:text-emerald-800 p-1" title="Alterar">
+                      <button onClick={() => setCurrentStep(6)} className="text-green-600 hover:text-green-800 p-1" title="Alterar">
                         <Edit3 size={14} />
                       </button>
                     </div>
@@ -612,7 +612,7 @@ export const NovaSolicitacaoModal: React.FC<NovaSolicitacaoModalProps> = ({
                 {/* Programação */}
                 <div className="bg-white rounded-2xl p-3.5 border border-slate-200 shadow-sm space-y-3">
                   <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center border-b border-slate-100 pb-2">
-                    <Calendar size={16} className="mr-2 text-emerald-600" /> Programação
+                    <Calendar size={16} className="mr-2 text-green-600" /> Programação
                   </h3>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -623,7 +623,7 @@ export const NovaSolicitacaoModal: React.FC<NovaSolicitacaoModalProps> = ({
                       <input 
                         type="date" 
                         required
-                        className="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm font-semibold text-slate-800 shadow-sm focus:ring-2 focus:ring-emerald-500"
+                        className="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm font-semibold text-slate-800 shadow-sm focus:ring-2 focus:ring-green-500"
                         value={dataProgramada}
                         onChange={(e) => setDataProgramada(e.target.value)}
                       />
@@ -635,7 +635,7 @@ export const NovaSolicitacaoModal: React.FC<NovaSolicitacaoModalProps> = ({
                       </label>
                       <input 
                         type="time" 
-                        className="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm font-semibold text-slate-800 shadow-sm focus:ring-2 focus:ring-emerald-500"
+                        className="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm font-semibold text-slate-800 shadow-sm focus:ring-2 focus:ring-green-500"
                         value={horarioSaida}
                         onChange={(e) => setHorarioSaida(e.target.value)}
                       />
@@ -647,7 +647,7 @@ export const NovaSolicitacaoModal: React.FC<NovaSolicitacaoModalProps> = ({
                 <div className="bg-white rounded-2xl p-3.5 border border-slate-200 shadow-sm space-y-2">
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center justify-between">
                     <span className="flex items-center">
-                      <FileText size={16} className="mr-2 text-emerald-600" /> Observações Adicionais <span className="text-red-500 ml-1">*</span>
+                      <FileText size={16} className="mr-2 text-green-600" /> Observações Adicionais <span className="text-red-500 ml-1">*</span>
                     </span>
                     <span className="text-[10px] text-slate-400 font-medium">Obrigatório</span>
                   </label>
@@ -655,7 +655,7 @@ export const NovaSolicitacaoModal: React.FC<NovaSolicitacaoModalProps> = ({
                     rows={3}
                     required
                     placeholder="Informe detalhes importantes sobre a carga, urgência, especificações ou pontos de atenção..."
-                    className="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 resize-none shadow-sm font-medium"
+                    className="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-green-500 resize-none shadow-sm font-medium"
                     value={observacoes}
                     onChange={(e) => setObservacoes(e.target.value)}
                   ></textarea>
@@ -674,7 +674,7 @@ export const NovaSolicitacaoModal: React.FC<NovaSolicitacaoModalProps> = ({
                   <button
                     type="submit"
                     disabled={isLoading || !observacoes.trim()}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-emerald-700/20 flex items-center text-sm disabled:opacity-50"
+                    className="bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-green-700/20 flex items-center text-sm disabled:opacity-50"
                   >
                     {isLoading ? (
                       <div className="flex items-center">
@@ -701,8 +701,8 @@ export const NovaSolicitacaoModal: React.FC<NovaSolicitacaoModalProps> = ({
       {successModalOpen && (
         <div className="fixed inset-0 z-60 bg-black/70 flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 w-full max-w-sm text-center shadow-2xl animate-in zoom-in-95 duration-200">
-            <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 relative">
-              <div className="absolute inset-0 bg-emerald-400 rounded-full animate-ping opacity-25"></div>
+            <div className="w-16 h-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4 relative">
+              <div className="absolute inset-0 bg-green-400 rounded-full animate-ping opacity-25"></div>
               <CheckCircle2 size={36} className="relative z-10" />
             </div>
             <h3 className="text-xl font-black text-slate-800 mb-1">{createdOsId} Criada com Sucesso!</h3>
@@ -711,7 +711,7 @@ export const NovaSolicitacaoModal: React.FC<NovaSolicitacaoModalProps> = ({
             </p>
             <button
               onClick={handleFinish}
-              className="w-full bg-emerald-600 text-white py-3 rounded-xl font-bold hover:bg-emerald-700 transition-colors shadow-lg text-sm flex items-center justify-center"
+              className="w-full bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 transition-colors shadow-lg text-sm flex items-center justify-center"
             >
               Concluir
             </button>

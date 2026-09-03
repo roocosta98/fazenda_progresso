@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { RefreshCw, CalendarDays, AlertTriangle, Gauge, Trophy, Medal, Truck, User } from 'lucide-react';
+import { RefreshCw, AlertTriangle, Gauge, Trophy, Medal, Truck, User } from 'lucide-react';
 import { BarChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart, Cell } from 'recharts';
 import { DataTable } from '../../components/common/DataTable';
 
@@ -245,14 +245,8 @@ export const PainelMetasDiario = () => {
   const coberturaMes = rankingProgresso[0];
 
   return (
-    <div className="space-y-6 pb-12">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
-            <CalendarDays size={22} className="text-emerald-600" /> Painel de Metas — Diário
-          </h2>
-          <p className="text-slate-500 mt-1">Meta x realizado por dia, motivos de parada, motor ocioso e ponto de equilíbrio do mês.</p>
-        </div>
+    <div className="space-y-6">
+      <div className="flex justify-end">
         <button
           onClick={() => { carregarDiario(); carregarProgresso(); }}
           className="inline-flex items-center px-4 py-2.5 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition-colors text-sm"
@@ -311,7 +305,7 @@ export const PainelMetasDiario = () => {
                     <Tooltip formatter={(value) => formatMoeda(Number(value))} />
                     <Bar dataKey="realizado" name="Custo realizado" radius={[4, 4, 0, 0]}>
                       {serieGrafico.map((s, idx) => (
-                        <Cell key={idx} fill={s.bateu ? '#059669' : '#e11d48'} />
+                        <Cell key={idx} fill={s.bateu ? '#16a34a' : '#e11d48'} />
                       ))}
                     </Bar>
                     <Line type="monotone" dataKey="esperado" name="Custo esperado" stroke="#0f172a" strokeWidth={2} dot={false} />
@@ -409,7 +403,7 @@ export const PainelMetasDiario = () => {
                   header: 'Saldo acumulado (ponto de equilíbrio)',
                   align: 'right' as const,
                   render: (l: (typeof rankingProgresso)[number]) => (
-                    <span className={`font-mono font-bold ${((l.SaldoAcumuladoMes ?? 0) >= 0) ? 'text-emerald-600' : 'text-rose-600'}`}>
+                    <span className={`font-mono font-bold ${((l.SaldoAcumuladoMes ?? 0) >= 0) ? 'text-green-600' : 'text-rose-600'}`}>
                       {formatMoeda(l.SaldoAcumuladoMes)}
                     </span>
                   ),

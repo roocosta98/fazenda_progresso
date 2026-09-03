@@ -39,7 +39,7 @@ export const Login: React.FC = () => {
         className="absolute inset-0 bg-cover bg-center z-0 scale-105"
         style={{ backgroundImage: "url('https://images.unsplash.com/photo-1586771107445-d3ca888129ff?auto=format&fit=crop&q=80&w=1000')" }}
       >
-        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-emerald-900/60 to-gray-900/95"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-green-900/60 to-gray-900/95"></div>
       </div>
 
       <div className="relative z-10 flex-1 flex flex-col justify-end px-6 pb-10 pt-16">
@@ -50,7 +50,7 @@ export const Login: React.FC = () => {
           <h1 className="text-[28px] font-black text-white tracking-tight text-center drop-shadow-lg leading-tight">
             FAZENDA<br />PROGRESSO
           </h1>
-          <p className="text-emerald-300 text-xs font-bold uppercase tracking-[0.3em] mt-3 drop-shadow-md">
+          <p className="text-green-300 text-xs font-bold uppercase tracking-[0.3em] mt-3 drop-shadow-md">
             Portal do Motorista
           </p>
         </div>
@@ -69,7 +69,7 @@ export const Login: React.FC = () => {
                 <User className="h-5 w-5 text-gray-400" />
               </div>
               <select
-                className="w-full bg-gray-100/80 border border-gray-200 text-gray-900 rounded-2xl pl-11 pr-4 py-4 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 transition-all font-bold appearance-none disabled:opacity-50"
+                className="w-full bg-gray-100/80 border border-gray-200 text-gray-900 rounded-2xl pl-11 pr-4 py-4 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 transition-all font-bold appearance-none disabled:opacity-50"
                 value={selecionado}
                 onChange={(e) => setSelecionado(e.target.value)}
                 disabled={loading || motoristas.length === 0}
@@ -87,7 +87,7 @@ export const Login: React.FC = () => {
             <button
               type="submit"
               disabled={!selecionado}
-              className="w-full bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-700 hover:to-emerald-600 active:scale-[0.98] text-white rounded-2xl py-4 font-black text-[15px] tracking-wide mt-2 transition-all shadow-lg shadow-emerald-500/30 uppercase disabled:opacity-50 disabled:pointer-events-none"
+              className="w-full bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 active:scale-[0.98] text-white rounded-2xl py-4 font-black text-[15px] tracking-wide mt-2 transition-all shadow-lg shadow-green-500/30 uppercase disabled:opacity-50 disabled:pointer-events-none"
             >
               Entrar
             </button>

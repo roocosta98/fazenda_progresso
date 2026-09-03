@@ -124,13 +124,13 @@ export const AprovarSolicitacaoDrawer = ({ solicitacao, isOpen, onClose, onSucce
             <div>
               <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Serviço</p>
               <p className="text-sm font-semibold text-slate-800 flex items-center">
-                <Truck size={14} className="mr-1.5 text-emerald-600" /> {solicitacao.tipoServico}
+                <Truck size={14} className="mr-1.5 text-green-600" /> {solicitacao.tipoServico}
               </p>
             </div>
             <div className="col-span-2">
               <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1">Rota / Destino</p>
               <div className="flex items-center gap-2 text-sm font-semibold">
-                <span className="bg-white text-slate-700 px-2.5 py-1 rounded-md border border-slate-200 flex items-center"><MapPin size={12} className="mr-1 text-emerald-500"/> {solicitacao.origem}</span>
+                <span className="bg-white text-slate-700 px-2.5 py-1 rounded-md border border-slate-200 flex items-center"><MapPin size={12} className="mr-1 text-green-500"/> {solicitacao.origem}</span>
                 <span className="text-slate-300">&rarr;</span>
                 <span className="bg-white text-slate-700 px-2.5 py-1 rounded-md border border-slate-200 flex items-center"><MapPin size={12} className="mr-1 text-rose-500"/> {solicitacao.destino}</span>
               </div>
@@ -156,7 +156,7 @@ export const AprovarSolicitacaoDrawer = ({ solicitacao, isOpen, onClose, onSucce
         <div className="flex bg-slate-100 p-1.5 rounded-xl mb-6 shadow-inner">
           <button
             onClick={() => setActiveTab('alocar')}
-            className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all flex justify-center items-center gap-1.5 ${activeTab === 'alocar' ? 'bg-white text-emerald-600 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'}`}
+            className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all flex justify-center items-center gap-1.5 ${activeTab === 'alocar' ? 'bg-white text-green-600 shadow-sm ring-1 ring-slate-200/50' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'}`}
           >
             <CheckCircle2 size={14} /> Aprovar & Alocar
           </button>
@@ -183,7 +183,7 @@ export const AprovarSolicitacaoDrawer = ({ solicitacao, isOpen, onClose, onSucce
                 <select
                   value={veiculoId}
                   onChange={handleVeiculoChange}
-                  className="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all bg-white text-sm shadow-sm font-medium appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-[length:1.2em] bg-[right_1rem_center] bg-no-repeat"
+                  className="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-4 focus:ring-green-500/10 focus:border-green-500 transition-all bg-white text-sm shadow-sm font-medium appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-[length:1.2em] bg-[right_1rem_center] bg-no-repeat"
                 >
                   <option value="">Selecione o veículo...</option>
                   {veiculosOpcoes.map(v => (
@@ -193,9 +193,9 @@ export const AprovarSolicitacaoDrawer = ({ solicitacao, isOpen, onClose, onSucce
                   ))}
                 </select>
                 {veiculoId && (
-                  <div className="mt-3 p-3 bg-emerald-50/50 border border-emerald-100 rounded-lg flex items-center justify-between">
+                  <div className="mt-3 p-3 bg-green-50/50 border border-green-100 rounded-lg flex items-center justify-between">
                     <span className="text-xs font-bold text-slate-600 uppercase">Odômetro Sankhya</span>
-                    <span className="text-sm font-mono font-bold text-emerald-800">{veiculos.find(v => v.id === veiculoId)?.odometro || '154.320'} km</span>
+                    <span className="text-sm font-mono font-bold text-green-800">{veiculos.find(v => v.id === veiculoId)?.odometro || '154.320'} km</span>
                   </div>
                 )}
               </div>
@@ -205,7 +205,7 @@ export const AprovarSolicitacaoDrawer = ({ solicitacao, isOpen, onClose, onSucce
                 <select
                   value={motoristaId}
                   onChange={(e) => setMotoristaId(e.target.value)}
-                  className="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all bg-white text-sm shadow-sm font-medium appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-[length:1.2em] bg-[right_1rem_center] bg-no-repeat"
+                  className="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-4 focus:ring-green-500/10 focus:border-green-500 transition-all bg-white text-sm shadow-sm font-medium appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-[length:1.2em] bg-[right_1rem_center] bg-no-repeat"
                 >
                   <option value="">Selecione o motorista...</option>
                   {motoristas.map(m => (
@@ -218,14 +218,14 @@ export const AprovarSolicitacaoDrawer = ({ solicitacao, isOpen, onClose, onSucce
 
               <div className="group/input">
                 <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide flex items-center">
-                  <Clock size={14} className="mr-1.5 text-emerald-600" /> Horário Obrigatório da Aprovação <span className="text-red-500 font-bold ml-1">*</span>
+                  <Clock size={14} className="mr-1.5 text-green-600" /> Horário Obrigatório da Aprovação <span className="text-red-500 font-bold ml-1">*</span>
                 </label>
                 <input
                   type="time"
                   required
                   value={horarioConfirmado}
                   onChange={(e) => setHorarioConfirmado(e.target.value)}
-                  className="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all bg-white text-sm shadow-sm font-medium"
+                  className="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-4 focus:ring-green-500/10 focus:border-green-500 transition-all bg-white text-sm shadow-sm font-medium"
                 />
                 <p className="text-[11px] text-slate-500 mt-1">
                   Ajustes de horário no mesmo dia são realizados diretamente aqui, sem necessidade de formalizar reagendamento.
@@ -240,17 +240,17 @@ export const AprovarSolicitacaoDrawer = ({ solicitacao, isOpen, onClose, onSucce
                 <textarea
                   rows={2}
                   placeholder="Ex: Motorista irá aguardar no galpão 02. Chegar 15 minutos antes do horário..."
-                  className="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all bg-white shadow-sm font-medium text-slate-800 resize-none"
+                  className="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-4 focus:ring-green-500/10 focus:border-green-500 transition-all bg-white shadow-sm font-medium text-slate-800 resize-none"
                   value={observacaoAprovacao}
                   onChange={(e) => setObservacaoAprovacao(e.target.value)}
                 ></textarea>
               </div>
 
               {/* Banner Informativo sobre Notificação Automática */}
-              <div className="bg-emerald-50/80 border border-emerald-200/90 rounded-xl p-3.5 flex items-start space-x-3">
-                <Zap className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+              <div className="bg-green-50/80 border border-green-200/90 rounded-xl p-3.5 flex items-start space-x-3">
+                <Zap className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
                 <div className="text-xs text-slate-700">
-                  <span className="font-bold text-emerald-900 block mb-0.5">Notificação Automática e Obrigatória</span>
+                  <span className="font-bold text-green-900 block mb-0.5">Notificação Automática e Obrigatória</span>
                   Ao confirmar a aprovação, as confirmações serão enviadas automaticamente para o WhatsApp do solicitante e para o App do motorista alocado.
                 </div>
               </div>
@@ -259,7 +259,7 @@ export const AprovarSolicitacaoDrawer = ({ solicitacao, isOpen, onClose, onSucce
                 <button
                   onClick={handleAlocar}
                   disabled={!veiculoId || !motoristaId || !horarioConfirmado.trim() || isLoading}
-                  className="relative w-full overflow-hidden bg-gradient-to-r from-emerald-600 to-teal-500 text-white py-3.5 rounded-xl font-bold hover:from-emerald-500 hover:to-teal-400 transition-all shadow-lg shadow-emerald-500/30 flex items-center justify-center hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed group"
+                  className="relative w-full overflow-hidden bg-gradient-to-r from-green-600 to-teal-500 text-white py-3.5 rounded-xl font-bold hover:from-green-500 hover:to-teal-400 transition-all shadow-lg shadow-green-500/30 flex items-center justify-center hover:scale-[1.02] active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed group"
                 >
                   {isLoading ? (
                     <div className="flex items-center">

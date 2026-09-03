@@ -185,7 +185,7 @@ export const ExecucaoViagem: React.FC = () => {
   if (!viagem) {
     return (
       <div className="flex flex-col h-screen bg-slate-50 items-center justify-center">
-        <div className="animate-spin text-emerald-500 mb-4"><Truck size={40} /></div>
+        <div className="animate-spin text-green-500 mb-4"><Truck size={40} /></div>
         <p className="text-slate-500 font-medium">Carregando viagem...</p>
       </div>
     );
@@ -204,12 +204,12 @@ export const ExecucaoViagem: React.FC = () => {
   if (isConcluida) {
     return (
       <div className="flex flex-col h-screen bg-slate-50 items-center justify-center p-6 text-center">
-        <CheckCircle className="text-emerald-500 w-16 h-16 mb-4" />
+        <CheckCircle className="text-green-500 w-16 h-16 mb-4" />
         <h2 className="text-2xl font-bold text-slate-800 mb-2">Viagem Concluída</h2>
         <p className="text-slate-500 mb-6">Esta viagem já foi finalizada com comprovante de entrega (POD).</p>
         <button 
           onClick={() => navigate('/viagens')}
-          className="bg-emerald-600 text-white px-6 py-3.5 rounded-xl font-bold w-full max-w-xs shadow-lg shadow-emerald-500/20"
+          className="bg-green-600 text-white px-6 py-3.5 rounded-xl font-bold w-full max-w-xs shadow-lg shadow-green-500/20"
         >
           Voltar para Viagens
         </button>
@@ -296,26 +296,26 @@ export const ExecucaoViagem: React.FC = () => {
     <div className="flex flex-col min-h-screen bg-slate-50">
       
       {/* Header Bar */}
-      <div className="bg-emerald-600 text-white px-4 py-4 shadow-md flex items-center justify-between sticky top-0 z-20">
+      <div className="bg-green-600 text-white px-4 py-4 shadow-md flex items-center justify-between sticky top-0 z-20">
         <div className="flex items-center">
-          <button onClick={() => navigate(-1)} className="mr-3 p-1.5 rounded-full hover:bg-emerald-700 active:bg-emerald-800 transition-colors">
+          <button onClick={() => navigate(-1)} className="mr-3 p-1.5 rounded-full hover:bg-green-700 active:bg-green-800 transition-colors">
             <ArrowLeft size={24} />
           </button>
           <div>
             <h1 className="text-lg font-bold leading-tight">
               {isAgendada ? 'Iniciar Viagem' : 'Encerramento / POD'}
             </h1>
-            <p className="text-emerald-100 text-xs font-medium uppercase tracking-wider">{viagem.idOS}</p>
+            <p className="text-green-100 text-xs font-medium uppercase tracking-wider">{viagem.idOS}</p>
           </div>
         </div>
 
         {/* Online / Offline status */}
-        <div className="flex items-center space-x-2 bg-emerald-700/80 border border-emerald-400/30 rounded-full px-3 py-1.5 shadow-sm">
+        <div className="flex items-center space-x-2 bg-green-700/80 border border-green-400/30 rounded-full px-3 py-1.5 shadow-sm">
           <div className="relative flex items-center justify-center">
-            <Map className="w-4 h-4 text-emerald-100" />
+            <Map className="w-4 h-4 text-green-100" />
             <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
-              {isOnline && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-300 opacity-75"></span>}
-              <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${isOnline ? 'bg-emerald-400' : 'bg-amber-400'}`}></span>
+              {isOnline && <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-300 opacity-75"></span>}
+              <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${isOnline ? 'bg-green-400' : 'bg-amber-400'}`}></span>
             </span>
           </div>
           <span className="text-[11px] font-extrabold text-white tracking-wider uppercase">
@@ -331,15 +331,15 @@ export const ExecucaoViagem: React.FC = () => {
           className="bg-slate-900 text-white px-5 py-3 flex items-center justify-between cursor-pointer hover:bg-slate-800 transition-colors border-b border-slate-700 shadow-inner"
         >
           <div className="flex items-center space-x-3">
-            <div className="p-2 bg-emerald-500/20 text-emerald-400 rounded-xl">
-              <Navigation className="w-5 h-5 fill-emerald-400 rotate-45" />
+            <div className="p-2 bg-green-500/20 text-green-400 rounded-xl">
+              <Navigation className="w-5 h-5 fill-green-400 rotate-45" />
             </div>
             <div>
-              <p className="text-xs font-black uppercase text-emerald-400 tracking-wider">Mapa de Navegação Ativo</p>
+              <p className="text-xs font-black uppercase text-green-400 tracking-wider">Mapa de Navegação Ativo</p>
               <p className="text-xs text-slate-300 font-medium">Toque para ver rota em tempo real (Uber/99)</p>
             </div>
           </div>
-          <span className="text-xs font-extrabold bg-emerald-600 text-white px-3 py-1.5 rounded-lg shadow">
+          <span className="text-xs font-extrabold bg-green-600 text-white px-3 py-1.5 rounded-lg shadow">
             ABRIR MAPA
           </span>
         </div>
@@ -349,14 +349,14 @@ export const ExecucaoViagem: React.FC = () => {
       <div className="flex-1 p-5 space-y-5 pb-28 max-w-lg mx-auto w-full">
         
         {/* Automatic Time Capture Banner */}
-        <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 flex items-center justify-between shadow-sm">
+        <div className="bg-green-50 border border-green-200 rounded-2xl p-4 flex items-center justify-between shadow-sm">
           <div className="flex items-center space-x-3">
-            <div className="bg-emerald-100 p-2.5 rounded-xl text-emerald-700">
+            <div className="bg-green-100 p-2.5 rounded-xl text-green-700">
               <Clock className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-xs font-black uppercase text-emerald-900 tracking-wide">Captura de Horário Automática</p>
-              <p className="text-xs text-emerald-700 mt-0.5">
+              <p className="text-xs font-black uppercase text-green-900 tracking-wide">Captura de Horário Automática</p>
+              <p className="text-xs text-green-700 mt-0.5">
                 {isAgendada 
                   ? 'Horário de saída gravado automaticamente ao iniciar.' 
                   : `Saída às ${viagem.dataHoraSaida ? new Date(viagem.dataHoraSaida).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '--:--'}. Término será gravado ao clicar.`
@@ -385,7 +385,7 @@ export const ExecucaoViagem: React.FC = () => {
             {/* Start Odometer Info */}
             <div className="flex justify-between items-center mb-3">
               <label className="text-xs font-bold text-slate-700 uppercase tracking-wide flex items-center">
-                <GaugeCircle className="w-4 h-4 mr-1.5 text-emerald-600" />
+                <GaugeCircle className="w-4 h-4 mr-1.5 text-green-600" />
                 Hodômetro Inicial (Sankhya)
               </label>
               <span className="text-xs font-black text-slate-800 bg-slate-200 px-2.5 py-1 rounded-lg">
@@ -423,7 +423,7 @@ export const ExecucaoViagem: React.FC = () => {
                     className={`w-full text-2xl font-black rounded-xl py-3 pl-4 pr-14 transition-all outline-none border-2 shadow-sm ${
                       !isKmFinalValid
                         ? 'bg-rose-50 border-rose-500 text-rose-900 focus:ring-4 focus:ring-rose-500/20'
-                        : 'bg-white border-emerald-300 text-slate-900 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/20'
+                        : 'bg-white border-green-300 text-slate-900 focus:border-green-500 focus:ring-4 focus:ring-green-500/20'
                     }`}
                   />
                   <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold text-sm">
@@ -457,7 +457,7 @@ export const ExecucaoViagem: React.FC = () => {
               value={divergencia}
               onChange={(e) => setDivergencia(e.target.value)}
               placeholder="Se o painel do veículo diferir do valor exibido no sistema, relate a divergência aqui."
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-700 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 resize-none h-20"
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-700 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20 resize-none h-20"
             />
           </div>
 
@@ -472,11 +472,11 @@ export const ExecucaoViagem: React.FC = () => {
               <div>
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-black text-slate-800 uppercase tracking-wide flex items-center">
-                    <PenTool className="w-4 h-4 mr-2 text-emerald-600" />
+                    <PenTool className="w-4 h-4 mr-2 text-green-600" />
                     Assinatura do Recebedor (POD) *
                   </h3>
                   {signature && (
-                    <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full flex items-center">
+                    <span className="text-[10px] bg-green-100 text-green-800 font-bold px-2 py-0.5 rounded-full flex items-center">
                       <CheckCircle className="w-3 h-3 mr-1" /> Assinado
                     </span>
                   )}
@@ -495,7 +495,7 @@ export const ExecucaoViagem: React.FC = () => {
                     value={nomeRecebedor}
                     onChange={(e) => setNomeRecebedor(e.target.value)}
                     placeholder="Ex: João Ferreira da Silva"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-9 pr-3 text-xs text-slate-800 font-bold outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-2.5 pl-9 pr-3 text-xs text-slate-800 font-bold outline-none focus:border-green-500 focus:ring-2 focus:ring-green-500/20"
                   />
                   <UserCheck className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 </div>
@@ -508,7 +508,7 @@ export const ExecucaoViagem: React.FC = () => {
             <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
               <div>
                 <h3 className="text-sm font-black text-slate-800 uppercase tracking-wide flex items-center">
-                  <Camera className="w-4 h-4 mr-2 text-emerald-600" />
+                  <Camera className="w-4 h-4 mr-2 text-green-600" />
                   Foto do Comprovante / Carga
                 </h3>
                 <p className="text-xs text-slate-500 mt-1">Anexar foto da nota fiscal, comprovante ou descarregamento.</p>
@@ -528,12 +528,12 @@ export const ExecucaoViagem: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="w-full py-6 border-2 border-dashed border-slate-300 hover:border-emerald-500 rounded-2xl bg-slate-50 hover:bg-emerald-50/50 flex flex-col items-center justify-center space-y-2 transition-all group"
+                  className="w-full py-6 border-2 border-dashed border-slate-300 hover:border-green-500 rounded-2xl bg-slate-50 hover:bg-green-50/50 flex flex-col items-center justify-center space-y-2 transition-all group"
                 >
                   <div className="p-3 bg-white rounded-full shadow-sm border border-slate-200 group-hover:scale-110 transition-transform">
-                    <Camera className="w-6 h-6 text-emerald-600" />
+                    <Camera className="w-6 h-6 text-green-600" />
                   </div>
-                  <span className="text-xs font-extrabold text-slate-700 group-hover:text-emerald-800">
+                  <span className="text-xs font-extrabold text-slate-700 group-hover:text-green-800">
                     Tirar Foto ou Escolher da Galeria
                   </span>
                 </button>
@@ -596,10 +596,10 @@ export const ExecucaoViagem: React.FC = () => {
           <button
             type="button"
             onClick={() => navigate(`/viagem/${viagem.idOS}/checklist`)}
-            className="w-full flex items-center justify-between bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl px-4 py-3 font-bold text-sm hover:bg-emerald-100 transition-colors"
+            className="w-full flex items-center justify-between bg-green-50 border border-green-200 text-green-800 rounded-2xl px-4 py-3 font-bold text-sm hover:bg-green-100 transition-colors"
           >
             <span className="flex items-center gap-2"><ListChecks size={18} /> Preencher checklist do veículo</span>
-            <span className="text-xs text-emerald-600">Antes de sair →</span>
+            <span className="text-xs text-green-600">Antes de sair →</span>
           </button>
         </div>
       )}
@@ -611,10 +611,10 @@ export const ExecucaoViagem: React.FC = () => {
           disabled={isEmExecucao && (!km || !isKmFinalValid || !signature)}
           className={`w-full max-w-lg mx-auto flex items-center justify-center space-x-2 py-4 rounded-2xl font-black text-base tracking-wide transition-all shadow-lg active:scale-[0.98] ${
             isAgendada
-              ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-emerald-500/30'
+              ? 'bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-green-500/30'
               : !isKmFinalValid || !signature || !km
                 ? 'bg-slate-300 text-slate-500 cursor-not-allowed shadow-none'
-                : 'bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white shadow-emerald-600/30'
+                : 'bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-green-600/30'
           }`}
         >
           {isAgendada ? <Play size={22} className="fill-white" /> : <CheckCircle size={22} />}
