@@ -11,6 +11,7 @@ import { GestaoFrota } from '../pages/logistica/GestaoFrota';
 import { PainelMetas } from '../pages/logistica/PainelMetas';
 import { Gastos } from '../pages/logistica/Gastos';
 import { AvaliacaoConducao } from '../pages/logistica/AvaliacaoConducao';
+import { InsightsIA } from '../pages/logistica/InsightsIA';
 import { MapaMonitoramento } from '../pages/logistica/MapaMonitoramento';
 import { TelaTVMonitor } from '../pages/logistica/TelaTVMonitor';
 
@@ -67,6 +68,10 @@ export const AppRoutes = () => {
         <Route
           path="/logistica/avaliacao-conducao"
           element={<ProtectedRoute allowedRoles={['logistica']}><AvaliacaoConducao /></ProtectedRoute>}
+        />
+        <Route
+          path="/logistica/insights"
+          element={<ProtectedRoute allowedRoles={['logistica']}><InsightsIA /></ProtectedRoute>}
         />
         <Route 
           path="/logistica/monitoramento" 

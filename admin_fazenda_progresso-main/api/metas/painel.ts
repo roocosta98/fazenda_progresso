@@ -39,7 +39,7 @@ FROM vw_PainelMotoristaVeiculo v
 LEFT JOIN Equipamentos eq ON eq.EquipamentoId = v.EquipamentoId
 LEFT JOIN TiposEquipamento te ON te.TipoEquipamentoId = eq.TipoEquipamentoId
 LEFT JOIN Consumo c ON c.EquipamentoId = v.EquipamentoId
-WHERE (@competencia IS NULL OR v.CompetenciaMeta = @competencia)
+WHERE v.CompetenciaMeta >= @inicioCompetencia AND v.CompetenciaMeta < @fimCompetencia
 ORDER BY v.Atividade, v.MotoristaNomeFicha
 `;
 
@@ -59,7 +59,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const pool = await getMssqlPool();
     const result = await pool
       .request()
-      .input('competencia', sql.NVarChar, competencia)
       .input('inicioCompetencia', sql.DateTime2, inicioCompetencia)
       .input('fimCompetencia', sql.DateTime2, fimCompetencia)
       .query(QUERY);
