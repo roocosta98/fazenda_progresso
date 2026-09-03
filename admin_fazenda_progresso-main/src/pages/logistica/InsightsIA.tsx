@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Sparkles, RefreshCw, CheckCircle2, Eye, Truck, Wallet, AlertTriangle } from 'lucide-react';
+import { Sparkles, RefreshCw, CheckCircle2, Eye, Truck, Wallet, AlertTriangle, Wrench } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 const API_URL = import.meta.env.VITE_API_URL ?? '';
@@ -7,7 +7,7 @@ const API_URL = import.meta.env.VITE_API_URL ?? '';
 interface Insight {
   InsightId: number;
   GeradoEm: string;
-  Categoria: 'Metas' | 'Gastos' | 'Alarmes';
+  Categoria: 'Metas' | 'Gastos' | 'Alarmes' | 'Manutencao';
   Severidade: 'baixa' | 'media' | 'alta';
   Titulo: string;
   Descricao: string;
@@ -29,6 +29,7 @@ const formatData = (iso: string) => {
 const categoriaIcon = (categoria: Insight['Categoria']) => {
   if (categoria === 'Metas') return <Truck size={14} />;
   if (categoria === 'Gastos') return <Wallet size={14} />;
+  if (categoria === 'Manutencao') return <Wrench size={14} />;
   return <AlertTriangle size={14} />;
 };
 

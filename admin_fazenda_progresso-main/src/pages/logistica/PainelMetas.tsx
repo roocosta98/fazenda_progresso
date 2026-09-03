@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { RefreshCw, Trophy, Fuel, Gauge, Medal } from 'lucide-react';
+import { RefreshCw, Trophy, Fuel, Gauge, Medal, FileSpreadsheet } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { DataTable } from '../../components/common/DataTable';
 
 const API_URL = import.meta.env.VITE_API_URL ?? '';
@@ -105,6 +106,30 @@ export const PainelMetas = () => {
     .sort((a, b) => (b.percentualMedio ?? -1) - (a.percentualMedio ?? -1))
     .map((l, idx) => ({ ...l, posicao: idx + 1 }));
 
+  // Fechamento automático do Reconhecimento Mensal (melhoria pedida pelo Rodrigo): gera a
+  // planilha direto no navegador a partir do que já está carregado na tela — sem endpoint novo —
+  // pronta pra RH/financeiro fechar a folha de bonificação sem redigitar nada.
+  const exportarXlsx = () => {
+    const linhas = filtradas.map((l) => ({
+      Motorista: l.MotoristaNomeFicha ?? 'Sem motorista vinculado',
+      Atividade: l.Atividade ?? '—',
+      Competência: l.CompetenciaMeta,
+      'Km/L Histórico': l.KmLHistorico,
+      'Km/L Meta': l.MetaKmL,
+      'Km/L Futuro': l.KmLFuturo,
+      'Km/L Realizado': l.KmLRealizado,
+      'CPK Histórico': l.CpkHistorico,
+      'CPK Meta': l.MetaCpk,
+      'CPK Futuro': l.CpkFuturo,
+      'CPK Realizado': l.CpkRealizado,
+      'Reconhecimento Mensal (R$)': l.ReconhecimentoMensal,
+    }));
+    const planilha = XLSX.utils.json_to_sheet(linhas);
+    const livro = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(livro, planilha, 'Reconhecimento Mensal');
+    XLSX.writeFile(livro, `reconhecimento-mensal-${competencia}.xlsx`);
+  };
+
   const columns = [
     {
       header: 'Motorista / Atividade',
@@ -183,13 +208,23 @@ export const PainelMetas = () => {
           <h2 className="text-2xl font-bold text-slate-800 tracking-tight">Programa Motorista de Excelência</h2>
           <p className="text-slate-500 mt-1">Metas, resultado do mês e ranking — dado ao vivo de vw_PainelMotoristaVeiculo.</p>
         </div>
-        <button
-          onClick={carregar}
-          className="inline-flex items-center px-4 py-2.5 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition-colors text-sm"
-        >
-          <RefreshCw size={16} className="mr-2" />
-          Atualizar
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={exportarXlsx}
+            disabled={filtradas.length === 0}
+            className="inline-flex items-center px-4 py-2.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl font-bold hover:bg-emerald-100 transition-colors text-sm disabled:opacity-50"
+          >
+            <FileSpreadsheet size={16} className="mr-2" />
+            Exportar planilha
+          </button>
+          <button
+            onClick={carregar}
+            className="inline-flex items-center px-4 py-2.5 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition-colors text-sm"
+          >
+            <RefreshCw size={16} className="mr-2" />
+            Atualizar
+          </button>
+        </div>
       </div>
 
       {erro && (
