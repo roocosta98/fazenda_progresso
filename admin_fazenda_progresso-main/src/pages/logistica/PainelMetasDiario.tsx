@@ -711,18 +711,19 @@ export const PainelMetasDiario: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {gastos.map((gasto) => {
-                const isExpanded = expandGastos[gasto.id];
+                const id = gasto.EquipamentoId || Math.random();
+                const isExpanded = expandGastos[id];
                 return (
-                  <React.Fragment key={gasto.id}>
+                  <React.Fragment key={id}>
                     <tr className="hover:bg-slate-50 transition-colors">
-                      <td className="py-3 font-semibold text-slate-800">{gasto.equipamento}</td>
-                      <td className="py-3 text-slate-600">{gasto.combustivel}</td>
-                      <td className="py-3 text-slate-600">{gasto.manutencao}</td>
-                      <td className="py-3 font-bold text-slate-800">{gasto.custoTotal}</td>
-                      <td className="py-3 font-bold text-emerald-700">{gasto.custoOperacional}</td>
+                      <td className="py-3 font-semibold text-slate-800">{gasto.NomeEquipamento || '—'}</td>
+                      <td className="py-3 text-slate-600">{formatMoeda(gasto.CustoCombustivelMes)}</td>
+                      <td className="py-3 text-slate-600">{formatMoeda((gasto.CustoManutencaoMes ?? 0) + (gasto.CustoPneusMes ?? 0))}</td>
+                      <td className="py-3 font-bold text-slate-800">{formatMoeda(gasto.CustoFixoTotalMes)}</td>
+                      <td className="py-3 font-bold text-emerald-700">{formatMoeda(gasto.CustoOperacionalTotalMes ?? gasto.CustoFixoTotalMes)}</td>
                       <td className="py-3 text-right">
                         <button
-                          onClick={() => toggleGasto(gasto.id)}
+                          onClick={() => toggleGasto(id)}
                           className="p-1 rounded-lg hover:bg-slate-200/70 text-slate-500 transition-colors"
                         >
                           {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
@@ -737,17 +738,17 @@ export const PainelMetasDiario: React.FC = () => {
                               <p className="font-bold text-slate-800 text-[11px] mb-1">
                                 Detalhamento Mensal/Período
                               </p>
-                              <p className="text-slate-600">• Seguro Proporcional: {gasto.detalhes.seguro}</p>
-                              <p className="text-slate-600">• Pneus: {gasto.detalhes.pneus}</p>
-                              <p className="text-slate-600">• Arla 32: {gasto.detalhes.arla}</p>
+                              <p className="text-slate-600">• Seguro Proporcional: {formatMoeda(gasto.CustoSeguroMes)}</p>
+                              <p className="text-slate-600">• Pneus: {formatMoeda(gasto.CustoPneusMes)}</p>
+                              <p className="text-slate-600">• Outros Custos: {formatMoeda(gasto.CustoOutrosMes)}</p>
                             </div>
                             <div className="bg-white p-3 rounded-xl border border-slate-200/60 shadow-2xs space-y-1">
                               <p className="font-bold text-slate-800 text-[11px] mb-1">
-                                Média Diária Operacional
+                                Dados do Motorista
                               </p>
-                              <p className="text-slate-600">• Custo por Dia: {gasto.detalhes.custoDia}</p>
-                              <p className="text-slate-600">• Média Consumo: {gasto.detalhes.consumoMedio}</p>
-                              <p className="text-slate-600">• Horas Trabalhadas/Dia: {gasto.detalhes.horasTrabalhadas}</p>
+                              <p className="text-slate-600">• Motorista: {gasto.MotoristaNomeFolha ?? gasto.MotoristaNomeFicha ?? 'Nenhum'}</p>
+                              <p className="text-slate-600">• Salário Base: {formatMoeda(gasto.SalarioBase)}</p>
+                              <p className="text-slate-600">• Custo Motorista Rateado: {formatMoeda(gasto.CustoMotoristaMes)}</p>
                             </div>
                           </div>
                         </td>
