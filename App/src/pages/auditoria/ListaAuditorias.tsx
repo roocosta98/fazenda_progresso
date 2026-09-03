@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, ClipboardCheck, Calendar, MapPin, Truck, ChevronRight } from 'lucide-react';
+import { Plus, Search, ClipboardCheck, Calendar, MapPin } from 'lucide-react';
 
 const MOCK_AUDITORIAS = [
   {
