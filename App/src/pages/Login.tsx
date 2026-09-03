@@ -39,18 +39,16 @@ export const Login: React.FC = () => {
         className="absolute inset-0 bg-cover bg-center z-0 scale-105"
         style={{ backgroundImage: "url('https://images.unsplash.com/photo-1586771107445-d3ca888129ff?auto=format&fit=crop&q=80&w=1000')" }}
       >
-        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-green-900/60 to-gray-900/95"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-[#1E3A2F]/80 to-gray-900/95"></div>
       </div>
 
       <div className="relative z-10 flex-1 flex flex-col justify-end px-6 pb-10 pt-16">
         <div className="mb-auto flex flex-col items-center mt-6">
-          <div className="w-24 h-24 bg-white/10 backdrop-blur-lg rounded-3xl flex items-center justify-center mb-5 border border-white/20 shadow-2xl">
-            <Truck className="w-12 h-12 text-white" />
-          </div>
+          <img src="/logo.png" alt="Fazenda Progresso" className="w-28 h-28 object-contain mb-5 drop-shadow-2xl" />
           <h1 className="text-[28px] font-black text-white tracking-tight text-center drop-shadow-lg leading-tight">
             FAZENDA<br />PROGRESSO
           </h1>
-          <p className="text-green-300 text-xs font-bold uppercase tracking-[0.3em] mt-3 drop-shadow-md">
+          <p className="text-[#D4AF37] text-xs font-bold uppercase tracking-[0.3em] mt-3 drop-shadow-md">
             Portal do Motorista
           </p>
         </div>

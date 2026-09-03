@@ -16,9 +16,7 @@ export const Splash: React.FC = () => {
 
   return (
     <div className="flex-1 flex flex-col items-center justify-center bg-[#1E3A2F] h-full">
-      <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-lg animate-bounce mb-6">
-        <Truck className="w-12 h-12 text-[#1E3A2F]" />
-      </div>
+      <img src="/logo.png" alt="Fazenda Progresso" className="w-32 h-32 object-contain animate-bounce mb-6 drop-shadow-xl" />
       <h1 className="text-3xl font-black text-white tracking-wider text-center">
         FAZENDA<br/>PROGRESSO
       </h1>

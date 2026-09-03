@@ -51,9 +51,9 @@ export const MinhaMeta: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-50">
-      <div className="bg-green-600 text-white px-4 py-4 shadow-md flex items-center justify-between sticky top-0 z-20">
+      <div className="bg-[#1E3A2F] text-white px-4 py-4 shadow-md flex items-center justify-between sticky top-0 z-20">
         <div className="flex items-center">
-          <button onClick={() => navigate(-1)} className="mr-3 p-1.5 rounded-full hover:bg-green-700 active:bg-green-800 transition-colors">
+          <button onClick={() => navigate(-1)} className="mr-3 p-1.5 rounded-full hover:bg-[#2D5A46] active:bg-green-800 transition-colors">
             <ArrowLeft size={24} />
           </button>
           <div>
@@ -80,12 +80,12 @@ export const MinhaMeta: React.FC = () => {
         {progresso && (
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
             <div className="flex items-center justify-between mb-1">
-              <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2"><TrendingUp size={16} className="text-green-600" /> Ponto de equilíbrio do mês</h3>
+              <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2"><TrendingUp size={16} className="text-[#1E3A2F]" /> Ponto de equilíbrio do mês</h3>
               {progresso.QtdCaminhoes > 1 && (
                 <span className="text-[11px] font-bold text-slate-500 flex items-center gap-1"><Truck size={12} /> {progresso.QtdCaminhoes} caminhões</span>
               )}
             </div>
-            <p className={`text-2xl font-black ${((progresso.SaldoAcumuladoMes ?? 0) >= 0) ? 'text-green-600' : 'text-rose-600'}`}>
+            <p className={`text-2xl font-black ${((progresso.SaldoAcumuladoMes ?? 0) >= 0) ? 'text-[#1E3A2F]' : 'text-rose-600'}`}>
               {formatMoeda(progresso.SaldoAcumuladoMes)}
             </p>
             <p className="text-xs text-slate-500 mt-1">
@@ -97,7 +97,7 @@ export const MinhaMeta: React.FC = () => {
 
         {diario.length > 0 && (
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
-            <h3 className="text-sm font-bold text-slate-700 mb-1 flex items-center gap-2"><CalendarDays size={16} className="text-green-600" /> Meta x realizado por dia</h3>
+            <h3 className="text-sm font-bold text-slate-700 mb-1 flex items-center gap-2"><CalendarDays size={16} className="text-[#1E3A2F]" /> Meta x realizado por dia</h3>
             <p className="text-[11px] text-slate-400 mb-3">Barras verdes = bateu a meta do dia. Linha = custo esperado.</p>
             <div style={{ width: '100%', height: 160 }}>
               <ResponsiveContainer width="100%" height="100%">
@@ -142,19 +142,19 @@ export const MinhaMeta: React.FC = () => {
                 <p className="text-sm font-bold text-slate-700 mb-4">{meta.NomeEquipamento}</p>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-green-50 border border-green-100 rounded-xl p-3">
-                    <p className="text-[10px] font-bold text-green-600 uppercase flex items-center gap-1"><Fuel size={12} /> Km/L</p>
-                    <p className="text-xl font-black text-green-800">{formatNumero(meta.KmLRealizado)}</p>
-                    <p className="text-[11px] text-green-600">Meta: {formatNumero(meta.MetaKmL)}</p>
+                  <div className="bg-slate-100 border border-slate-200 rounded-xl p-3">
+                    <p className="text-[10px] font-bold text-[#1E3A2F] uppercase flex items-center gap-1"><Fuel size={12} /> Km/L</p>
+                    <p className="text-xl font-black text-[#1E3A2F]">{formatNumero(meta.KmLRealizado)}</p>
+                    <p className="text-[11px] text-[#1E3A2F]">Meta: {formatNumero(meta.MetaKmL)}</p>
                     {meta.PercentualMetaKmL !== null && (
-                      <div className="mt-2 h-1.5 bg-green-100 rounded-full overflow-hidden">
+                      <div className="mt-2 h-1.5 bg-[#D4AF37]/20 rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-green-500 rounded-full"
+                          className="h-full bg-slate-1000 rounded-full"
                           style={{ width: `${Math.min(100, meta.PercentualMetaKmL)}%` }}
                         />
                       </div>
                     )}
-                    <p className="text-[11px] font-bold text-green-700 mt-1">
+                    <p className="text-[11px] font-bold text-[#1E3A2F] mt-1">
                       {meta.PercentualMetaKmL !== null ? `${formatNumero(meta.PercentualMetaKmL, 0)}% da meta` : 'Sem leitura suficiente ainda'}
                     </p>
                   </div>
@@ -189,7 +189,7 @@ export const MinhaMeta: React.FC = () => {
                 )}
 
                 {meta.ReconhecimentoMensal !== null && (
-                  <div className="mt-3 bg-green-600 text-white rounded-xl p-3 flex items-center justify-between">
+                  <div className="mt-3 bg-[#1E3A2F] text-white rounded-xl p-3 flex items-center justify-between">
                     <span className="text-xs font-bold">Reconhecimento do mês</span>
                     <span className="text-sm font-black">{formatMoeda(meta.ReconhecimentoMensal)}</span>
                   </div>
