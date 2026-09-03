@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { List, Clock, LayoutDashboard, Truck, Map as MapIcon, Leaf, MonitorPlay, BarChart3, Trophy, CircleDollarSign, ClipboardCheck, Sparkles } from 'lucide-react';
+import { List, Clock, LayoutDashboard, Truck, Map as MapIcon, Leaf, MonitorPlay, BarChart3, Trophy, CircleDollarSign, ClipboardCheck, Sparkles, CalendarDays, PieChart, Link2 } from 'lucide-react';
 
 export const Sidebar = () => {
   const { usuario } = useAuth();
@@ -17,7 +17,10 @@ export const Sidebar = () => {
         { to: '/logistica/pendentes', icon: <Clock size={20} />, label: 'Fila de Aprovação', badge: 2 },
         { to: '/logistica/frota', icon: <Truck size={20} />, label: 'Gestão de Frota' },
         { to: '/logistica/metas', icon: <Trophy size={20} />, label: 'Metas & Ranking' },
+        { to: '/logistica/metas-diario', icon: <CalendarDays size={20} />, label: 'Metas — Diário' },
+        { to: '/logistica/metas-orfas', icon: <Link2 size={20} />, label: 'Metas Órfãs' },
         { to: '/logistica/gastos', icon: <CircleDollarSign size={20} />, label: 'Gastos & Custos' },
+        { to: '/logistica/dashboard-executivo', icon: <PieChart size={20} />, label: 'Dashboard Executivo' },
         { to: '/logistica/avaliacao-conducao', icon: <ClipboardCheck size={20} />, label: 'Avaliação de Condução' },
         { to: '/logistica/insights', icon: <Sparkles size={20} />, label: 'Insights (IA)' },
         { to: '/logistica/monitoramento', icon: <MapIcon size={20} />, label: 'Telemetria & Mapa' },

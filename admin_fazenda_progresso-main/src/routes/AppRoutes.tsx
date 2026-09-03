@@ -9,6 +9,9 @@ import { DashboardBI } from '../pages/logistica/DashboardBI';
 import { FilaPendentes } from '../pages/logistica/FilaPendentes';
 import { GestaoFrota } from '../pages/logistica/GestaoFrota';
 import { PainelMetas } from '../pages/logistica/PainelMetas';
+import { PainelMetasDiario } from '../pages/logistica/PainelMetasDiario';
+import { DashboardExecutivo } from '../pages/logistica/DashboardExecutivo';
+import { MetasOrfas } from '../pages/logistica/MetasOrfas';
 import { Gastos } from '../pages/logistica/Gastos';
 import { AvaliacaoConducao } from '../pages/logistica/AvaliacaoConducao';
 import { InsightsIA } from '../pages/logistica/InsightsIA';
@@ -60,6 +63,18 @@ export const AppRoutes = () => {
         <Route
           path="/logistica/metas"
           element={<ProtectedRoute allowedRoles={['logistica']}><PainelMetas /></ProtectedRoute>}
+        />
+        <Route
+          path="/logistica/metas-diario"
+          element={<ProtectedRoute allowedRoles={['logistica']}><PainelMetasDiario /></ProtectedRoute>}
+        />
+        <Route
+          path="/logistica/metas-orfas"
+          element={<ProtectedRoute allowedRoles={['logistica']}><MetasOrfas /></ProtectedRoute>}
+        />
+        <Route
+          path="/logistica/dashboard-executivo"
+          element={<ProtectedRoute allowedRoles={['logistica']}><DashboardExecutivo /></ProtectedRoute>}
         />
         <Route
           path="/logistica/gastos"

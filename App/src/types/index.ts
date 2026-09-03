@@ -21,6 +21,30 @@ export interface MetaMotorista {
   TotalMotoristasAtividade: number | null;
 }
 
+// Painel de Metas Completo (diário) — PRD v3 §5/§9.4/§9.7, mesmas views novas consumidas por
+// admin_fazenda_progresso-main/api/metas/diario.ts, aqui já filtradas pelo motorista logado.
+export interface ResultadoDiarioMotorista {
+  Dia: string;
+  MotoristaNomeFicha: string;
+  QtdCaminhoes: number;
+  KmRodadoDia: number | null;
+  CustoOperacionalRealDia: number | null;
+  CustoEsperadoDia: number | null;
+  ResultadoDia: number | null;
+}
+
+export interface ProgressoMensalMotorista {
+  MotoristaNomeFicha: string;
+  Competencia: string;
+  DiaDoMesAtual: number;
+  DiasNoMes: number;
+  QtdCaminhoes: number;
+  KmAcumuladoMes: number | null;
+  CustoRealAcumuladoMes: number | null;
+  CustoEsperadoAcumuladoMes: number | null;
+  SaldoAcumuladoMes: number | null;
+}
+
 export type StatusViagem = 'agendada' | 'em_execucao' | 'concluida';
 
 export interface ViagemMotorista {

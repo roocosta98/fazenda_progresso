@@ -195,7 +195,7 @@ interface TrajetoPonto {
   ColetadoEmUtc: string;
 }
 
-// AlarmesEquipamento — eventos de risco (frenagem brusca, aceleração etc.), ver api/frota/alarmes.ts.
+// AlarmesEquipamento — eventos de risco (frenagem brusca, aceleração etc.), ver api/frota/leituras.ts.
 // O schema exato de colunas de justificativa/descrição pode variar por instalação — trata com
 // campos genéricos e cai pro fallback de "todos os campos" quando não reconhece a coluna.
 interface AlarmeEquipamento {
@@ -317,7 +317,7 @@ export const MapaMonitoramento = () => {
     }
     let cancelado = false;
     setAlarmesLoading(true);
-    fetch(`${API_URL}/api/frota/alarmes?equipamentoId=${equipamentoId}&horas=24`)
+    fetch(`${API_URL}/api/frota/leituras?tipo=alarmes&equipamentoId=${equipamentoId}&horas=24`)
       .then((response) => {
         if (!response.ok) throw new Error(`API respondeu ${response.status}`);
         return response.json();

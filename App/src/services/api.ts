@@ -19,6 +19,10 @@ export const api = {
   listarMotoristas: () => request<string[]>('/api/motoristas/listar'),
   minhaMeta: (motorista: string) =>
     request<import('../types').MetaMotorista[]>(`/api/metas/minha-meta?motorista=${encodeURIComponent(motorista)}`),
+  metaDiaria: (motorista: string) =>
+    request<import('../types').ResultadoDiarioMotorista[]>(`/api/metas/diario?modo=diario&motorista=${encodeURIComponent(motorista)}`),
+  progressoMensal: (motorista: string) =>
+    request<import('../types').ProgressoMensalMotorista | null>(`/api/metas/diario?modo=progresso&motorista=${encodeURIComponent(motorista)}`),
   criarChecklist: (payload: unknown) =>
     request<{ ok: true }>('/api/checklist/criar', { method: 'POST', body: JSON.stringify(payload) }),
 };
