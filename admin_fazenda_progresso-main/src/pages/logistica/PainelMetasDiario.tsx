@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import {
-  RefreshCw,
   ChevronDown,
   ChevronUp,
   Sparkles,
@@ -46,7 +45,7 @@ export const PainelMetasDiario: React.FC = () => {
   // Listas de seleção carregadas do banco de dados real
   const [veiculosLista, setVeiculosLista] = useState<EquipamentoItem[]>([]);
   const [motoristasLista, setMotoristasLista] = useState<OperadorItem[]>([]);
-  const [loading, setLoading] = useState(false);
+
 
   // Estados de dados dinâmicos da API
   const [dadosGraficoDiario, setDadosGraficoDiario] = useState<any[]>([]);
@@ -68,7 +67,6 @@ export const PainelMetasDiario: React.FC = () => {
   // Busca veículos, motoristas e métricas do backend
   const carregarDados = async () => {
     try {
-      setLoading(true);
       const [respEq, respOp] = await Promise.all([
         fetch(`${API_URL}/api/frota/equipamentos`).then((r) => (r.ok ? r.json() : [])),
         fetch(`${API_URL}/api/frota/operadores`).then((r) => (r.ok ? r.json() : [])),
@@ -204,22 +202,18 @@ export const PainelMetasDiario: React.FC = () => {
 
     } catch (e) {
       console.error('Erro ao carregar veículos/motoristas:', e);
-    } finally {
-      setLoading(false);
     }
   };
 
   useEffect(() => {
     carregarDados();
-  }, []);
+  }, [dataDe, dataAte, veiculoSelecionado, motoristaSelecionado]);
 
   const toggleGasto = (id: number) => {
     setExpandGastos((prev) => ({ ...prev, [id]: !prev[id] }));
   };
 
-  const handleAtualizar = () => {
-    carregarDados();
-  };
+
 
   // Cálculo dos totais para os 6 KPIs Superiores
   const totalCombustivel = gastos.reduce((acc, g) => acc + (g.CustoCombustivelMes ?? 0), 0);
@@ -316,15 +310,7 @@ export const PainelMetasDiario: React.FC = () => {
           </div>
         </div>
 
-        {/* Botão Atualizar */}
-        <button
-          onClick={handleAtualizar}
-          disabled={loading}
-          className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-all active:scale-95 disabled:opacity-50"
-        >
-          <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
-          Atualizar
-        </button>
+
       </div>
 
       {/* 2. Top 6 KPI Cards */}

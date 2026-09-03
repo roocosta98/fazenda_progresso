@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { RefreshCw, Fuel, Wrench, Shield, Users } from 'lucide-react';
+import { Fuel, Wrench, Shield, Users } from 'lucide-react';
 import { DataTable } from '../../components/common/DataTable';
 import { DashboardExecutivo } from './DashboardExecutivo';
 
@@ -174,13 +174,7 @@ export const Gastos = () => {
             </select>
           </div>
         </div>
-        <button
-          onClick={carregar}
-          className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-all active:scale-95 disabled:opacity-50"
-        >
-          <RefreshCw size={13} />
-          Atualizar
-        </button>
+
       </div>
 
       <DashboardExecutivo dataInicio={dataInicio} dataFim={dataFim} tipoEquipamento={tipoEquipamento} trigger={trigger} />
