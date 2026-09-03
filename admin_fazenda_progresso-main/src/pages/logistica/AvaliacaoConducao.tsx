@@ -49,7 +49,7 @@ export const AvaliacaoConducao = () => {
     try {
       const [respPainel, respAvaliacoes] = await Promise.all([
         fetch(`${API_URL}/api/metas/painel`),
-        fetch(`${API_URL}/api/avaliacao/listar`),
+        fetch(`${API_URL}/api/avaliacao`),
       ]);
       if (!respPainel.ok || !respAvaliacoes.ok) throw new Error('Falha ao consultar a API');
       const painel: { MotoristaNomeFicha: string | null }[] = await respPainel.json();
@@ -78,7 +78,7 @@ export const AvaliacaoConducao = () => {
     setEnviando(true);
     setSucesso(null);
     try {
-      const resp = await fetch(`${API_URL}/api/avaliacao/criar`, {
+      const resp = await fetch(`${API_URL}/api/avaliacao`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

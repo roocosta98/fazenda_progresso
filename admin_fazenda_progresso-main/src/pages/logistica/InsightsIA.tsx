@@ -93,7 +93,7 @@ export const InsightsIA = () => {
   const atualizarInsight = async (insightId: number, patch: { lido?: boolean; resolvido?: boolean }) => {
     setInsights((atual) => atual.map((i) => (i.InsightId === insightId ? { ...i, ...patch } as Insight : i)));
     try {
-      await fetch(`${API_URL}/api/insights/atualizar`, {
+      await fetch(`${API_URL}/api/insights/listar`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ insightId, ...patch, resolvidoPor: usuario?.nome }),
