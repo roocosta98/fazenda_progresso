@@ -67,11 +67,13 @@ async function modoDiario(req: VercelRequest, res: VercelResponse) {
     .input('dataInicio', sql.DateTime2, dataInicio)
     .input('dataFim', sql.DateTime2, dataFim)
     .input('equipamentoId', sql.Int, equipamentoId)
+    .input('motorista', sql.NVarChar, motorista)
     .input('tipoCaminhao', sql.NVarChar, FILTRO_TIPO_CAMINHAO_LIKE)
     .query(`
       SELECT * FROM vw_ResultadoDiarioVeiculo
       WHERE Dia >= @dataInicio AND Dia < @dataFim
         AND (@equipamentoId IS NULL OR EquipamentoId = @equipamentoId)
+        AND (@motorista IS NULL OR MotoristaNomeFicha = @motorista)
         AND ${EXISTS_CAMINHAO('EquipamentoId')}
       ORDER BY Dia
     `);
@@ -90,46 +92,143 @@ async function modoDiario(req: VercelRequest, res: VercelResponse) {
   res.status(200).json({ porVeiculo: porVeiculo.recordset, porMotorista: porMotorista.recordset });
 }
 
+// Motivos de parada/operação já AGREGADOS no banco (o front antes lia uma coluna
+// "MotivoParada" que não existe nesta view e caía tudo num único "Outros"). O contrato real,
+// confirmado no DBeaver, é: EquipamentoId, Dia, Estado, OperacaoDescricao, QtdLeituras,
+// MinutosAproximados. Agrupo por Estado + OperacaoDescricao e devolvo já ordenado por tempo,
+// que é exatamente o que a tela precisa desenhar.
+//
+// O filtro de motorista não existe nesta view (ela é por equipamento), então resolvo pelos
+// equipamentos que aquele motorista rodou no período, via vw_ResultadoDiarioVeiculo.
 async function modoMotivos(req: VercelRequest, res: VercelResponse) {
   const equipamentoId = equipamentoIdNumerico(req);
+  const motorista = typeof req.query.motorista === 'string' ? req.query.motorista : null;
   const { dataInicio, dataFim } = parseIntervaloDatas(req);
 
   const pool = await getMssqlPool();
   const result = await pool.request()
     .input('equipamentoId', sql.Int, equipamentoId)
+    .input('motorista', sql.NVarChar, motorista)
     .input('dataInicio', sql.DateTime2, dataInicio)
     .input('dataFim', sql.DateTime2, dataFim)
-    .input('tipoCaminhao', sql.NVarChar, FILTRO_TIPO_CAMINHAO_LIKE)
     .query(`
-      SELECT * FROM vw_MotivosOperacaoEquipamento
-      WHERE (@equipamentoId IS NULL OR EquipamentoId = @equipamentoId) 
-        AND Dia >= @dataInicio AND Dia < @dataFim
-        AND ${EXISTS_CAMINHAO('EquipamentoId')}
+      SELECT
+        m.Estado,
+        m.OperacaoDescricao,
+        SUM(ISNULL(m.MinutosAproximados, 0)) AS MinutosAproximados,
+        SUM(ISNULL(m.QtdLeituras, 0)) AS QtdLeituras
+      FROM vw_MotivosOperacaoEquipamento m
+      WHERE m.Dia >= @dataInicio AND m.Dia < @dataFim
+        AND (@equipamentoId IS NULL OR m.EquipamentoId = @equipamentoId)
+        AND (@motorista IS NULL OR EXISTS (
+          SELECT 1 FROM vw_ResultadoDiarioVeiculo r
+          WHERE r.EquipamentoId = m.EquipamentoId
+            AND r.MotoristaNomeFicha = @motorista
+            AND r.Dia >= @dataInicio AND r.Dia < @dataFim
+        ))
+      GROUP BY m.Estado, m.OperacaoDescricao
+      HAVING SUM(ISNULL(m.MinutosAproximados, 0)) > 0
       ORDER BY MinutosAproximados DESC
     `);
 
   res.status(200).json(result.recordset);
 }
 
+// Motor ligado x ocioso — contrato real da view (confirmado no DBeaver): EquipamentoId, Dia,
+// MinutosMotorLigado, MinutosMotorOcioso. O front antes lia MinutosProdutivos/MinutosOciosos/
+// MinutosAproximados (nomes que não existem aqui), então o total dava 0 e a rosca ficava vazia.
+// Devolvo o total do período já somado + a série por dia, pra tela não ter que somar nada.
 async function modoMotor(req: VercelRequest, res: VercelResponse) {
   const equipamentoId = equipamentoIdNumerico(req);
+  const motorista = typeof req.query.motorista === 'string' ? req.query.motorista : null;
+  const { dataInicio, dataFim } = parseIntervaloDatas(req);
+
+  const pool = await getMssqlPool();
+
+  const filtroMotorista = `
+    AND (@motorista IS NULL OR EXISTS (
+      SELECT 1 FROM vw_ResultadoDiarioVeiculo r
+      WHERE r.EquipamentoId = t.EquipamentoId
+        AND r.MotoristaNomeFicha = @motorista
+        AND r.Dia >= @dataInicio AND r.Dia < @dataFim
+    ))
+  `;
+
+  const totais = await pool.request()
+    .input('equipamentoId', sql.Int, equipamentoId)
+    .input('motorista', sql.NVarChar, motorista)
+    .input('dataInicio', sql.DateTime2, dataInicio)
+    .input('dataFim', sql.DateTime2, dataFim)
+    .query(`
+      SELECT
+        SUM(ISNULL(t.MinutosMotorLigado, 0)) AS MinutosMotorLigado,
+        SUM(ISNULL(t.MinutosMotorOcioso, 0)) AS MinutosMotorOcioso,
+        COUNT(DISTINCT t.Dia) AS DiasComDado
+      FROM vw_TempoMotorEquipamento t
+      WHERE t.Dia >= @dataInicio AND t.Dia < @dataFim
+        AND (@equipamentoId IS NULL OR t.EquipamentoId = @equipamentoId)
+        ${filtroMotorista}
+    `);
+
+  const porDia = await pool.request()
+    .input('equipamentoId', sql.Int, equipamentoId)
+    .input('motorista', sql.NVarChar, motorista)
+    .input('dataInicio', sql.DateTime2, dataInicio)
+    .input('dataFim', sql.DateTime2, dataFim)
+    .query(`
+      SELECT
+        t.Dia,
+        SUM(ISNULL(t.MinutosMotorLigado, 0)) AS MinutosMotorLigado,
+        SUM(ISNULL(t.MinutosMotorOcioso, 0)) AS MinutosMotorOcioso
+      FROM vw_TempoMotorEquipamento t
+      WHERE t.Dia >= @dataInicio AND t.Dia < @dataFim
+        AND (@equipamentoId IS NULL OR t.EquipamentoId = @equipamentoId)
+        ${filtroMotorista}
+      GROUP BY t.Dia
+      ORDER BY t.Dia
+    `);
+
+  const linha = totais.recordset[0] ?? { MinutosMotorLigado: 0, MinutosMotorOcioso: 0, DiasComDado: 0 };
+  res.status(200).json({
+    minutosMotorLigado: Number(linha.MinutosMotorLigado ?? 0),
+    minutosMotorOcioso: Number(linha.MinutosMotorOcioso ?? 0),
+    diasComDado: Number(linha.DiasComDado ?? 0),
+    porDia: porDia.recordset,
+  });
+}
+
+// Lista de motoristas pro filtro da tela. Precisa vir da MESMA fonte que o filtro compara
+// (MotoristaNomeFicha das views de metas) — antes a tela populava o dropdown com Operadores.Nome
+// (nome da telemetria), que é outro cadastro, então o filtro quase nunca casava.
+async function modoMotoristas(req: VercelRequest, res: VercelResponse) {
   const { dataInicio, dataFim } = parseIntervaloDatas(req);
 
   const pool = await getMssqlPool();
   const result = await pool.request()
-    .input('equipamentoId', sql.Int, equipamentoId)
     .input('dataInicio', sql.DateTime2, dataInicio)
     .input('dataFim', sql.DateTime2, dataFim)
-    .input('tipoCaminhao', sql.NVarChar, FILTRO_TIPO_CAMINHAO_LIKE)
     .query(`
-      SELECT * FROM vw_TempoMotorEquipamento
-      WHERE (@equipamentoId IS NULL OR EquipamentoId = @equipamentoId) 
+      SELECT DISTINCT MotoristaNomeFicha
+      FROM vw_ResultadoDiarioVeiculo
+      WHERE MotoristaNomeFicha IS NOT NULL
         AND Dia >= @dataInicio AND Dia < @dataFim
-        AND ${EXISTS_CAMINHAO('EquipamentoId')}
-      ORDER BY Dia
+      ORDER BY MotoristaNomeFicha
     `);
 
-  res.status(200).json(result.recordset);
+  // Se o intervalo escolhido ainda não tem dado diário sincronizado, o dropdown não deve ficar
+  // vazio — cai pra lista da ficha de metas (visão mensal), que é o mesmo domínio de nome.
+  if (result.recordset.length > 0) {
+    res.status(200).json(result.recordset.map((l) => l.MotoristaNomeFicha as string));
+    return;
+  }
+
+  const fallback = await pool.request().query(`
+    SELECT DISTINCT MotoristaNomeFicha
+    FROM vw_PainelMotoristaVeiculo
+    WHERE MotoristaNomeFicha IS NOT NULL
+    ORDER BY MotoristaNomeFicha
+  `);
+  res.status(200).json(fallback.recordset.map((l) => l.MotoristaNomeFicha as string));
 }
 
 async function modoProgresso(req: VercelRequest, res: VercelResponse) {
@@ -271,12 +370,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return await modoMotivos(req, res);
       case 'motor':
         return await modoMotor(req, res);
+      case 'motoristas':
+        return await modoMotoristas(req, res);
       case 'progresso':
         return await modoProgresso(req, res);
       case 'executivo':
         return await modoExecutivo(req, res);
       default:
-        res.status(400).json({ error: 'Parâmetro modo é obrigatório: diario, motivos, motor, progresso ou executivo' });
+        res.status(400).json({ error: 'Parâmetro modo é obrigatório: diario, motivos, motor, motoristas, progresso ou executivo' });
     }
   } catch (error) {
     console.error(`Erro ao consultar painel diário (modo=${modo}):`, error);

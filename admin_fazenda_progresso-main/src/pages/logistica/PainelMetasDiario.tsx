@@ -1,9 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import {
-  ChevronDown,
-  ChevronUp,
-  Sparkles,
-} from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { ChevronDown, ChevronUp, Sparkles, RefreshCw, Info } from 'lucide-react';
 import {
   ResponsiveContainer,
   BarChart,
@@ -12,734 +8,646 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
-  PieChart,
-  Pie,
   Cell,
+  ReferenceLine,
 } from 'recharts';
 
 const API_URL = import.meta.env.VITE_API_URL ?? '';
 
-// Interface para Equipamentos vindos do banco
+// Paleta validada (dataviz): slots categóricos 1 (azul) e 2 (laranja) — ΔE CVD 24.7 / normal 33.6
+// contra fundo branco, todos os checks passando. Status good/critical pra polaridade
+// (economia x excesso), sempre acompanhados de rótulo/legenda — nunca só a cor.
+const COR = {
+  serie1: '#2a78d6',
+  serie2: '#eb6834',
+  bom: '#0ca30c',
+  critico: '#d03b3b',
+  atencao: '#fab219',
+  grid: '#e1e0d9',
+  eixo: '#c3c2b7',
+  tintaMuda: '#898781',
+  tintaSecundaria: '#52514e',
+} as const;
+
+// Contrato real das views (confirmado no DBeaver, PRD v3 §9.3/§9.5/§9.6).
+interface LinhaDiariaVeiculo {
+  Dia: string;
+  EquipamentoId: number;
+  CodigoEquipamento: string | null;
+  NomeEquipamento: string | null;
+  MotoristaNomeFicha: string | null;
+  MotoristaNomeFolha: string | null;
+  MetaCpk: number | null;
+  KmRodadoDia: number | null;
+  CustoCombustivelDia: number | null;
+  CustoPneusDia: number | null;
+  CustoManutencaoDia: number | null;
+  CustoOutrosDia: number | null;
+  CustoLogisticoRealDia: number | null;
+  CustoMotoristaRateadoDia: number | null;
+  CustoOperacionalRealDia: number | null;
+  CustoEsperadoDia: number | null;
+  ResultadoDia: number | null;
+}
+
+interface MotivoAgregado {
+  Estado: string | null;
+  OperacaoDescricao: string | null;
+  MinutosAproximados: number;
+  QtdLeituras: number;
+}
+
+interface MotorAgregado {
+  minutosMotorLigado: number;
+  minutosMotorOcioso: number;
+  diasComDado: number;
+  porDia: { Dia: string; MinutosMotorLigado: number; MinutosMotorOcioso: number }[];
+}
+
 interface EquipamentoItem {
   EquipamentoId: number;
-  CodigoEquipamento: string;
-  Nome: string;
-  Operador?: string | null;
-  Fazenda?: string | null;
-  GrupoFrente?: string | null;
+  CodigoEquipamento: string | null;
+  Nome: string | null;
 }
 
-interface OperadorItem {
-  OperadorId: number;
-  Nome: string;
+interface InsightItem {
+  InsightId: number;
+  Categoria: string;
+  Severidade: 'baixa' | 'media' | 'alta';
+  Titulo: string;
+  Descricao: string;
+  EntidadeReferencia: string | null;
+  GeradoEm: string;
 }
+
+const formatMoeda = (valor: number | null | undefined) =>
+  valor === null || valor === undefined ? '—' : valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+const formatMoedaCurta = (valor: number) =>
+  valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', notation: 'compact', maximumFractionDigits: 1 });
+
+const formatMinutos = (minutos: number) => {
+  const total = Math.round(minutos);
+  if (total < 60) return `${total} min`;
+  const horas = Math.floor(total / 60);
+  const resto = total % 60;
+  return resto === 0 ? `${horas}h` : `${horas}h ${resto}min`;
+};
+
+const formatDiaCurto = (iso: string) => {
+  const [ano, mes, dia] = iso.split('T')[0].split('-').map(Number);
+  return new Date(ano, mes - 1, dia).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+};
+
+const hojeISO = () => new Date().toISOString().split('T')[0];
+const diasAtrasISO = (dias: number) => {
+  const d = new Date();
+  d.setDate(d.getDate() - dias);
+  return d.toISOString().split('T')[0];
+};
+
+const somar = <T,>(lista: T[], pegar: (item: T) => number | null | undefined) =>
+  lista.reduce((acc, item) => acc + (pegar(item) ?? 0), 0);
+
+const CardKpi = ({ label, valor, apoio, destaque }: { label: string; valor: string; apoio: string; destaque?: boolean }) => (
+  <div className={`p-3.5 rounded-2xl border flex flex-col justify-between ${destaque ? 'bg-green-50/50 border-2 border-green-600/40' : 'bg-white border-slate-200/80'}`}>
+    <span className={`text-[10px] font-bold uppercase tracking-wider ${destaque ? 'text-green-800' : 'text-slate-400'}`}>{label}</span>
+    <div className="my-1.5">
+      <span className={`text-xl font-black tracking-tight ${destaque ? 'text-green-700' : 'text-slate-900'}`}>{valor}</span>
+    </div>
+    <span className={`text-[10px] font-medium ${destaque ? 'text-green-700' : 'text-slate-500'}`}>{apoio}</span>
+  </div>
+);
+
+const Card = ({ titulo, acessorio, children }: { titulo: string; acessorio?: React.ReactNode; children: React.ReactNode }) => (
+  <div className="bg-white p-5 rounded-2xl border border-slate-200/80">
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-2">
+      <h3 className="text-sm font-bold text-slate-900">{titulo}</h3>
+      {acessorio}
+    </div>
+    <div className="mt-4">{children}</div>
+  </div>
+);
+
+const SemDado = ({ mensagem }: { mensagem: string }) => (
+  <div className="flex items-center justify-center gap-2 py-12 text-xs text-slate-400">
+    <Info size={14} /> {mensagem}
+  </div>
+);
+
+const Legenda = ({ itens }: { itens: { cor: string; rotulo: string }[] }) => (
+  <div className="flex items-center gap-4 text-xs">
+    {itens.map((i) => (
+      <div key={i.rotulo} className="flex items-center gap-1.5">
+        <span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ backgroundColor: i.cor }} />
+        <span className="text-slate-600 text-[11px] font-medium">{i.rotulo}</span>
+      </div>
+    ))}
+  </div>
+);
+
+const estiloTooltip = {
+  backgroundColor: '#ffffff',
+  borderRadius: '12px',
+  border: `1px solid ${COR.grid}`,
+  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+  fontSize: '11px',
+} as const;
 
 export const PainelMetasDiario: React.FC = () => {
-  // Filtros de cabeçalho
-  const [dataDe, setDataDe] = useState('2026-08-20');
-  const [dataAte, setDataAte] = useState('2026-09-02');
-  const [veiculoSelecionado, setVeiculoSelecionado] = useState<string>('todos');
-  const [motoristaSelecionado, setMotoristaSelecionado] = useState<string>('todos');
+  const [dataDe, setDataDe] = useState(diasAtrasISO(30));
+  const [dataAte, setDataAte] = useState(hojeISO());
+  const [veiculoSelecionado, setVeiculoSelecionado] = useState('todos');
+  const [motoristaSelecionado, setMotoristaSelecionado] = useState('todos');
 
-  // Listas de seleção carregadas do banco de dados real
-  const [veiculosLista, setVeiculosLista] = useState<EquipamentoItem[]>([]);
-  const [motoristasLista, setMotoristasLista] = useState<OperadorItem[]>([]);
+  const [veiculos, setVeiculos] = useState<EquipamentoItem[]>([]);
+  const [motoristas, setMotoristas] = useState<string[]>([]);
 
+  const [linhasDiarias, setLinhasDiarias] = useState<LinhaDiariaVeiculo[]>([]);
+  const [motivos, setMotivos] = useState<MotivoAgregado[]>([]);
+  const [motor, setMotor] = useState<MotorAgregado | null>(null);
+  const [alarmes24h, setAlarmes24h] = useState<number | null>(null);
+  const [insights, setInsights] = useState<InsightItem[]>([]);
 
-  // Estados de dados dinâmicos da API
-  const [dadosGraficoDiario, setDadosGraficoDiario] = useState<any[]>([]);
-  const [dadosBalanco, setDadosBalanco] = useState<any[]>([]);
-  const [dadosMotivos, setDadosMotivos] = useState<any[]>([]);
-  const [dadosUsoMotor, setDadosUsoMotor] = useState<any[]>([]);
-  const [gastos, setGastos] = useState<any[]>([]);
-  const [kpis, setKpis] = useState<any>(null);
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState<string | null>(null);
+  const [expandidos, setExpandidos] = useState<Record<number, boolean>>({});
+  const [insightAberto, setInsightAberto] = useState<number | null>(null);
 
-  // Estados de expansão dos acordeões
-  const [expandGastos, setExpandGastos] = useState<Record<number, boolean>>({
-    1: true,
-    2: false,
-    3: false,
-  });
-  const [expandInsight1, setExpandInsight1] = useState(true);
-  const [expandInsight2, setExpandInsight2] = useState(false);
+  const carregar = useCallback(async () => {
+    setCarregando(true);
+    const qs = new URLSearchParams({ dataInicio: dataDe, dataFim: dataAte });
+    if (veiculoSelecionado !== 'todos') qs.append('equipamentoId', veiculoSelecionado);
+    if (motoristaSelecionado !== 'todos') qs.append('motorista', motoristaSelecionado);
 
-  // Busca veículos, motoristas e métricas do backend
-  const carregarDados = async () => {
-    try {
-      const [respEq, respOp] = await Promise.all([
-        fetch(`${API_URL}/api/frota/equipamentos`).then((r) => (r.ok ? r.json() : [])),
-        fetch(`${API_URL}/api/frota/operadores`).then((r) => (r.ok ? r.json() : [])),
-      ]);
-      setVeiculosLista(respEq ?? []);
-      setMotoristasLista(respOp ?? []);
-
-      // Monta query string
-      const qsParams = new URLSearchParams();
-      qsParams.append('dataInicio', dataDe);
-      qsParams.append('dataFim', dataAte);
-      if (veiculoSelecionado !== 'todos') qsParams.append('equipamentoId', veiculoSelecionado);
-      if (motoristaSelecionado !== 'todos') qsParams.append('motorista', motoristaSelecionado);
-      const qs = `?${qsParams.toString()}`;
-
-      // Tenta buscar os dados se a API responder corretamente
+    const buscar = async <T,>(url: string, fallback: T): Promise<T> => {
       try {
-        const [respDiario, respMotivos, respMotor, respExec, respGastos] = await Promise.all([
-          fetch(`${API_URL}/api/metas/diario${qs}&modo=diario`),
-          fetch(`${API_URL}/api/metas/diario${qs}&modo=motivos`),
-          fetch(`${API_URL}/api/metas/diario${qs}&modo=motor`),
-          fetch(`${API_URL}/api/metas/diario${qs}&modo=executivo`),
-          fetch(`${API_URL}/api/gastos/resumo${qs}`)
-        ]);
-
-        if (respDiario.ok) {
-          const json = await respDiario.json();
-          if (json.porVeiculo && json.porVeiculo.length > 0) {
-            // Agrupar dados por dia (somando todos os veículos no mesmo dia)
-            const dadosPorDia: Record<string, { dataOriginal: string, previsto: number, realizado: number }> = {};
-            
-            json.porVeiculo.forEach((v: any) => {
-              if (!v.Dia) return;
-              const diaReal = v.Dia.split('T')[0];
-              if (!dadosPorDia[diaReal]) {
-                dadosPorDia[diaReal] = { dataOriginal: diaReal, previsto: 0, realizado: 0 };
-              }
-              dadosPorDia[diaReal].previsto += (v.CustoEsperadoDia ?? 0);
-              dadosPorDia[diaReal].realizado += (v.CustoOperacionalRealDia ?? 0);
-            });
-
-            const graficoDiario = Object.values(dadosPorDia)
-              .sort((a, b) => a.dataOriginal.localeCompare(b.dataOriginal))
-              .map(v => {
-                const [yyyy, mm, dd] = v.dataOriginal.split('-');
-                const dateObj = new Date(Number(yyyy), Number(mm) - 1, Number(dd));
-                return {
-                  dia: dateObj.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }),
-                  previsto: v.previsto,
-                  realizado: v.realizado,
-                  status: v.realizado <= v.previsto ? 'dentro' : 'acima'
-                };
-              });
-
-            setDadosGraficoDiario(graficoDiario);
-
-            // Calcular Balanço Financeiro (Lucro vs Prejuízo) por Veículo
-            const saldoPorVeiculo: Record<number, number> = {};
-            json.porVeiculo.forEach((v: any) => {
-              const id = v.EquipamentoId;
-              const previsto = v.CustoEsperadoDia ?? 0;
-              const realizado = v.CustoOperacionalRealDia ?? 0;
-              if (id) {
-                if (!saldoPorVeiculo[id]) saldoPorVeiculo[id] = 0;
-                saldoPorVeiculo[id] += (previsto - realizado);
-              }
-            });
-
-            const balancoData = Object.entries(saldoPorVeiculo).map(([idStr, saldo]) => {
-              const eqId = Number(idStr);
-              // Busca nome na lista carregada, se não achar usa 'Veículo ' + id
-              const nome = respEq?.find((e: any) => e.EquipamentoId === eqId)?.Nome || `Veículo ${eqId}`;
-              return {
-                nome: nome.split(' ')[0] + ' ' + (nome.split(' ')[1] || ''), // Nome abreviado
-                saldo: saldo
-              };
-            });
-            // Ordenar para mostrar os maiores lucros primeiro
-            balancoData.sort((a, b) => b.saldo - a.saldo);
-            setDadosBalanco(balancoData);
-          }
-        }
-        
-        if (respMotivos.ok) {
-          const json = await respMotivos.json();
-          if (json.length > 0) {
-            const cores = ['#ef4444', '#f97316', '#3b82f6', '#10b981'];
-            
-            // Agrupar os motivos
-            const motivosAgrupados: Record<string, number> = {};
-            json.forEach((v: any) => {
-              const m = v.MotivoParada ?? 'Outros';
-              if (!motivosAgrupados[m]) motivosAgrupados[m] = 0;
-              motivosAgrupados[m] += (v.MinutosAproximados ?? 0);
-            });
-
-            const motivosArray = Object.entries(motivosAgrupados)
-              .sort((a, b) => b[1] - a[1]) // ordena por mais tempo primeiro
-              .map(([motivo, minutos], i) => ({
-                motivo,
-                minutos,
-                cor: cores[i % cores.length]
-              }));
-
-            setDadosMotivos(motivosArray);
-          }
-        }
-
-        if (respMotor.ok) {
-          const json = await respMotor.json();
-          if (json.length > 0) {
-            const total = json.reduce((acc: number, v: any) => acc + (v.MinutosAproximados ?? 0), 0);
-            if (total > 0) {
-              setDadosUsoMotor([
-                { name: 'Produtivo', value: Math.round((json[0]?.MinutosProdutivos ?? 0) / total * 100), color: '#10b981' },
-                { name: 'Ocioso', value: Math.round((json[0]?.MinutosOciosos ?? 0) / total * 100), color: '#ef4444' }
-              ]);
-            }
-          }
-        }
-
-        if (respExec.ok) {
-          setKpis(await respExec.json());
-        }
-
-        if (respGastos.ok) {
-          setGastos(await respGastos.json());
-        }
-
+        const resp = await fetch(url);
+        if (!resp.ok) throw new Error(`API respondeu ${resp.status}`);
+        return (await resp.json()) as T;
       } catch (e) {
-        console.warn('As rotas de meta diária ainda não estão 100% integradas. Mantendo dados simulados nos gráficos.', e);
+        console.error('Falha ao consultar', url, e);
+        return fallback;
       }
+    };
 
-    } catch (e) {
-      console.error('Erro ao carregar veículos/motoristas:', e);
-    }
-  };
+    const [eqs, mots, diario, motivosResp, motorResp, exec, insightsResp] = await Promise.all([
+      buscar<EquipamentoItem[]>(`${API_URL}/api/frota/equipamentos`, []),
+      buscar<string[]>(`${API_URL}/api/metas/diario?modo=motoristas&${qs}`, []),
+      buscar<{ porVeiculo: LinhaDiariaVeiculo[] }>(`${API_URL}/api/metas/diario?modo=diario&${qs}`, { porVeiculo: [] }),
+      buscar<MotivoAgregado[]>(`${API_URL}/api/metas/diario?modo=motivos&${qs}`, []),
+      buscar<MotorAgregado>(`${API_URL}/api/metas/diario?modo=motor&${qs}`, { minutosMotorLigado: 0, minutosMotorOcioso: 0, diasComDado: 0, porDia: [] }),
+      buscar<{ alarmes24h: number }>(`${API_URL}/api/metas/diario?modo=executivo`, { alarmes24h: 0 }),
+      buscar<InsightItem[]>(`${API_URL}/api/insights/listar?resolvido=false`, []),
+    ]);
 
-  useEffect(() => {
-    carregarDados();
+    setVeiculos(eqs);
+    setMotoristas(mots);
+    setLinhasDiarias(diario.porVeiculo ?? []);
+    setMotivos(motivosResp);
+    setMotor(motorResp);
+    setAlarmes24h(exec.alarmes24h ?? 0);
+    setInsights(insightsResp.slice(0, 4));
+    setErro(diario.porVeiculo ? null : 'Não foi possível carregar os dados do painel diário.');
+    setCarregando(false);
   }, [dataDe, dataAte, veiculoSelecionado, motoristaSelecionado]);
 
-  const toggleGasto = (id: number) => {
-    setExpandGastos((prev) => ({ ...prev, [id]: !prev[id] }));
+  useEffect(() => {
+    carregar();
+  }, [carregar]);
+
+  // ---- Tudo abaixo é derivado do MESMO payload diário, então KPIs, gráficos e tabela sempre
+  // contam a mesma história e respeitam o intervalo de datas escolhido. (Antes os KPIs vinham de
+  // /api/gastos/resumo, que filtra por CompetenciaMeta = dia 1º do mês: um intervalo dentro de um
+  // único mês zerava todos os cards.)
+  const porDia = useMemo(() => {
+    const mapa = new Map<string, { dia: string; previsto: number; realizado: number }>();
+    linhasDiarias.forEach((l) => {
+      if (!l.Dia) return;
+      const chave = l.Dia.split('T')[0];
+      const atual = mapa.get(chave) ?? { dia: chave, previsto: 0, realizado: 0 };
+      atual.previsto += l.CustoEsperadoDia ?? 0;
+      atual.realizado += l.CustoOperacionalRealDia ?? 0;
+      mapa.set(chave, atual);
+    });
+    return Array.from(mapa.values())
+      .sort((a, b) => a.dia.localeCompare(b.dia))
+      .map((d) => ({ ...d, rotulo: formatDiaCurto(d.dia), dentroDaMeta: d.realizado <= d.previsto }));
+  }, [linhasDiarias]);
+
+  const porEquipamento = useMemo(() => {
+    const mapa = new Map<number, {
+      EquipamentoId: number;
+      nome: string;
+      codigo: string;
+      motorista: string;
+      combustivel: number;
+      manutencao: number;
+      outros: number;
+      logistico: number;
+      motoristaRateado: number;
+      operacional: number;
+      esperado: number;
+      km: number;
+      dias: number;
+    }>();
+    linhasDiarias.forEach((l) => {
+      const atual = mapa.get(l.EquipamentoId) ?? {
+        EquipamentoId: l.EquipamentoId,
+        nome: l.NomeEquipamento ?? `Equipamento ${l.EquipamentoId}`,
+        codigo: l.CodigoEquipamento ?? '—',
+        motorista: l.MotoristaNomeFicha ?? l.MotoristaNomeFolha ?? 'Sem motorista vinculado',
+        combustivel: 0, manutencao: 0, outros: 0, logistico: 0, motoristaRateado: 0,
+        operacional: 0, esperado: 0, km: 0, dias: 0,
+      };
+      atual.combustivel += l.CustoCombustivelDia ?? 0;
+      atual.manutencao += (l.CustoManutencaoDia ?? 0) + (l.CustoPneusDia ?? 0);
+      atual.outros += l.CustoOutrosDia ?? 0;
+      atual.logistico += l.CustoLogisticoRealDia ?? 0;
+      atual.motoristaRateado += l.CustoMotoristaRateadoDia ?? 0;
+      atual.operacional += l.CustoOperacionalRealDia ?? 0;
+      atual.esperado += l.CustoEsperadoDia ?? 0;
+      atual.km += l.KmRodadoDia ?? 0;
+      atual.dias += 1;
+      mapa.set(l.EquipamentoId, atual);
+    });
+    return Array.from(mapa.values()).sort((a, b) => b.operacional - a.operacional);
+  }, [linhasDiarias]);
+
+  // Balanço: saldo assinado por equipamento (esperado − real). Nome completo no eixo, sem cortar
+  // em 2 palavras (era isso que fazia vários caminhões virarem "CAMINHAO MERCEDES" repetido).
+  const balanco = useMemo(
+    () =>
+      porEquipamento
+        .map((e) => ({
+          rotulo: e.codigo !== '—' ? `${e.nome} · ${e.codigo}` : e.nome,
+          saldo: e.esperado - e.operacional,
+        }))
+        .filter((e) => e.saldo !== 0)
+        .sort((a, b) => b.saldo - a.saldo)
+        .slice(0, 12),
+    [porEquipamento]
+  );
+
+  const motivosGrafico = useMemo(() => {
+    const rotulo = (m: MotivoAgregado) =>
+      m.OperacaoDescricao?.trim() || m.Estado?.trim() || 'Não informado';
+    const somados = new Map<string, number>();
+    motivos.forEach((m) => somados.set(rotulo(m), (somados.get(rotulo(m)) ?? 0) + (m.MinutosAproximados ?? 0)));
+    const ordenados = Array.from(somados.entries())
+      .map(([nome, minutos]) => ({ nome, minutos }))
+      .sort((a, b) => b.minutos - a.minutos);
+    if (ordenados.length <= 8) return ordenados;
+    const principais = ordenados.slice(0, 7);
+    const resto = ordenados.slice(7).reduce((acc, m) => acc + m.minutos, 0);
+    return [...principais, { nome: `Outros (${ordenados.length - 7})`, minutos: resto }];
+  }, [motivos]);
+
+  const totalCombustivel = somar(porEquipamento, (e) => e.combustivel);
+  const totalManutencao = somar(porEquipamento, (e) => e.manutencao);
+  const totalLogistico = somar(porEquipamento, (e) => e.logistico);
+  const totalOperacional = somar(porEquipamento, (e) => e.operacional);
+  const totalKm = somar(porEquipamento, (e) => e.km);
+  const diasDentro = porDia.filter((d) => d.dentroDaMeta).length;
+  const percentualDentro = porDia.length > 0 ? ((diasDentro / porDia.length) * 100).toFixed(0) : '0';
+
+  const minutosLigado = motor?.minutosMotorLigado ?? 0;
+  const minutosOcioso = motor?.minutosMotorOcioso ?? 0;
+  const minutosProdutivo = Math.max(minutosLigado - minutosOcioso, 0);
+  const percentualOcioso = minutosLigado > 0 ? (minutosOcioso / minutosLigado) * 100 : 0;
+
+  const severidadeBadge: Record<InsightItem['Severidade'], string> = {
+    alta: 'bg-rose-100 text-rose-700',
+    media: 'bg-amber-100 text-amber-800',
+    baixa: 'bg-slate-100 text-slate-600',
   };
 
-
-
-  // Cálculo dos totais para os 6 KPIs Superiores
-  const totalCombustivel = gastos.reduce((acc, g) => acc + (g.CustoCombustivelMes ?? 0), 0);
-  const totalManutencao = gastos.reduce((acc, g) => acc + (g.CustoManutencaoMes ?? 0) + (g.CustoPneusMes ?? 0), 0);
-  const totalFixo = gastos.reduce((acc, g) => acc + (g.CustoFixoTotalMes ?? 0), 0);
-  const totalOperacional = gastos.reduce((acc, g) => acc + (g.CustoOperacionalTotalMes ?? g.CustoFixoTotalMes ?? 0), 0);
-  
-  const diasTotal = dadosGraficoDiario.length;
-  const diasDentro = dadosGraficoDiario.filter(d => d.status === 'dentro').length;
-  const porcentagemDentro = diasTotal > 0 ? ((diasDentro / diasTotal) * 100).toFixed(1) : '0.0';
-
-  const formatMoeda = (valor: number | null | undefined) =>
-    valor === null || valor === undefined ? '—' : valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-
   return (
-    <div className="space-y-5 pb-12 font-sans text-slate-800">
-      {/* 1. Barra de Filtros no Topo */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Campo DE */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">DE</span>
-            <div className="relative">
-              <input
-                type="date"
-                value={dataDe}
-                onChange={(e) => setDataDe(e.target.value)}
-                className="px-3 py-1.5 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20 text-slate-700"
-              />
-            </div>
-          </div>
-
-          {/* Campo ATÉ */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">ATÉ</span>
-            <div className="relative">
-              <input
-                type="date"
-                value={dataAte}
-                onChange={(e) => setDataAte(e.target.value)}
-                className="px-3 py-1.5 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20 text-slate-700"
-              />
-            </div>
-          </div>
-
-          {/* Seletor de VEÍCULO */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">VEÍCULO</span>
-            <select
-              value={veiculoSelecionado}
-              onChange={(e) => setVeiculoSelecionado(e.target.value)}
-              className="px-3 py-1.5 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20 text-slate-700 min-w-[170px]"
-            >
-              <option value="todos">Todos os Veículos</option>
-              {veiculosLista.length > 0 ? (
-                veiculosLista.map((v) => (
-                  <option key={v.EquipamentoId} value={String(v.EquipamentoId)}>
-                    {v.Nome} ({v.CodigoEquipamento})
-                  </option>
-                ))
-              ) : (
-                <>
-                  <option value="1">Volkswagen 32.380</option>
-                  <option value="2">Mercedes-Benz Atego 2429</option>
-                  <option value="3">Volvo FMX 500</option>
-                </>
-              )}
-            </select>
-          </div>
-
-          {/* Seletor de MOTORISTA */}
-          <div className="flex items-center gap-1.5">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">MOTORISTA</span>
-            <select
-              value={motoristaSelecionado}
-              onChange={(e) => setMotoristaSelecionado(e.target.value)}
-              className="px-3 py-1.5 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20 text-slate-700 min-w-[170px]"
-            >
-              <option value="todos">Todos os Motoristas</option>
-              {motoristasLista.length > 0 ? (
-                motoristasLista.map((m) => (
-                  <option key={m.OperadorId} value={m.Nome}>
-                    {m.Nome}
-                  </option>
-                ))
-              ) : (
-                <>
-                  <option value="Tiago">Tiago</option>
-                  <option value="Maurício">Maurício</option>
-                  <option value="Denilson">Denilson</option>
-                </>
-              )}
-            </select>
-          </div>
+    <div className={`space-y-5 pb-12 transition-opacity ${carregando ? 'opacity-60' : 'opacity-100'}`}>
+      {/* Filtros: uma linha só, acima de tudo que eles afetam */}
+      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-1.5">
+          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">De</span>
+          <input type="date" value={dataDe} max={dataAte} onChange={(e) => setDataDe(e.target.value)}
+            className="px-3 py-1.5 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl text-slate-700" />
         </div>
-
-
+        <div className="flex items-center gap-1.5">
+          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Até</span>
+          <input type="date" value={dataAte} min={dataDe} onChange={(e) => setDataAte(e.target.value)}
+            className="px-3 py-1.5 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl text-slate-700" />
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Veículo</span>
+          <select value={veiculoSelecionado} onChange={(e) => setVeiculoSelecionado(e.target.value)}
+            className="px-3 py-1.5 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl text-slate-700 min-w-[200px]">
+            <option value="todos">Todos os veículos</option>
+            {veiculos.map((v) => (
+              <option key={v.EquipamentoId} value={String(v.EquipamentoId)}>
+                {v.Nome} {v.CodigoEquipamento ? `(${v.CodigoEquipamento})` : ''}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Motorista</span>
+          <select value={motoristaSelecionado} onChange={(e) => setMotoristaSelecionado(e.target.value)}
+            className="px-3 py-1.5 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl text-slate-700 min-w-[200px]">
+            <option value="todos">Todos os motoristas</option>
+            {motoristas.map((m) => <option key={m} value={m}>{m}</option>)}
+          </select>
+        </div>
+        <button onClick={carregar}
+          className="ml-auto inline-flex items-center px-3 py-1.5 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 text-xs">
+          <RefreshCw size={13} className="mr-1.5" /> Atualizar
+        </button>
       </div>
 
-      {/* 2. Top 6 KPI Cards */}
+      {erro && <div className="bg-rose-50 border border-rose-200 text-rose-700 rounded-xl p-4 text-sm">{erro}</div>}
+
+      {/* KPIs — todos somados do dado diário dentro do intervalo filtrado */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        {/* Card 1 */}
-        <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col justify-between">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-            Combustível + Consumo
-          </span>
-          <div className="my-1.5">
-            <span className="text-xl font-black text-slate-900 tracking-tight">{formatMoeda(totalCombustivel)}</span>
-          </div>
-          <span className="text-[10px] text-slate-500 font-medium">Gasto no período filtrado</span>
-        </div>
-
-        {/* Card 2 */}
-        <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col justify-between">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-            Pneus + Manutenção
-          </span>
-          <div className="my-1.5">
-            <span className="text-xl font-black text-slate-900 tracking-tight">{formatMoeda(totalManutencao)}</span>
-          </div>
-          <span className="text-[10px] text-slate-500 font-medium">Gasto no período filtrado</span>
-        </div>
-
-        {/* Card 3 */}
-        <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col justify-between">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-            Custo Fixo Total
-          </span>
-          <div className="my-1.5">
-            <span className="text-xl font-black text-slate-900 tracking-tight">{formatMoeda(totalFixo)}</span>
-          </div>
-          <span className="text-[10px] text-slate-500 font-medium">Depreciação + Seguro + Adm</span>
-        </div>
-
-        {/* Card 4 (Destaque Custo Operacional) */}
-        <div className="bg-emerald-50/50 p-3.5 rounded-2xl border-2 border-emerald-500/40 shadow-2xs flex flex-col justify-between">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800">
-            Custo Operacional Total
-          </span>
-          <div className="my-1.5">
-            <span className="text-xl font-black text-emerald-700 tracking-tight">{formatMoeda(totalOperacional)}</span>
-          </div>
-          <span className="text-[10px] text-emerald-700 font-medium">Somatório da operação direta</span>
-        </div>
-
-        {/* Card 5 */}
-        <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col justify-between">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-            Dias Dentro da Meta
-          </span>
-          <div className="my-1.5">
-            <span className="text-xl font-black text-slate-900 tracking-tight">{diasDentro} / {diasTotal}</span>
-          </div>
-          <span className="text-[10px] text-slate-500 font-medium">{porcentagemDentro}% de conformidade</span>
-        </div>
-
-        {/* Card 6 */}
-        <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col justify-between">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-            Alarmes em Aberto (24h)
-          </span>
-          <div className="my-1.5">
-            <span className="text-xl font-black text-rose-600 tracking-tight">{kpis?.alarmes24h ?? 0}</span>
-          </div>
-          <span className="text-[10px] text-slate-500 font-medium">Registrados no sistema hoje</span>
-        </div>
+        <CardKpi label="Combustível" valor={formatMoeda(totalCombustivel)} apoio="Somado no período filtrado" />
+        <CardKpi label="Pneus + Manutenção" valor={formatMoeda(totalManutencao)} apoio="Somado no período filtrado" />
+        <CardKpi label="Custo Logístico" valor={formatMoeda(totalLogistico)} apoio="Combustível + pneus + manut. + outros" />
+        <CardKpi label="Custo Operacional" valor={formatMoeda(totalOperacional)} apoio="Logístico + motorista rateado" destaque />
+        <CardKpi label="Dias Dentro da Meta" valor={`${diasDentro} / ${porDia.length}`} apoio={`${percentualDentro}% dos dias com dado`} />
+        <CardKpi label="Alarmes (24h)" valor={alarmes24h === null ? '—' : String(alarmes24h)} apoio="Eventos de risco da frota hoje" />
       </div>
 
-      {/* 3. Gráfico Principal: Acompanhamento Diário: Meta Previsto vs Realizado */}
-      <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-2">
-          <h3 className="text-sm font-bold text-slate-900">
-            Acompanhamento Diário: Meta Previsto vs Realizado
-          </h3>
-          <div className="flex items-center gap-4 text-xs">
-            <div className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-xs bg-slate-300 inline-block" />
-              <span className="text-slate-500 text-[11px]">Previsto</span>
+      {/* Meta previsto x realizado por dia */}
+      <Card
+        titulo="Acompanhamento diário: previsto x realizado"
+        acessorio={<Legenda itens={[{ cor: COR.serie1, rotulo: 'Custo previsto (meta)' }, { cor: COR.serie2, rotulo: 'Custo realizado' }]} />}
+      >
+        {porDia.length === 0 ? (
+          <SemDado mensagem="Nenhum dia sincronizado nesse período. A carga diária do Sankhya alimenta essa visão." />
+        ) : porDia.length === 1 ? (
+          // Um único dia não é um gráfico de barras — é um número. (Anti-pattern: one-bar bar chart.)
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/60">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Previsto em {porDia[0].rotulo}</p>
+              <p className="text-2xl font-black text-slate-900 mt-1">{formatMoeda(porDia[0].previsto)}</p>
             </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-xs bg-blue-500 inline-block" />
-              <span className="text-slate-700 text-[11px] font-medium">Dentro da Meta</span>
+            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/60">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Realizado</p>
+              <p className="text-2xl font-black text-slate-900 mt-1">{formatMoeda(porDia[0].realizado)}</p>
             </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-xs bg-rose-500 inline-block" />
-              <span className="text-slate-700 text-[11px] font-medium">Acima da Meta</span>
+            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/60">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Resultado</p>
+              <p className="text-2xl font-black mt-1" style={{ color: porDia[0].dentroDaMeta ? COR.bom : COR.critico }}>
+                {formatMoeda(porDia[0].previsto - porDia[0].realizado)}
+              </p>
+              <p className="text-[11px] text-slate-500 mt-1">
+                {porDia[0].dentroDaMeta ? 'Dentro da meta do dia' : 'Acima da meta do dia'}
+              </p>
             </div>
+            <p className="sm:col-span-3 text-[11px] text-slate-400">
+              Só um dia com dado no período — quando mais dias forem sincronizados, esse bloco vira o gráfico de evolução.
+            </p>
           </div>
-        </div>
-
-        <div className="h-64 w-full mt-4">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={dadosGraficoDiario} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-              <XAxis dataKey="dia" tickLine={false} axisLine={{ stroke: '#e2e8f0' }} tick={{ fill: '#64748b', fontSize: 10 }} />
-              <YAxis
-                domain={[0, 14000]}
-                ticks={[0, 2000, 4000, 6000, 8000, 10000, 12000, 14000]}
-                tickLine={false}
-                axisLine={{ stroke: '#e2e8f0' }}
-                tick={{ fill: '#64748b', fontSize: 10 }}
-                tickFormatter={(v) => (v === 0 ? '0' : `${v}`)}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: '#ffffff',
-                  borderRadius: '12px',
-                  border: '1px solid #e2e8f0',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                  fontSize: '11px',
-                }}
-                formatter={(val: unknown, name: unknown) => [
-                  `R$ ${Number(val ?? 0).toLocaleString('pt-BR')}`,
-                  String(name) === 'previsto' ? 'Previsto' : 'Realizado',
-                ]}
-              />
-              <Bar dataKey="previsto" name="previsto" fill="#e2e8f0" radius={[3, 3, 0, 0]} maxBarSize={16} />
-              <Bar dataKey="realizado" name="realizado" radius={[3, 3, 0, 0]} maxBarSize={16}>
-                {dadosGraficoDiario.map((entry, index) => (
-                  <Cell
-                    key={`cell-${index}`}
-                    fill={entry.status === 'acima' ? '#ef4444' : '#3b82f6'}
-                  />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* 3.1 Gráfico de Balanço Financeiro (Lucro vs Prejuízo) */}
-      <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-2">
-          <h3 className="text-sm font-bold text-slate-900">
-            Balanço Financeiro (Economia vs Excesso de Custo)
-          </h3>
-          <div className="flex items-center gap-4 text-xs">
-            <div className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-xs bg-emerald-500 inline-block" />
-              <span className="text-slate-700 text-[11px] font-medium">Lucro (Economia)</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-xs bg-rose-500 inline-block" />
-              <span className="text-slate-700 text-[11px] font-medium">Prejuízo (Excedeu Meta)</span>
-            </div>
+        ) : (
+          <div className="h-72 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={porDia} margin={{ top: 8, right: 8, left: 8, bottom: 0 }} barGap={2}>
+                <CartesianGrid vertical={false} stroke={COR.grid} />
+                <XAxis dataKey="rotulo" tickLine={false} axisLine={{ stroke: COR.eixo }} tick={{ fill: COR.tintaMuda, fontSize: 10 }} />
+                <YAxis tickLine={false} axisLine={false} tick={{ fill: COR.tintaMuda, fontSize: 10 }}
+                  tickFormatter={(v) => formatMoedaCurta(Number(v))} width={64} />
+                <Tooltip contentStyle={estiloTooltip} cursor={{ fill: 'rgba(11,11,11,0.03)' }}
+                  formatter={(valor, nome) => [formatMoeda(Number(valor)), nome === 'previsto' ? 'Previsto (meta)' : 'Realizado']}
+                  labelFormatter={(l) => `Dia ${l}`} />
+                <Bar dataKey="previsto" name="previsto" fill={COR.serie1} radius={[4, 4, 0, 0]} maxBarSize={18} />
+                <Bar dataKey="realizado" name="realizado" fill={COR.serie2} radius={[4, 4, 0, 0]} maxBarSize={18} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
-        </div>
+        )}
+      </Card>
 
-        <div className="h-64 w-full mt-4">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={dadosBalanco.length > 0 ? dadosBalanco : [{ nome: 'Nenhum dado', saldo: 0 }]} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-              <XAxis dataKey="nome" tickLine={false} axisLine={{ stroke: '#e2e8f0' }} tick={{ fill: '#64748b', fontSize: 10 }} />
-              <YAxis
-                tickLine={false}
-                axisLine={{ stroke: '#e2e8f0' }}
-                tick={{ fill: '#64748b', fontSize: 10 }}
-                tickFormatter={(v) => (v === 0 ? '0' : `${v}`)}
-              />
-              <Tooltip
-                cursor={{ fill: 'transparent' }}
-                contentStyle={{
-                  backgroundColor: '#ffffff',
-                  borderRadius: '12px',
-                  border: '1px solid #e2e8f0',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-                  fontSize: '11px',
-                }}
-                formatter={(val: unknown) => [
-                  `R$ ${Number(val ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-                  Number(val) >= 0 ? 'Lucro/Economia' : 'Prejuízo/Excesso',
-                ]}
-              />
-              <Bar dataKey="saldo" radius={[3, 3, 3, 3]} maxBarSize={32}>
-                {dadosBalanco.map((entry, index) => (
-                  <Cell
-                    key={`cell-balanco-${index}`}
-                    fill={entry.saldo >= 0 ? '#10b981' : '#ef4444'}
-                  />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* 4. Grid de Motivos de Parada e Uso do Motor */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Coluna 1: Principais Motivos de Parada */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-          <div>
-            <h3 className="text-sm font-bold text-slate-900 mb-3">
-              Principais Motivos de Parada (Minutos)
-            </h3>
-
-            {/* Gráfico de Barras Horizontais */}
-            <div className="space-y-2.5 mb-5">
-              {(() => {
-                const maxMinutos = dadosMotivos.length > 0 ? Math.max(...dadosMotivos.map(d => d.minutos)) : 1;
-                return (
-                  <>
-                    {dadosMotivos.map((item, idx) => (
-                      <div key={idx} className="space-y-1">
-                        <div className="flex justify-between text-xs">
-                          <span className="text-slate-600 font-medium">{item.motivo}</span>
-                          <span className="font-bold text-slate-800">{item.minutos} min</span>
-                        </div>
-                        <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
-                          <div
-                            className="h-3 rounded-full transition-all duration-500"
-                            style={{
-                              width: `${Math.min((item.minutos / maxMinutos) * 100, 100)}%`,
-                              backgroundColor: item.cor,
-                            }}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                    {dadosMotivos.length > 0 && (
-                      <div className="flex justify-between text-[9px] text-slate-400 pt-1">
-                        <span>0</span>
-                        <span>{Math.round(maxMinutos / 2)}</span>
-                        <span>{maxMinutos}</span>
-                      </div>
-                    )}
-                    {dadosMotivos.length === 0 && (
-                      <div className="text-center text-slate-400 text-xs py-4">Nenhum dado encontrado no período.</div>
-                    )}
-                  </>
-                );
-              })()}
-            </div>
-          </div>
-        </div>
-
-        {/* Coluna 2: Uso do Motor: Produtivo vs Ocioso */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
-          <div>
-            <h3 className="text-sm font-bold text-slate-900 mb-2">
-              Uso do Motor: Produtivo vs Ocioso
-            </h3>
-
-            <div className="h-52 w-full flex items-center justify-center">
+      {/* Balanço por veículo */}
+      <Card
+        titulo="Balanço por veículo (economia x excesso de custo)"
+        acessorio={<Legenda itens={[{ cor: COR.bom, rotulo: 'Economia (abaixo da meta)' }, { cor: COR.critico, rotulo: 'Excesso (acima da meta)' }]} />}
+      >
+        {balanco.length === 0 ? (
+          <SemDado mensagem="Sem custo diário lançado no período pra calcular o balanço." />
+        ) : (
+          <>
+            <div style={{ height: Math.max(balanco.length * 34 + 40, 180) }} className="w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={dadosUsoMotor.length > 0 ? dadosUsoMotor : [{ name: 'Nenhum', value: 100, color: '#e2e8f0' }]}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={55}
-                    outerRadius={75}
-                    paddingAngle={3}
-                    dataKey="value"
-                  >
-                    {(dadosUsoMotor.length > 0 ? dadosUsoMotor : [{ name: 'Nenhum', value: 100, color: '#e2e8f0' }]).map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
+                <BarChart data={balanco} layout="vertical" margin={{ top: 4, right: 60, left: 8, bottom: 4 }}>
+                  <CartesianGrid horizontal={false} stroke={COR.grid} />
+                  <XAxis type="number" tickLine={false} axisLine={false} tick={{ fill: COR.tintaMuda, fontSize: 10 }}
+                    tickFormatter={(v) => formatMoedaCurta(Number(v))} />
+                  <YAxis type="category" dataKey="rotulo" width={220} tickLine={false} axisLine={false}
+                    tick={{ fill: COR.tintaSecundaria, fontSize: 11 }} />
+                  <ReferenceLine x={0} stroke={COR.eixo} />
+                  <Tooltip contentStyle={estiloTooltip} cursor={{ fill: 'rgba(11,11,11,0.03)' }}
+                    formatter={(valor) => [formatMoeda(Number(valor)), Number(valor) >= 0 ? 'Economia' : 'Excesso de custo']} />
+                  <Bar dataKey="saldo" radius={4} maxBarSize={22}>
+                    {balanco.map((b) => (
+                      <Cell key={b.rotulo} fill={b.saldo >= 0 ? COR.bom : COR.critico} />
                     ))}
-                  </Pie>
-                  <Tooltip formatter={(val) => [`${val}%`, 'Tempo']} />
-                  <Legend
-                    verticalAlign="bottom"
-                    iconType="square"
-                    iconSize={8}
-                    wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }}
-                  />
-                </PieChart>
+                  </Bar>
+                </BarChart>
               </ResponsiveContainer>
             </div>
-          </div>
-        </div>
+            {porEquipamento.length > balanco.length && (
+              <p className="text-[11px] text-slate-400 mt-2">Mostrando os {balanco.length} maiores desvios de {porEquipamento.length} veículos com dado.</p>
+            )}
+          </>
+        )}
+      </Card>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Motivos de parada — agora com o rótulo real (Estado/Operação), não "Outros" */}
+        <Card titulo="Principais motivos de parada e operação">
+          {motivosGrafico.length === 0 ? (
+            <SemDado mensagem="Nenhum registro de estado/operação no período." />
+          ) : (
+            <div className="space-y-3">
+              {(() => {
+                const maximo = Math.max(...motivosGrafico.map((m) => m.minutos));
+                return motivosGrafico.map((m) => (
+                  <div key={m.nome} className="space-y-1">
+                    <div className="flex justify-between items-baseline gap-3 text-xs">
+                      <span className="text-slate-700 font-medium truncate" title={m.nome}>{m.nome}</span>
+                      <span className="font-bold text-slate-900 tabular-nums shrink-0">{formatMinutos(m.minutos)}</span>
+                    </div>
+                    <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                      <div className="h-2.5 rounded-full" style={{ width: `${(m.minutos / maximo) * 100}%`, backgroundColor: COR.serie1 }} />
+                    </div>
+                  </div>
+                ));
+              })()}
+              <p className="text-[11px] text-slate-400 pt-1">
+                Tempo estimado pela frequência das leituras (~5 min), limitado a 60 min por leitura — é aproximação, não cronômetro.
+              </p>
+            </div>
+          )}
+        </Card>
+
+        {/* Motor: produtivo x ocioso — barra 100%, não rosca de 2 fatias */}
+        <Card titulo="Uso do motor: produtivo x ocioso">
+          {minutosLigado === 0 ? (
+            <SemDado mensagem="Sem leitura de motor no período." />
+          ) : (
+            <div className="space-y-5">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Motor produtivo</p>
+                  <p className="text-2xl font-black text-slate-900 mt-1">{formatMinutos(minutosProdutivo)}</p>
+                  <p className="text-[11px] text-slate-500">{(100 - percentualOcioso).toFixed(0)}% do motor ligado</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Motor ocioso</p>
+                  <p className="text-2xl font-black mt-1" style={{ color: COR.atencao }}>{formatMinutos(minutosOcioso)}</p>
+                  <p className="text-[11px] text-slate-500">{percentualOcioso.toFixed(0)}% do motor ligado</p>
+                </div>
+              </div>
+
+              <div>
+                <div className="flex w-full h-4 rounded-full overflow-hidden bg-slate-100 gap-0.5">
+                  <div style={{ width: `${100 - percentualOcioso}%`, backgroundColor: COR.serie1 }} />
+                  <div style={{ width: `${percentualOcioso}%`, backgroundColor: COR.atencao }} />
+                </div>
+                <div className="flex justify-between mt-2">
+                  <Legenda itens={[{ cor: COR.serie1, rotulo: 'Produtivo' }, { cor: COR.atencao, rotulo: 'Ocioso (ligado e parado)' }]} />
+                  <span className="text-[11px] text-slate-400">Motor ligado: {formatMinutos(minutosLigado)}</span>
+                </div>
+              </div>
+
+              <p className="text-[11px] text-slate-400">
+                Baseado em {motor?.diasComDado ?? 0} dia(s) com leitura de motor no período. Km rodado no período: {totalKm.toLocaleString('pt-BR', { maximumFractionDigits: 0 })} km.
+              </p>
+            </div>
+          )}
+        </Card>
       </div>
 
-      {/* 5. Tabela: Gastos por Equipamento */}
-      <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
-        <h3 className="text-sm font-bold text-slate-900 mb-4">Gastos por Equipamento</h3>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead>
-              <tr className="border-b border-slate-200 text-slate-500 font-semibold text-[11px]">
-                <th className="pb-3">Equipamento</th>
-                <th className="pb-3">Combustível</th>
-                <th className="pb-3">Manutenção</th>
-                <th className="pb-3">Custo Total</th>
-                <th className="pb-3 text-emerald-700 font-bold">Custo Operacional</th>
-                <th className="pb-3 text-right">Ação</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {gastos.map((gasto) => {
-                const id = gasto.EquipamentoId || Math.random();
-                const isExpanded = expandGastos[id];
-                return (
-                  <React.Fragment key={id}>
-                    <tr className="hover:bg-slate-50 transition-colors">
-                      <td className="py-3 font-semibold text-slate-800">{gasto.NomeEquipamento || '—'}</td>
-                      <td className="py-3 text-slate-600">{formatMoeda(gasto.CustoCombustivelMes)}</td>
-                      <td className="py-3 text-slate-600">{formatMoeda((gasto.CustoManutencaoMes ?? 0) + (gasto.CustoPneusMes ?? 0))}</td>
-                      <td className="py-3 font-bold text-slate-800">{formatMoeda(gasto.CustoFixoTotalMes)}</td>
-                      <td className="py-3 font-bold text-emerald-700">{formatMoeda(gasto.CustoOperacionalTotalMes ?? gasto.CustoFixoTotalMes)}</td>
-                      <td className="py-3 text-right">
-                        <button
-                          onClick={() => toggleGasto(id)}
-                          className="p-1 rounded-lg hover:bg-slate-200/70 text-slate-500 transition-colors"
-                        >
-                          {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                        </button>
-                      </td>
-                    </tr>
-                    {isExpanded && (
-                      <tr>
-                        <td colSpan={6} className="bg-slate-50/70 p-4 border-y border-slate-100">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
-                            <div className="bg-white p-3 rounded-xl border border-slate-200/60 shadow-2xs space-y-1">
-                              <p className="font-bold text-slate-800 text-[11px] mb-1">
-                                Detalhamento Mensal/Período
-                              </p>
-                              <p className="text-slate-600">• Seguro Proporcional: {formatMoeda(gasto.CustoSeguroMes)}</p>
-                              <p className="text-slate-600">• Pneus: {formatMoeda(gasto.CustoPneusMes)}</p>
-                              <p className="text-slate-600">• Outros Custos: {formatMoeda(gasto.CustoOutrosMes)}</p>
-                            </div>
-                            <div className="bg-white p-3 rounded-xl border border-slate-200/60 shadow-2xs space-y-1">
-                              <p className="font-bold text-slate-800 text-[11px] mb-1">
-                                Dados do Motorista
-                              </p>
-                              <p className="text-slate-600">• Motorista: {gasto.MotoristaNomeFolha ?? gasto.MotoristaNomeFicha ?? 'Nenhum'}</p>
-                              <p className="text-slate-600">• Salário Base: {formatMoeda(gasto.SalarioBase)}</p>
-                              <p className="text-slate-600">• Custo Motorista Rateado: {formatMoeda(gasto.CustoMotoristaMes)}</p>
-                            </div>
-                          </div>
+      {/* Gastos por equipamento — mesmo payload dos KPIs, então os números fecham */}
+      <Card titulo="Gastos por equipamento (no período filtrado)">
+        {porEquipamento.length === 0 ? (
+          <SemDado mensagem="Nenhum equipamento com custo diário lançado no período." />
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-slate-200 text-slate-500 font-semibold text-[11px]">
+                  <th className="pb-3">Equipamento</th>
+                  <th className="pb-3 text-right">Combustível</th>
+                  <th className="pb-3 text-right">Pneus + Manut.</th>
+                  <th className="pb-3 text-right">Logístico</th>
+                  <th className="pb-3 text-right text-green-700">Operacional</th>
+                  <th className="pb-3 text-right">Meta (esperado)</th>
+                  <th className="pb-3 text-right">Saldo</th>
+                  <th className="pb-3" />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {porEquipamento.map((e) => {
+                  const saldo = e.esperado - e.operacional;
+                  const aberto = expandidos[e.EquipamentoId];
+                  return (
+                    <React.Fragment key={e.EquipamentoId}>
+                      <tr className="hover:bg-slate-50">
+                        <td className="py-3">
+                          <p className="font-semibold text-slate-800">{e.nome}</p>
+                          <p className="text-[11px] text-slate-500">{e.codigo} · {e.motorista} · {e.dias} dia(s)</p>
+                        </td>
+                        <td className="py-3 text-right text-slate-600 tabular-nums">{formatMoeda(e.combustivel)}</td>
+                        <td className="py-3 text-right text-slate-600 tabular-nums">{formatMoeda(e.manutencao)}</td>
+                        <td className="py-3 text-right text-slate-600 tabular-nums">{formatMoeda(e.logistico)}</td>
+                        <td className="py-3 text-right font-bold text-green-700 tabular-nums">{formatMoeda(e.operacional)}</td>
+                        <td className="py-3 text-right text-slate-600 tabular-nums">{formatMoeda(e.esperado)}</td>
+                        <td className="py-3 text-right font-bold tabular-nums" style={{ color: saldo >= 0 ? COR.bom : COR.critico }}>
+                          {formatMoeda(saldo)}
+                        </td>
+                        <td className="py-3 text-right">
+                          <button onClick={() => setExpandidos((a) => ({ ...a, [e.EquipamentoId]: !a[e.EquipamentoId] }))}
+                            className="p-1 rounded-lg hover:bg-slate-200/70 text-slate-500">
+                            {aberto ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+                          </button>
                         </td>
                       </tr>
-                    )}
-                  </React.Fragment>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* 6. Seção: Insights da Inteligência Artificial */}
-      <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
-        <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
-          <Sparkles size={16} className="text-amber-500" />
-          Insights da Inteligência Artificial
-        </h3>
-
-        {/* Card 1: Consumo excessivo */}
-        <div className="border border-slate-200/80 rounded-2xl p-4 space-y-3 bg-white">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div className="flex items-start gap-3">
-              <div className="flex items-center gap-1.5 pt-0.5">
-                <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-rose-100 text-rose-700">
-                  ALTA
-                </span>
-                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-100 text-blue-700">
-                  GASTOS
-                </span>
-              </div>
-              <div>
-                <h4 className="text-xs font-bold text-slate-900">
-                  Consumo excessivo de combustível em marcha lenta
-                </h4>
-                <p className="text-[11px] text-slate-500">
-                  O veículo Volkswagen 32.380 apresentou 18h de motor ocioso nos últimos 4 dias.
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => setExpandInsight1(!expandInsight1)}
-              className="p-1 text-slate-400 hover:text-slate-600 self-end sm:self-auto"
-            >
-              {expandInsight1 ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-            </button>
+                      {aberto && (
+                        <tr>
+                          <td colSpan={8} className="bg-slate-50/70 p-4 border-y border-slate-100">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                              <div className="bg-white p-3 rounded-xl border border-slate-200/60 space-y-1">
+                                <p className="font-bold text-slate-800 text-[11px] mb-1">Composição do custo</p>
+                                <p className="text-slate-600">• Combustível: {formatMoeda(e.combustivel)}</p>
+                                <p className="text-slate-600">• Pneus + manutenção: {formatMoeda(e.manutencao)}</p>
+                                <p className="text-slate-600">• Outros: {formatMoeda(e.outros)}</p>
+                                <p className="text-slate-600">• Motorista rateado: {formatMoeda(e.motoristaRateado)}</p>
+                              </div>
+                              <div className="bg-white p-3 rounded-xl border border-slate-200/60 space-y-1">
+                                <p className="font-bold text-slate-800 text-[11px] mb-1">Operação no período</p>
+                                <p className="text-slate-600">• Km rodado: {e.km.toLocaleString('pt-BR', { maximumFractionDigits: 0 })} km</p>
+                                <p className="text-slate-600">• Dias com dado: {e.dias}</p>
+                                <p className="text-slate-600">• CPK realizado: {e.km > 0 ? formatMoeda(e.operacional / e.km) : '—'}/km</p>
+                              </div>
+                              <div className="bg-white p-3 rounded-xl border border-slate-200/60 space-y-1">
+                                <p className="font-bold text-slate-800 text-[11px] mb-1">Meta x realizado</p>
+                                <p className="text-slate-600">• Custo esperado: {formatMoeda(e.esperado)}</p>
+                                <p className="text-slate-600">• Custo real: {formatMoeda(e.operacional)}</p>
+                                <p className="font-bold" style={{ color: saldo >= 0 ? COR.bom : COR.critico }}>
+                                  • {saldo >= 0 ? 'Economia' : 'Excesso'}: {formatMoeda(Math.abs(saldo))}
+                                </p>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
+        )}
+      </Card>
 
-          {expandInsight1 && (
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs text-slate-700 space-y-1">
-              <p className="font-bold text-slate-900 text-[11px]">Diagnóstico Detalhado & Ação Recomendada:</p>
-              <p className="text-slate-600 leading-relaxed">
-                Identificado padrão de ar-condicionado ligado durante intervalos de transbordo no Talhão 2 pelo motorista Tiago. Recomendação: Orientar o motorista ou redefinir a rota de suporte para reduzir o tempo de espera no ponto de descarga.
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Card 2: Desvio de pressão */}
-        <div className="border border-slate-200/80 rounded-2xl p-4 space-y-3 bg-white">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-            <div className="flex items-start gap-3">
-              <div className="flex items-center gap-1.5 pt-0.5">
-                <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-amber-100 text-amber-800">
-                  MÉDIA
-                </span>
-                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-sky-100 text-sky-800">
-                  ALARMES
-                </span>
+      {/* Insights reais da tabela InsightIA (os cards de exemplo hardcoded saíram) */}
+      <Card titulo="Insights da IA (gerados sobre o dado real)" acessorio={
+        <span className="text-[11px] text-slate-400">Gere novos na aba Insights (IA)</span>
+      }>
+        {insights.length === 0 ? (
+          <SemDado mensagem="Nenhum insight em aberto. Gere na aba Insights (IA)." />
+        ) : (
+          <div className="space-y-3">
+            {insights.map((i) => (
+              <div key={i.InsightId} className="border border-slate-200/80 rounded-2xl p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <div className="flex items-center gap-1.5 pt-0.5 shrink-0">
+                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-extrabold uppercase ${severidadeBadge[i.Severidade] ?? severidadeBadge.baixa}`}>
+                        {i.Severidade}
+                      </span>
+                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-600 uppercase">{i.Categoria}</span>
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                        <Sparkles size={12} className="text-amber-500 shrink-0" /> {i.Titulo}
+                      </h4>
+                      {i.EntidadeReferencia && <p className="text-[11px] text-slate-500 mt-0.5">{i.EntidadeReferencia}</p>}
+                    </div>
+                  </div>
+                  <button onClick={() => setInsightAberto(insightAberto === i.InsightId ? null : i.InsightId)}
+                    className="p-1 text-slate-400 hover:text-slate-600 shrink-0">
+                    {insightAberto === i.InsightId ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+                  </button>
+                </div>
+                {insightAberto === i.InsightId && (
+                  <p className="mt-3 p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs text-slate-700 leading-relaxed">
+                    {i.Descricao}
+                  </p>
+                )}
               </div>
-              <div>
-                <h4 className="text-xs font-bold text-slate-900">
-                  Desvio de pressão de pneus detectado
-                </h4>
-                <p className="text-[11px] text-slate-500">
-                  O veículo Volvo FMX 500 rodou 34km com o pneu traseiro esquerdo 15% abaixo da calibragem ideal.
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => setExpandInsight2(!expandInsight2)}
-              className="p-1 text-slate-400 hover:text-slate-600 self-end sm:self-auto"
-            >
-              {expandInsight2 ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-            </button>
+            ))}
           </div>
-
-          {expandInsight2 && (
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs text-slate-700 space-y-1">
-              <p className="font-bold text-slate-900 text-[11px]">Diagnóstico Detalhado & Ação Recomendada:</p>
-              <p className="text-slate-600 leading-relaxed">
-                Risco de desgaste prematuro da banda de rodagem ou sobreaquecimento do pneu. Recomendado agendar checagem do sensor de pressão/válvula na próxima parada da borracharia interna.
-              </p>
-            </div>
-          )}
-        </div>
-      </div>
+        )}
+      </Card>
     </div>
   );
 };
