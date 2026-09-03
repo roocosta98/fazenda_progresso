@@ -264,7 +264,8 @@ export const PainelMetasDiario: React.FC = () => {
   const diasDentro = dadosGraficoDiario.filter(d => d.status === 'dentro').length;
   const porcentagemDentro = diasTotal > 0 ? ((diasDentro / diasTotal) * 100).toFixed(1) : '0.0';
 
-  const formatMoeda = (valor: number) => valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+  const formatMoeda = (valor: number | null | undefined) =>
+    valor === null || valor === undefined ? '—' : valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
   return (
     <div className="space-y-5 pb-12 font-sans text-slate-800">
