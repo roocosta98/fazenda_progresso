@@ -1,6 +1,6 @@
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { List, Clock, LayoutDashboard, Truck, Map as MapIcon, Leaf, MonitorPlay, BarChart3, Trophy, CircleDollarSign, ClipboardCheck } from 'lucide-react';
+import { List, Clock, LayoutDashboard, Truck, Map as MapIcon, Leaf, MonitorPlay, BarChart3, Trophy, CircleDollarSign, ClipboardCheck, Sparkles } from 'lucide-react';
 
 export const Sidebar = () => {
   const { usuario } = useAuth();
@@ -19,6 +19,7 @@ export const Sidebar = () => {
         { to: '/logistica/metas', icon: <Trophy size={20} />, label: 'Metas & Ranking' },
         { to: '/logistica/gastos', icon: <CircleDollarSign size={20} />, label: 'Gastos & Custos' },
         { to: '/logistica/avaliacao-conducao', icon: <ClipboardCheck size={20} />, label: 'Avaliação de Condução' },
+        { to: '/logistica/insights', icon: <Sparkles size={20} />, label: 'Insights (IA)' },
         { to: '/logistica/monitoramento', icon: <MapIcon size={20} />, label: 'Telemetria & Mapa' },
         { to: '/logistica/monitor-tv', icon: <MonitorPlay size={20} />, label: 'Monitor TV' },
       ];
