@@ -32,7 +32,7 @@ import { DashboardDriveAval } from './DashboardDriveAval';
 
 // Dashboard unificado: junta Dashboard DriveAval (Avaliação & Desenvolvimento de Condutores) +
 // Visão geral de solicitações + Metas/Diário + Dashboard Executivo + Gastos&Custos + Insights IA numa tela só.
-type Aba = 'driveaval' | 'visao-geral' | 'metas' | 'gastos' | 'insights';
+type Aba = 'metas' | 'driveaval' | 'visao-geral' | 'gastos' | 'insights';
 
 interface KpiExecutivo {
   tendenciaMensal: { CustoOperacionalTotalMes: number }[];
@@ -46,7 +46,7 @@ const formatMoeda = (valor: number | null | undefined) =>
 export const Dashboard = () => {
   const { solicitacoes, projetos, veiculos } = useAppContext();
 
-  const [aba, setAba] = useState<Aba>('driveaval');
+  const [aba, setAba] = useState<Aba>('metas');
   const [kpi, setKpi] = useState<KpiExecutivo | null>(null);
 
   const [visao, setVisao] = useState<'hoje' | 'semana'>('hoje');
@@ -113,9 +113,9 @@ export const Dashboard = () => {
   };
 
   const abas: { id: Aba; label: string; icon: React.ReactNode }[] = [
-    { id: 'driveaval', label: 'DriveAval (Performance)', icon: <Award size={15} /> },
+    { id: 'metas', label: 'Painel Operacional (Metas & Diário)', icon: <Trophy size={15} /> },
+    { id: 'driveaval', label: 'DriveAval (Condutores)', icon: <Award size={15} /> },
     { id: 'visao-geral', label: 'Solicitações & Frota', icon: <LayoutGrid size={15} /> },
-    { id: 'metas', label: 'Metas & Progresso', icon: <Trophy size={15} /> },
     { id: 'gastos', label: 'Gastos & Custos', icon: <CircleDollarSign size={15} /> },
     { id: 'insights', label: 'Insights (IA)', icon: <Sparkles size={15} /> },
   ];
@@ -128,7 +128,7 @@ export const Dashboard = () => {
             key={a.id}
             onClick={() => setAba(a.id)}
             className={`flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl transition-all ${
-              aba === a.id ? 'bg-white text-blue-600 shadow-xs' : 'text-slate-500 hover:text-slate-800'
+              aba === a.id ? 'bg-white text-emerald-700 shadow-xs' : 'text-slate-500 hover:text-slate-800'
             }`}
           >
             {a.icon} {a.label}

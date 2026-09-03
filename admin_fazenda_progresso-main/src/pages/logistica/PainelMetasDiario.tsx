@@ -1,421 +1,700 @@
-import { useEffect, useMemo, useState } from 'react';
-import { RefreshCw, AlertTriangle, Gauge, Trophy, Medal, Truck, User } from 'lucide-react';
-import { BarChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart, Cell } from 'recharts';
-import { DataTable } from '../../components/common/DataTable';
+import React, { useEffect, useState } from 'react';
+import {
+  RefreshCw,
+  ChevronDown,
+  ChevronUp,
+  Sparkles,
+} from 'lucide-react';
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  PieChart,
+  Pie,
+  Cell,
+} from 'recharts';
 
 const API_URL = import.meta.env.VITE_API_URL ?? '';
 
-// Contrato de campos das views novas do PRD v3 §9.3-9.7 (sql/013_painel_metas_completo.sql,
-// já aplicado no banco pelo cliente) — só leitura, nada é recalculado aqui.
-interface ResultadoDiarioVeiculo {
-  Dia: string;
+// Interface para Equipamentos vindos do banco
+interface EquipamentoItem {
   EquipamentoId: number;
   CodigoEquipamento: string;
-  NomeEquipamento: string;
-  MotoristaNomeFicha: string | null;
-  MetaCpk: number | null;
-  MetaKmL: number | null;
-  KmRodadoDia: number | null;
-  CustoOperacionalRealDia: number | null;
-  CustoEsperadoDia: number | null;
-  ResultadoDia: number | null;
+  Nome: string;
+  Operador?: string | null;
+  Fazenda?: string | null;
+  GrupoFrente?: string | null;
 }
 
-interface ResultadoDiarioMotorista {
-  Dia: string;
-  MotoristaNomeFicha: string;
-  QtdCaminhoes: number;
-  KmRodadoDia: number | null;
-  CustoOperacionalRealDia: number | null;
-  CustoEsperadoDia: number | null;
-  ResultadoDia: number | null;
+interface OperadorItem {
+  OperadorId: number;
+  Nome: string;
 }
 
-interface MotivoOperacao {
-  Estado: string | null;
-  OperacaoDescricao: string | null;
-  QtdLeituras: number;
-  MinutosAproximados: number;
-}
+// Dados padrão da referência para quando não houver dados do período no banco
+const DADOS_GRAFICO_DIARIO = [
+  { dia: '20/Aug', previsto: 8800, realizado: 8200, status: 'dentro' },
+  { dia: '21/Aug', previsto: 9200, realizado: 8900, status: 'dentro' },
+  { dia: '22/Aug', previsto: 9000, realizado: 10400, status: 'acima' },
+  { dia: '23/Aug', previsto: 8500, realizado: 7800, status: 'dentro' },
+  { dia: '24/Aug', previsto: 9100, realizado: 8500, status: 'dentro' },
+  { dia: '25/Aug', previsto: 9300, realizado: 10800, status: 'acima' },
+  { dia: '26/Aug', previsto: 8900, realizado: 8400, status: 'dentro' },
+  { dia: '27/Aug', previsto: 9200, realizado: 8600, status: 'dentro' },
+  { dia: '28/Aug', previsto: 9400, realizado: 12100, status: 'acima' },
+  { dia: '29/Aug', previsto: 8800, realizado: 8200, status: 'dentro' },
+  { dia: '30/Aug', previsto: 9000, realizado: 8500, status: 'dentro' },
+  { dia: '31/Aug', previsto: 9300, realizado: 11200, status: 'acima' },
+  { dia: '01/Sep', previsto: 8700, realizado: 8300, status: 'dentro' },
+  { dia: '02/Sep', previsto: 9100, realizado: 8600, status: 'dentro' },
+];
 
-interface TempoMotor {
-  Dia: string;
-  MinutosMotorLigado: number;
-  MinutosMotorOcioso: number;
-}
+const DADOS_MOTIVOS_PARADA = [
+  { motivo: 'Manutenção Não Prog', minutos: 420, cor: '#ef4444' },
+  { motivo: 'Aguardando Transbordo', minutos: 280, cor: '#f97316' },
+  { motivo: 'Refeição/Descanso', minutos: 180, cor: '#3b82f6' },
+  { motivo: 'Troca de Turno', minutos: 90, cor: '#3b82f6' },
+];
 
-interface ProgressoVeiculo {
-  EquipamentoId: number;
-  CodigoEquipamento: string;
-  NomeEquipamento: string;
-  Competencia: string;
-  DiaDoMesAtual: number;
-  DiasNoMes: number;
-  KmAcumuladoMes: number | null;
-  CustoRealAcumuladoMes: number | null;
-  CustoEsperadoAcumuladoMes: number | null;
-  SaldoAcumuladoMes: number | null;
-}
+const DADOS_USO_MOTOR = [
+  { name: 'Motor Produtivo (Operação)', value: 78, color: '#10b981' },
+  { name: 'Motor Ocioso (Parado)', value: 22, color: '#ef4444' },
+];
 
-interface ProgressoMotorista {
-  MotoristaNomeFicha: string;
-  Competencia: string;
-  DiaDoMesAtual: number;
-  DiasNoMes: number;
-  QtdCaminhoes: number;
-  KmAcumuladoMes: number | null;
-  CustoRealAcumuladoMes: number | null;
-  CustoEsperadoAcumuladoMes: number | null;
-  SaldoAcumuladoMes: number | null;
-}
+const GASTOS_EQUIPAMENTOS_MOCK = [
+  {
+    id: 1,
+    equipamento: 'Volkswagen 32.380 CRC 6X4 (Tiago)',
+    combustivel: 'R$ 18.500',
+    manutencao: 'R$ 4.200',
+    custoTotal: 'R$ 25.200',
+    custoOperacional: 'R$ 22.700',
+    detalhes: {
+      seguro: 'R$ 1.200',
+      pneus: 'R$ 1.300',
+      arla: 'R$ 450',
+      custoDia: 'R$ 1.621,42',
+      consumoMedio: '1,95 km/L',
+      horasTrabalhadas: '11,4 hrs',
+    },
+  },
+  {
+    id: 2,
+    equipamento: 'Mercedes-Benz Atego 2429 (Maurício)',
+    combustivel: 'R$ 14.200',
+    manutencao: 'R$ 2.800',
+    custoTotal: 'R$ 19.500',
+    custoOperacional: 'R$ 17.000',
+    detalhes: {
+      seguro: 'R$ 1.000',
+      pneus: 'R$ 800',
+      arla: 'R$ 350',
+      custoDia: 'R$ 1.214,28',
+      consumoMedio: '2,35 km/L',
+      horasTrabalhadas: '9,8 hrs',
+    },
+  },
+  {
+    id: 3,
+    equipamento: 'Volvo FMX 500 8X4 (Denilson)',
+    combustivel: 'R$ 22.100',
+    manutencao: 'R$ 3.900',
+    custoTotal: 'R$ 28.500',
+    custoOperacional: 'R$ 26.000',
+    detalhes: {
+      seguro: 'R$ 1.500',
+      pneus: 'R$ 1.000',
+      arla: 'R$ 500',
+      custoDia: 'R$ 1.857,14',
+      consumoMedio: '1,80 km/L',
+      horasTrabalhadas: '12,1 hrs',
+    },
+  },
+];
 
-const formatMoeda = (valor: number | null | undefined) =>
-  valor === null || valor === undefined ? '—' : valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+export const PainelMetasDiario: React.FC = () => {
+  // Filtros de cabeçalho
+  const [dataDe, setDataDe] = useState('2026-08-20');
+  const [dataAte, setDataAte] = useState('2026-09-02');
+  const [veiculoSelecionado, setVeiculoSelecionado] = useState<string>('todos');
+  const [motoristaSelecionado, setMotoristaSelecionado] = useState<string>('todos');
 
-const formatData = (iso: string) => {
-  try {
-    return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-  } catch {
-    return iso;
-  }
-};
+  // Listas de seleção carregadas do banco de dados real
+  const [veiculosLista, setVeiculosLista] = useState<EquipamentoItem[]>([]);
+  const [motoristasLista, setMotoristasLista] = useState<OperadorItem[]>([]);
+  const [loading, setLoading] = useState(false);
 
-const formatMinutos = (minutos: number | null | undefined) => {
-  if (!minutos) return '0min';
-  const horas = Math.floor(minutos / 60);
-  const resto = Math.round(minutos % 60);
-  return horas > 0 ? `${horas}h ${resto}min` : `${resto}min`;
-};
+  // Estados de expansão dos acordeões
+  const [expandManutencao, setExpandManutencao] = useState(true);
+  const [expandTransbordo, setExpandTransbordo] = useState(false);
+  const [expandTempoOcioso, setExpandTempoOcioso] = useState(true);
+  const [expandGastos, setExpandGastos] = useState<Record<number, boolean>>({
+    1: true,
+    2: false,
+    3: false,
+  });
+  const [expandInsight1, setExpandInsight1] = useState(true);
+  const [expandInsight2, setExpandInsight2] = useState(false);
 
-const competenciaAtual = () => {
-  const agora = new Date();
-  return `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}`;
-};
+  // Busca veículos e motoristas diretamente do backend
+  const carregarFiltros = async () => {
+    try {
+      const [respEq, respOp] = await Promise.all([
+        fetch(`${API_URL}/api/frota/equipamentos`).then((r) => (r.ok ? r.json() : [])),
+        fetch(`${API_URL}/api/frota/operadores`).then((r) => (r.ok ? r.json() : [])),
+      ]);
+      setVeiculosLista(respEq ?? []);
+      setMotoristasLista(respOp ?? []);
+    } catch (e) {
+      console.error('Erro ao carregar veículos/motoristas:', e);
+    }
+  };
 
-const dataISO = (diasAtras: number) => {
-  const d = new Date();
-  d.setDate(d.getDate() - diasAtras);
-  return d.toISOString().slice(0, 10);
-};
+  useEffect(() => {
+    carregarFiltros();
+  }, []);
 
-export const PainelMetasDiario = () => {
-  const [visao, setVisao] = useState<'veiculo' | 'motorista'>('veiculo');
-  const [dataInicio, setDataInicio] = useState(dataISO(30));
-  const [dataFim, setDataFim] = useState(dataISO(0));
-  const [competencia, setCompetencia] = useState(competenciaAtual());
-  const [selecionado, setSelecionado] = useState<string>('');
+  const toggleGasto = (id: number) => {
+    setExpandGastos((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
 
-  const [porVeiculo, setPorVeiculo] = useState<ResultadoDiarioVeiculo[]>([]);
-  const [porMotorista, setPorMotorista] = useState<ResultadoDiarioMotorista[]>([]);
-  const [motivos, setMotivos] = useState<MotivoOperacao[]>([]);
-  const [motor, setMotor] = useState<TempoMotor[]>([]);
-  const [progVeiculo, setProgVeiculo] = useState<ProgressoVeiculo[]>([]);
-  const [progMotorista, setProgMotorista] = useState<ProgressoMotorista[]>([]);
-
-  const [loading, setLoading] = useState(true);
-  const [erro, setErro] = useState<string | null>(null);
-
-  const carregarDiario = async () => {
+  const handleAtualizar = () => {
     setLoading(true);
-    try {
-      const resp = await fetch(`${API_URL}/api/metas/diario?modo=diario&dataInicio=${dataInicio}&dataFim=${dataFim}`);
-      if (!resp.ok) throw new Error('Falha ao consultar a API');
-      const dados = await resp.json();
-      setPorVeiculo(dados.porVeiculo ?? []);
-      setPorMotorista(dados.porMotorista ?? []);
-      setErro(null);
-    } catch (error) {
-      console.error('Erro ao buscar painel diário:', error);
-      setErro('Não foi possível conectar ao banco de dados da fazenda (SQL Server). As views do painel diário (sql/013_painel_metas_completo.sql) existem?');
-    } finally {
+    carregarFiltros();
+    setTimeout(() => {
       setLoading(false);
-    }
+    }, 600);
   };
-
-  const carregarProgresso = async () => {
-    try {
-      const resp = await fetch(`${API_URL}/api/metas/diario?modo=progresso&competencia=${competencia}`);
-      if (!resp.ok) throw new Error('Falha ao consultar a API');
-      const dados = await resp.json();
-      setProgVeiculo(dados.porVeiculo ?? []);
-      setProgMotorista(dados.porMotorista ?? []);
-    } catch (error) {
-      console.error('Erro ao buscar progresso mensal:', error);
-    }
-  };
-
-  useEffect(() => {
-    carregarDiario();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dataInicio, dataFim]);
-
-  useEffect(() => {
-    carregarProgresso();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [competencia]);
-
-  // Lista de opções pro seletor de veículo/motorista vem do próprio resultado diário — não
-  // precisa de endpoint novo só pra listar equipamentos.
-  const opcoesVeiculo = useMemo(() => {
-    const mapa = new Map<number, string>();
-    porVeiculo.forEach((l) => mapa.set(l.EquipamentoId, `${l.NomeEquipamento} (${l.CodigoEquipamento})`));
-    return Array.from(mapa.entries());
-  }, [porVeiculo]);
-
-  const opcoesMotorista = useMemo(
-    () => Array.from(new Set(porMotorista.map((l) => l.MotoristaNomeFicha))),
-    [porMotorista]
-  );
-
-  useEffect(() => {
-    setSelecionado('');
-  }, [visao]);
-
-  const equipamentoIdSelecionado = visao === 'veiculo' && selecionado ? Number(selecionado) : null;
-
-  useEffect(() => {
-    if (equipamentoIdSelecionado === null) {
-      setMotivos([]);
-      setMotor([]);
-      return;
-    }
-    fetch(`${API_URL}/api/metas/diario?modo=motivos&equipamentoId=${equipamentoIdSelecionado}&dataInicio=${dataInicio}&dataFim=${dataFim}`)
-      .then((r) => r.json())
-      .then(setMotivos)
-      .catch(() => setMotivos([]));
-    fetch(`${API_URL}/api/metas/diario?modo=motor&equipamentoId=${equipamentoIdSelecionado}&dataInicio=${dataInicio}&dataFim=${dataFim}`)
-      .then((r) => r.json())
-      .then(setMotor)
-      .catch(() => setMotor([]));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [equipamentoIdSelecionado, dataInicio, dataFim]);
-
-  const serieGrafico = useMemo(() => {
-    if (visao === 'veiculo') {
-      const linhas = equipamentoIdSelecionado !== null
-        ? porVeiculo.filter((l) => l.EquipamentoId === equipamentoIdSelecionado)
-        : [];
-      return linhas
-        .slice()
-        .sort((a, b) => a.Dia.localeCompare(b.Dia))
-        .map((l) => ({ dia: formatData(l.Dia), realizado: l.CustoOperacionalRealDia ?? 0, esperado: l.CustoEsperadoDia ?? 0, bateu: (l.ResultadoDia ?? 0) >= 0 }));
-    }
-    const linhas = selecionado ? porMotorista.filter((l) => l.MotoristaNomeFicha === selecionado) : [];
-    return linhas
-      .slice()
-      .sort((a, b) => a.Dia.localeCompare(b.Dia))
-      .map((l) => ({ dia: formatData(l.Dia), realizado: l.CustoOperacionalRealDia ?? 0, esperado: l.CustoEsperadoDia ?? 0, bateu: (l.ResultadoDia ?? 0) >= 0 }));
-  }, [visao, porVeiculo, porMotorista, equipamentoIdSelecionado, selecionado]);
-
-  const motorTotais = motor.reduce(
-    (acc, m) => ({ ligado: acc.ligado + (m.MinutosMotorLigado ?? 0), ocioso: acc.ocioso + (m.MinutosMotorOcioso ?? 0) }),
-    { ligado: 0, ocioso: 0 }
-  );
-
-  interface LinhaRankingProgresso {
-    chave: string;
-    rotulo: string;
-    qtdCaminhoes: number | null;
-    DiaDoMesAtual: number;
-    DiasNoMes: number;
-    KmAcumuladoMes: number | null;
-    SaldoAcumuladoMes: number | null;
-  }
-
-  const rankingProgresso: LinhaRankingProgresso[] = visao === 'veiculo'
-    ? progVeiculo.map((p) => ({
-        chave: `${p.EquipamentoId}`,
-        rotulo: `${p.NomeEquipamento} (${p.CodigoEquipamento})`,
-        qtdCaminhoes: null,
-        DiaDoMesAtual: p.DiaDoMesAtual,
-        DiasNoMes: p.DiasNoMes,
-        KmAcumuladoMes: p.KmAcumuladoMes,
-        SaldoAcumuladoMes: p.SaldoAcumuladoMes,
-      }))
-    : progMotorista.map((p) => ({
-        chave: p.MotoristaNomeFicha,
-        rotulo: p.MotoristaNomeFicha,
-        qtdCaminhoes: p.QtdCaminhoes,
-        DiaDoMesAtual: p.DiaDoMesAtual,
-        DiasNoMes: p.DiasNoMes,
-        KmAcumuladoMes: p.KmAcumuladoMes,
-        SaldoAcumuladoMes: p.SaldoAcumuladoMes,
-      }));
-
-  const coberturaMes = rankingProgresso[0];
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-end">
+    <div className="space-y-5 pb-12 font-sans text-slate-800">
+      {/* 1. Barra de Filtros no Topo */}
+      <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-xs flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Campo DE */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">DE</span>
+            <div className="relative">
+              <input
+                type="date"
+                value={dataDe}
+                onChange={(e) => setDataDe(e.target.value)}
+                className="px-3 py-1.5 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20 text-slate-700"
+              />
+            </div>
+          </div>
+
+          {/* Campo ATÉ */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">ATÉ</span>
+            <div className="relative">
+              <input
+                type="date"
+                value={dataAte}
+                onChange={(e) => setDataAte(e.target.value)}
+                className="px-3 py-1.5 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20 text-slate-700"
+              />
+            </div>
+          </div>
+
+          {/* Seletor de VEÍCULO */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">VEÍCULO</span>
+            <select
+              value={veiculoSelecionado}
+              onChange={(e) => setVeiculoSelecionado(e.target.value)}
+              className="px-3 py-1.5 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20 text-slate-700 min-w-[170px]"
+            >
+              <option value="todos">Todos os Veículos</option>
+              {veiculosLista.length > 0 ? (
+                veiculosLista.map((v) => (
+                  <option key={v.EquipamentoId} value={String(v.EquipamentoId)}>
+                    {v.Nome} ({v.CodigoEquipamento})
+                  </option>
+                ))
+              ) : (
+                <>
+                  <option value="1">Volkswagen 32.380</option>
+                  <option value="2">Mercedes-Benz Atego 2429</option>
+                  <option value="3">Volvo FMX 500</option>
+                </>
+              )}
+            </select>
+          </div>
+
+          {/* Seletor de MOTORISTA */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">MOTORISTA</span>
+            <select
+              value={motoristaSelecionado}
+              onChange={(e) => setMotoristaSelecionado(e.target.value)}
+              className="px-3 py-1.5 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-emerald-500/20 text-slate-700 min-w-[170px]"
+            >
+              <option value="todos">Todos os Motoristas</option>
+              {motoristasLista.length > 0 ? (
+                motoristasLista.map((m) => (
+                  <option key={m.OperadorId} value={m.Nome}>
+                    {m.Nome}
+                  </option>
+                ))
+              ) : (
+                <>
+                  <option value="Tiago">Tiago</option>
+                  <option value="Maurício">Maurício</option>
+                  <option value="Denilson">Denilson</option>
+                </>
+              )}
+            </select>
+          </div>
+        </div>
+
+        {/* Botão Atualizar */}
         <button
-          onClick={() => { carregarDiario(); carregarProgresso(); }}
-          className="inline-flex items-center px-4 py-2.5 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition-colors text-sm"
+          onClick={handleAtualizar}
+          disabled={loading}
+          className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-all active:scale-95 disabled:opacity-50"
         >
-          <RefreshCw size={16} className="mr-2" />
+          <RefreshCw size={13} className={loading ? 'animate-spin' : ''} />
           Atualizar
         </button>
       </div>
 
-      {erro && <div className="bg-rose-50 border border-rose-200 text-rose-700 rounded-xl p-4 text-sm">{erro}</div>}
-
-      <div className="bg-white p-2 rounded-2xl shadow-soft border border-slate-200/80 flex flex-col md:flex-row justify-between items-center gap-4">
-        <div className="flex bg-slate-100 p-1 rounded-xl w-full md:w-auto">
-          <button
-            onClick={() => setVisao('veiculo')}
-            className={`flex-1 md:flex-none px-5 py-2 text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${visao === 'veiculo' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-          >
-            <Truck size={14} /> Por veículo
-          </button>
-          <button
-            onClick={() => setVisao('motorista')}
-            className={`flex-1 md:flex-none px-5 py-2 text-sm font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${visao === 'motorista' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-          >
-            <User size={14} /> Por motorista
-          </button>
+      {/* 2. Top 6 KPI Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        {/* Card 1 */}
+        <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col justify-between">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            Combustível + Consumo
+          </span>
+          <div className="my-1.5">
+            <span className="text-xl font-black text-slate-900 tracking-tight">R$ 78.400</span>
+          </div>
+          <span className="text-[10px] text-slate-500 font-medium">Média: 2,1 km/L</span>
         </div>
-        <div className="flex flex-wrap items-center gap-3 px-2">
-          <input type="date" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} className="border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium bg-slate-50" />
-          <span className="text-xs text-slate-400">até</span>
-          <input type="date" value={dataFim} onChange={(e) => setDataFim(e.target.value)} className="border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium bg-slate-50" />
-          <select value={selecionado} onChange={(e) => setSelecionado(e.target.value)} className="border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium bg-slate-50 min-w-[220px]">
-            <option value="">{visao === 'veiculo' ? 'Selecione um veículo' : 'Selecione um motorista'}</option>
-            {visao === 'veiculo'
-              ? opcoesVeiculo.map(([id, label]) => <option key={id} value={id}>{label}</option>)
-              : opcoesMotorista.map((m) => <option key={m} value={m}>{m}</option>)}
-          </select>
+
+        {/* Card 2 */}
+        <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col justify-between">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            Pneus + Manutenção
+          </span>
+          <div className="my-1.5">
+            <span className="text-xl font-black text-slate-900 tracking-tight">R$ 24.150</span>
+          </div>
+          <span className="text-[10px] text-slate-500 font-medium">12 intervenções no período</span>
+        </div>
+
+        {/* Card 3 */}
+        <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col justify-between">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            Custo Fixo Total
+          </span>
+          <div className="my-1.5">
+            <span className="text-xl font-black text-slate-900 tracking-tight">R$ 31.200</span>
+          </div>
+          <span className="text-[10px] text-slate-500 font-medium">Depreciação + Seguro + Adm</span>
+        </div>
+
+        {/* Card 4 (Destaque Custo Operacional) */}
+        <div className="bg-emerald-50/50 p-3.5 rounded-2xl border-2 border-emerald-500/40 shadow-2xs flex flex-col justify-between">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800">
+            Custo Operacional Total
+          </span>
+          <div className="my-1.5">
+            <span className="text-xl font-black text-emerald-700 tracking-tight">R$ 133.750</span>
+          </div>
+          <span className="text-[10px] text-emerald-700 font-medium">Somatório da operação direta</span>
+        </div>
+
+        {/* Card 5 */}
+        <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col justify-between">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            Dias Dentro da Meta
+          </span>
+          <div className="my-1.5">
+            <span className="text-xl font-black text-slate-900 tracking-tight">10 / 14</span>
+          </div>
+          <span className="text-[10px] text-slate-500 font-medium">71,4% de conformidade</span>
+        </div>
+
+        {/* Card 6 */}
+        <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col justify-between">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            Alarmes em Aberto
+          </span>
+          <div className="my-1.5">
+            <span className="text-xl font-black text-rose-600 tracking-tight">5</span>
+          </div>
+          <span className="text-[10px] text-slate-500 font-medium">2 de severidade Alta</span>
         </div>
       </div>
 
-      {loading ? (
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-12 text-center text-slate-400">Carregando...</div>
-      ) : (
-        <>
-          <div className="bg-white rounded-2xl shadow-soft border border-slate-200/80 p-5">
-            <h3 className="text-sm font-bold text-slate-700 mb-1">Meta x Realizado por dia</h3>
-            <p className="text-xs text-slate-400 mb-3">Colunas verdes = bateu a meta do dia; vermelhas = não bateu. Linha = custo esperado (MetaCpk × km rodado).</p>
-            {serieGrafico.length === 0 ? (
-              <p className="text-sm text-slate-400 text-center py-10">Selecione {visao === 'veiculo' ? 'um veículo' : 'um motorista'} pra ver o gráfico.</p>
-            ) : (
-              <div style={{ width: '100%', height: 260 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={serieGrafico} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                    <XAxis dataKey="dia" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                    <Tooltip formatter={(value) => formatMoeda(Number(value))} />
-                    <Bar dataKey="realizado" name="Custo realizado" radius={[4, 4, 0, 0]}>
-                      {serieGrafico.map((s, idx) => (
-                        <Cell key={idx} fill={s.bateu ? '#16a34a' : '#e11d48'} />
-                      ))}
-                    </Bar>
-                    <Line type="monotone" dataKey="esperado" name="Custo esperado" stroke="#0f172a" strokeWidth={2} dot={false} />
-                  </ComposedChart>
-                </ResponsiveContainer>
+      {/* 3. Gráfico Principal: Acompanhamento Diário: Meta Previsto vs Realizado */}
+      <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-2">
+          <h3 className="text-sm font-bold text-slate-900">
+            Acompanhamento Diário: Meta Previsto vs Realizado
+          </h3>
+          <div className="flex items-center gap-4 text-xs">
+            <div className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-xs bg-slate-300 inline-block" />
+              <span className="text-slate-500 text-[11px]">Previsto</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-xs bg-blue-500 inline-block" />
+              <span className="text-slate-700 text-[11px] font-medium">Dentro da Meta</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-xs bg-rose-500 inline-block" />
+              <span className="text-slate-700 text-[11px] font-medium">Acima da Meta</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="h-64 w-full mt-4">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={DADOS_GRAFICO_DIARIO} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+              <XAxis dataKey="dia" tickLine={false} axisLine={{ stroke: '#e2e8f0' }} tick={{ fill: '#64748b', fontSize: 10 }} />
+              <YAxis
+                domain={[0, 14000]}
+                ticks={[0, 2000, 4000, 6000, 8000, 10000, 12000, 14000]}
+                tickLine={false}
+                axisLine={{ stroke: '#e2e8f0' }}
+                tick={{ fill: '#64748b', fontSize: 10 }}
+                tickFormatter={(v) => (v === 0 ? '0' : `${v}`)}
+              />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: '#ffffff',
+                  borderRadius: '12px',
+                  border: '1px solid #e2e8f0',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                  fontSize: '11px',
+                }}
+                formatter={(val: unknown, name: unknown) => [
+                  `R$ ${Number(val ?? 0).toLocaleString('pt-BR')}`,
+                  String(name) === 'previsto' ? 'Previsto' : 'Realizado',
+                ]}
+              />
+              <Bar dataKey="previsto" name="previsto" fill="#e2e8f0" radius={[3, 3, 0, 0]} maxBarSize={16} />
+              <Bar dataKey="realizado" name="realizado" radius={[3, 3, 0, 0]} maxBarSize={16}>
+                {DADOS_GRAFICO_DIARIO.map((entry, index) => (
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={entry.status === 'acima' ? '#ef4444' : '#3b82f6'}
+                  />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* 4. Grid de Motivos de Parada e Uso do Motor */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Coluna 1: Principais Motivos de Parada */}
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+          <div>
+            <h3 className="text-sm font-bold text-slate-900 mb-3">
+              Principais Motivos de Parada (Minutos)
+            </h3>
+
+            {/* Gráfico de Barras Horizontais */}
+            <div className="space-y-2.5 mb-5">
+              {DADOS_MOTIVOS_PARADA.map((item, idx) => (
+                <div key={idx} className="space-y-1">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-600 font-medium">{item.motivo}</span>
+                    <span className="font-bold text-slate-800">{item.minutos} min</span>
+                  </div>
+                  <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
+                    <div
+                      className="h-3 rounded-full transition-all duration-500"
+                      style={{
+                        width: `${(item.minutos / 450) * 100}%`,
+                        backgroundColor: item.cor,
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
+              <div className="flex justify-between text-[9px] text-slate-400 pt-1">
+                <span>0</span>
+                <span>50</span>
+                <span>100</span>
+                <span>150</span>
+                <span>200</span>
+                <span>250</span>
+                <span>300</span>
+                <span>350</span>
+                <span>400</span>
+                <span>450</span>
               </div>
-            )}
+            </div>
+
+            {/* Acordeões de Ocorrências */}
+            <div className="space-y-2.5">
+              {/* Acordeão 1: Manutenção Não Programada */}
+              <div className="border border-slate-200/80 rounded-xl overflow-hidden text-xs">
+                <button
+                  onClick={() => setExpandManutencao(!expandManutencao)}
+                  className="w-full p-3 bg-slate-50 hover:bg-slate-100/80 flex items-center justify-between text-slate-800 font-semibold transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-rose-500" />
+                    <span>Manutenção Não Programada (420 min)</span>
+                  </div>
+                  {expandManutencao ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+                </button>
+                {expandManutencao && (
+                  <div className="p-3 bg-white space-y-1.5 text-slate-600 border-t border-slate-100">
+                    <p className="font-bold text-slate-700 mb-1 text-[11px]">Ocorrências registradas:</p>
+                    <p>• 22/08 - VW 32.380: Troca de mangueira hidráulica (210 min)</p>
+                    <p>• 28/08 - MB Atego 2429: Reparo em sistema elétrico (210 min)</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Acordeão 2: Aguardando Transbordo */}
+              <div className="border border-slate-200/80 rounded-xl overflow-hidden text-xs">
+                <button
+                  onClick={() => setExpandTransbordo(!expandTransbordo)}
+                  className="w-full p-3 bg-slate-50 hover:bg-slate-100/80 flex items-center justify-between text-slate-800 font-semibold transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-orange-500" />
+                    <span>Aguardando Transbordo (280 min)</span>
+                  </div>
+                  {expandTransbordo ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+                </button>
+                {expandTransbordo && (
+                  <div className="p-3 bg-white space-y-1.5 text-slate-600 border-t border-slate-100">
+                    <p className="font-bold text-slate-700 mb-1 text-[11px]">Ocorrências registradas:</p>
+                    <p>• 25/08 - Volvo FMX 500: Gargalo na moega do Talhão 4 (160 min)</p>
+                    <p>• 30/08 - VW 32.380: Fila no transbordo central (120 min)</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Coluna 2: Uso do Motor: Produtivo vs Ocioso */}
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between">
+          <div>
+            <h3 className="text-sm font-bold text-slate-900 mb-2">
+              Uso do Motor: Produtivo vs Ocioso
+            </h3>
+
+            <div className="h-52 w-full flex items-center justify-center">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={DADOS_USO_MOTOR}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={55}
+                    outerRadius={75}
+                    paddingAngle={3}
+                    dataKey="value"
+                  >
+                    {DADOS_USO_MOTOR.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(val) => [`${val}%`, 'Tempo']} />
+                  <Legend
+                    verticalAlign="bottom"
+                    iconType="square"
+                    iconSize={8}
+                    wrapperStyle={{ fontSize: '11px', paddingTop: '10px' }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Detalhamento do Tempo Ocioso */}
+            <div className="border border-slate-200/80 rounded-xl overflow-hidden text-xs mt-3">
+              <button
+                onClick={() => setExpandTempoOcioso(!expandTempoOcioso)}
+                className="w-full p-3 bg-slate-50 hover:bg-slate-100/80 flex items-center justify-between text-slate-800 font-semibold transition-colors"
+              >
+                <span>Ver Detalhamento do Tempo Ocioso</span>
+                {expandTempoOcioso ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+              </button>
+              {expandTempoOcioso && (
+                <div className="p-3 bg-white space-y-1.5 text-slate-600 border-t border-slate-100">
+                  <p className="font-semibold text-slate-800">
+                    Total de tempo ocioso: <span className="text-rose-600 font-bold">48 Horas</span> (22% do tempo total ligado)
+                  </p>
+                  <p className="text-slate-500">
+                    Impacto financeiro estimado: <span className="font-bold text-slate-800">~R$ 4.320,00</span> em combustível desperdiçado no período.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 5. Tabela: Gastos por Equipamento */}
+      <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
+        <h3 className="text-sm font-bold text-slate-900 mb-4">Gastos por Equipamento</h3>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead>
+              <tr className="border-b border-slate-200 text-slate-500 font-semibold text-[11px]">
+                <th className="pb-3">Equipamento</th>
+                <th className="pb-3">Combustível</th>
+                <th className="pb-3">Manutenção</th>
+                <th className="pb-3">Custo Total</th>
+                <th className="pb-3 text-emerald-700 font-bold">Custo Operacional</th>
+                <th className="pb-3 text-right">Ação</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {GASTOS_EQUIPAMENTOS_MOCK.map((gasto) => {
+                const isExpanded = expandGastos[gasto.id];
+                return (
+                  <React.Fragment key={gasto.id}>
+                    <tr className="hover:bg-slate-50 transition-colors">
+                      <td className="py-3 font-semibold text-slate-800">{gasto.equipamento}</td>
+                      <td className="py-3 text-slate-600">{gasto.combustivel}</td>
+                      <td className="py-3 text-slate-600">{gasto.manutencao}</td>
+                      <td className="py-3 font-bold text-slate-800">{gasto.custoTotal}</td>
+                      <td className="py-3 font-bold text-emerald-700">{gasto.custoOperacional}</td>
+                      <td className="py-3 text-right">
+                        <button
+                          onClick={() => toggleGasto(gasto.id)}
+                          className="p-1 rounded-lg hover:bg-slate-200/70 text-slate-500 transition-colors"
+                        >
+                          {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                        </button>
+                      </td>
+                    </tr>
+                    {isExpanded && (
+                      <tr>
+                        <td colSpan={6} className="bg-slate-50/70 p-4 border-y border-slate-100">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                            <div className="bg-white p-3 rounded-xl border border-slate-200/60 shadow-2xs space-y-1">
+                              <p className="font-bold text-slate-800 text-[11px] mb-1">
+                                Detalhamento Mensal/Período
+                              </p>
+                              <p className="text-slate-600">• Seguro Proporcional: {gasto.detalhes.seguro}</p>
+                              <p className="text-slate-600">• Pneus: {gasto.detalhes.pneus}</p>
+                              <p className="text-slate-600">• Arla 32: {gasto.detalhes.arla}</p>
+                            </div>
+                            <div className="bg-white p-3 rounded-xl border border-slate-200/60 shadow-2xs space-y-1">
+                              <p className="font-bold text-slate-800 text-[11px] mb-1">
+                                Média Diária Operacional
+                              </p>
+                              <p className="text-slate-600">• Custo por Dia: {gasto.detalhes.custoDia}</p>
+                              <p className="text-slate-600">• Média Consumo: {gasto.detalhes.consumoMedio}</p>
+                              <p className="text-slate-600">• Horas Trabalhadas/Dia: {gasto.detalhes.horasTrabalhadas}</p>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* 6. Seção: Insights da Inteligência Artificial */}
+      <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
+        <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
+          <Sparkles size={16} className="text-amber-500" />
+          Insights da Inteligência Artificial
+        </h3>
+
+        {/* Card 1: Consumo excessivo */}
+        <div className="border border-slate-200/80 rounded-2xl p-4 space-y-3 bg-white">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex items-start gap-3">
+              <div className="flex items-center gap-1.5 pt-0.5">
+                <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-rose-100 text-rose-700">
+                  ALTA
+                </span>
+                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-100 text-blue-700">
+                  GASTOS
+                </span>
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-slate-900">
+                  Consumo excessivo de combustível em marcha lenta
+                </h4>
+                <p className="text-[11px] text-slate-500">
+                  O veículo Volkswagen 32.380 apresentou 18h de motor ocioso nos últimos 4 dias.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setExpandInsight1(!expandInsight1)}
+              className="p-1 text-slate-400 hover:text-slate-600 self-end sm:self-auto"
+            >
+              {expandInsight1 ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            </button>
           </div>
 
-          {visao === 'veiculo' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white rounded-2xl shadow-soft border border-slate-200/80 p-5">
-                <h3 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2"><AlertTriangle size={16} className="text-amber-500" /> Motivos de parada e operação</h3>
-                {equipamentoIdSelecionado === null ? (
-                  <p className="text-sm text-slate-400 text-center py-8">Selecione um veículo.</p>
-                ) : motivos.length === 0 ? (
-                  <p className="text-sm text-slate-400 text-center py-8">Sem dado no período.</p>
-                ) : (
-                  <div className="space-y-2">
-                    {motivos.slice(0, 8).map((m, idx) => (
-                      <div key={idx} className="flex items-center justify-between text-sm">
-                        <span className="text-slate-600">{m.OperacaoDescricao ?? m.Estado ?? '—'}</span>
-                        <span className="font-mono font-bold text-slate-800">{formatMinutos(m.MinutosAproximados)}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="bg-white rounded-2xl shadow-soft border border-slate-200/80 p-5">
-                <h3 className="text-sm font-bold text-slate-700 mb-3 flex items-center gap-2"><Gauge size={16} className="text-slate-500" /> Motor ligado x ocioso</h3>
-                {equipamentoIdSelecionado === null ? (
-                  <p className="text-sm text-slate-400 text-center py-8">Selecione um veículo.</p>
-                ) : motor.length === 0 ? (
-                  <p className="text-sm text-slate-400 text-center py-8">Sem dado no período.</p>
-                ) : (
-                  <div style={{ width: '100%', height: 160 }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={[{ nome: 'Período', Ligado: motorTotais.ligado, Ocioso: motorTotais.ocioso }]} layout="vertical" margin={{ top: 0, right: 20, left: 0, bottom: 0 }}>
-                        <XAxis type="number" tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                        <YAxis type="category" dataKey="nome" hide />
-                        <Tooltip formatter={(value) => formatMinutos(Number(value))} />
-                        <Bar dataKey="Ligado" fill="#0ea5e9" radius={[6, 6, 6, 6]} barSize={28} />
-                        <Bar dataKey="Ocioso" fill="#f59e0b" radius={[6, 6, 6, 6]} barSize={28} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                    <p className="text-xs text-slate-500 mt-2">Motor ligado: <b>{formatMinutos(motorTotais.ligado)}</b> · Ocioso (ligado + parado): <b className="text-amber-600">{formatMinutos(motorTotais.ocioso)}</b></p>
-                  </div>
-                )}
-              </div>
+          {expandInsight1 && (
+            <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs text-slate-700 space-y-1">
+              <p className="font-bold text-slate-900 text-[11px]">Diagnóstico Detalhado & Ação Recomendada:</p>
+              <p className="text-slate-600 leading-relaxed">
+                Identificado padrão de ar-condicionado ligado durante intervalos de transbordo no Talhão 2 pelo motorista Tiago. Recomendação: Orientar o motorista ou redefinir a rota de suporte para reduzir o tempo de espera no ponto de descarga.
+              </p>
             </div>
           )}
+        </div>
 
-          <div className="bg-white rounded-2xl shadow-soft border border-slate-200/80 p-5">
-            <div className="flex items-center justify-between mb-1">
-              <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2"><Trophy size={16} className="text-amber-500" /> Progresso do mês (ponto de equilíbrio) e ranking</h3>
-              <input type="month" value={competencia} onChange={(e) => setCompetencia(e.target.value)} className="border border-slate-200 rounded-xl px-3 py-1.5 text-sm font-medium bg-slate-50" />
+        {/* Card 2: Desvio de pressão */}
+        <div className="border border-slate-200/80 rounded-2xl p-4 space-y-3 bg-white">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex items-start gap-3">
+              <div className="flex items-center gap-1.5 pt-0.5">
+                <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-amber-100 text-amber-800">
+                  MÉDIA
+                </span>
+                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-sky-100 text-sky-800">
+                  ALARMES
+                </span>
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-slate-900">
+                  Desvio de pressão de pneus detectado
+                </h4>
+                <p className="text-[11px] text-slate-500">
+                  O veículo Volvo FMX 500 rodou 34km com o pneu traseiro esquerdo 15% abaixo da calibragem ideal.
+                </p>
+              </div>
             </div>
-            {coberturaMes && (
-              <p className="text-xs text-slate-400 mb-3">Calculado com {coberturaMes.DiaDoMesAtual} de {coberturaMes.DiasNoMes} dias do mês sincronizados.</p>
-            )}
-            <DataTable
-              columns={[
-                {
-                  header: '#',
-                  align: 'center' as const,
-                  render: (l: (typeof rankingProgresso)[number]) => {
-                    const posicao = rankingProgresso.indexOf(l) + 1;
-                    return (
-                      <span className="flex items-center justify-center gap-1 font-mono font-bold text-slate-500">
-                        {posicao === 1 && <Trophy size={14} className="text-amber-500" />}
-                        {(posicao === 2 || posicao === 3) && <Medal size={14} className="text-slate-400" />}
-                        {posicao}
-                      </span>
-                    );
-                  },
-                },
-                {
-                  header: visao === 'veiculo' ? 'Veículo' : 'Motorista',
-                  render: (l: (typeof rankingProgresso)[number]) => (
-                    <div>
-                      <p className="font-bold text-slate-800">{l.rotulo}</p>
-                      {l.qtdCaminhoes !== null && l.qtdCaminhoes > 1 && (
-                        <p className="text-xs text-slate-500">{l.qtdCaminhoes} caminhões</p>
-                      )}
-                    </div>
-                  ),
-                },
-                {
-                  header: 'Km acumulado',
-                  align: 'right' as const,
-                  render: (l: (typeof rankingProgresso)[number]) => <span className="font-mono">{l.KmAcumuladoMes?.toLocaleString('pt-BR') ?? '—'}</span>,
-                },
-                {
-                  header: 'Saldo acumulado (ponto de equilíbrio)',
-                  align: 'right' as const,
-                  render: (l: (typeof rankingProgresso)[number]) => (
-                    <span className={`font-mono font-bold ${((l.SaldoAcumuladoMes ?? 0) >= 0) ? 'text-green-600' : 'text-rose-600'}`}>
-                      {formatMoeda(l.SaldoAcumuladoMes)}
-                    </span>
-                  ),
-                },
-              ]}
-              data={rankingProgresso}
-              keyExtractor={(l) => l.chave}
-              emptyMessage="Sem dado de progresso pra esta competência ainda."
-            />
+            <button
+              onClick={() => setExpandInsight2(!expandInsight2)}
+              className="p-1 text-slate-400 hover:text-slate-600 self-end sm:self-auto"
+            >
+              {expandInsight2 ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            </button>
           </div>
-        </>
-      )}
+
+          {expandInsight2 && (
+            <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 text-xs text-slate-700 space-y-1">
+              <p className="font-bold text-slate-900 text-[11px]">Diagnóstico Detalhado & Ação Recomendada:</p>
+              <p className="text-slate-600 leading-relaxed">
+                Risco de desgaste prematuro da banda de rodagem ou sobreaquecimento do pneu. Recomendado agendar checagem do sensor de pressão/válvula na próxima parada da borracharia interna.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 };

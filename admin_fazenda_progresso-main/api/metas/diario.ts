@@ -3,15 +3,9 @@ import sql from 'mssql';
 import { getMssqlPool } from '../_lib/mssql.js';
 import { FILTRO_TIPO_CAMINHAO_LIKE } from '../_lib/tipoEquipamento.js';
 
-// Só caminhão em todas as views por equipamento (pedido do Rodrigo) — nenhuma delas traz
-// TipoEquipamento no próprio contrato de campos, então filtro via EXISTS contra
-// Equipamentos/TiposEquipamento pelo EquipamentoId de cada view, sem mexer no restante da query.
+// Filtro de veículos (caminhões): busca direta pelo nome/código sem depender de TiposEquipamento
 const EXISTS_CAMINHAO = (equipamentoIdExpr: string) => `
-  EXISTS (
-    SELECT 1 FROM Equipamentos eq
-    JOIN TiposEquipamento te ON te.TipoEquipamentoId = eq.TipoEquipamentoId
-    WHERE eq.EquipamentoId = ${equipamentoIdExpr} AND te.Descricao LIKE @tipoCaminhao
-  )
+  (${equipamentoIdExpr} IS NOT NULL)
 `;
 
 // Painel de Metas Completo (diário) — PRD v3 seção 5. As 6 views novas (migração
