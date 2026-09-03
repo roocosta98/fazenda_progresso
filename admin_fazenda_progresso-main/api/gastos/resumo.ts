@@ -41,11 +41,17 @@ function competenciaAtualYYYYMM(): string {
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
-    const competencia = typeof req.query.competencia === 'string' ? req.query.competencia : null;
-    const referencia = competencia ?? competenciaAtualYYYYMM();
-    const [ano, mes] = referencia.split('-').map(Number);
-    const inicioCompetencia = new Date(Date.UTC(ano, mes - 1, 1));
-    const fimCompetencia = new Date(Date.UTC(ano, mes, 1));
+    const dataInicioStr = typeof req.query.dataInicio === 'string' ? req.query.dataInicio : null;
+    const dataFimStr = typeof req.query.dataFim === 'string' ? req.query.dataFim : null;
+
+    const hoje = new Date();
+    const fimDefault = new Date(Date.UTC(hoje.getUTCFullYear(), hoje.getUTCMonth(), hoje.getUTCDate() + 1));
+    const inicioDefault = new Date(fimDefault);
+    inicioDefault.setUTCDate(inicioDefault.getUTCDate() - 30);
+
+    const inicioCompetencia = dataInicioStr ? new Date(`${dataInicioStr}T00:00:00Z`) : inicioDefault;
+    const dataFimBase = dataFimStr ? new Date(`${dataFimStr}T00:00:00Z`) : null;
+    const fimCompetencia = dataFimBase ? new Date(dataFimBase.getTime() + 24 * 60 * 60 * 1000) : fimDefault;
 
     const pool = await getMssqlPool();
     const result = await pool

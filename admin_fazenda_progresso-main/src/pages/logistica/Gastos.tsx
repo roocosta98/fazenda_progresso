@@ -29,10 +29,7 @@ interface LinhaGasto {
 const formatMoeda = (valor: number | null | undefined) =>
   valor === null || valor === undefined ? '—' : valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-const competenciaAtual = () => {
-  const agora = new Date();
-  return `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}`;
-};
+
 
 const CardTotal = ({ icon, label, valor }: { icon: React.ReactNode; label: string; valor: number }) => (
   <div className="bg-white rounded-2xl shadow-soft border border-slate-200/80 p-5 flex items-center gap-4">
@@ -45,7 +42,8 @@ const CardTotal = ({ icon, label, valor }: { icon: React.ReactNode; label: strin
 );
 
 export const Gastos = () => {
-  const [competencia, setCompetencia] = useState(competenciaAtual());
+  const [dataInicio, setDataInicio] = useState(new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0]);
+  const [dataFim, setDataFim] = useState(new Date().toISOString().split('T')[0]);
   const [tipoEquipamento, setTipoEquipamento] = useState('todos');
   const [linhas, setLinhas] = useState<LinhaGasto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,7 +52,7 @@ export const Gastos = () => {
   const carregar = async () => {
     setLoading(true);
     try {
-      const resp = await fetch(`${API_URL}/api/gastos/resumo?competencia=${competencia}`);
+      const resp = await fetch(`${API_URL}/api/gastos/resumo?dataInicio=${dataInicio}&dataFim=${dataFim}`);
       if (!resp.ok) throw new Error('Falha ao consultar a API');
       setLinhas(await resp.json());
       setErro(null);
@@ -69,7 +67,7 @@ export const Gastos = () => {
   useEffect(() => {
     carregar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [competencia]);
+  }, [dataInicio, dataFim]);
 
   const tiposEquipamento = useMemo(
     () => Array.from(new Set(linhas.map((l) => l.TipoEquipamento).filter(Boolean))) as string[],
@@ -160,10 +158,18 @@ export const Gastos = () => {
 
       <div className="bg-white p-4 rounded-2xl shadow-soft border border-slate-200/80 flex flex-wrap items-center gap-3">
         <CircleDollarSign size={16} className="text-slate-400" />
+        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">DE</span>
         <input
-          type="month"
-          value={competencia}
-          onChange={(e) => setCompetencia(e.target.value)}
+          type="date"
+          value={dataInicio}
+          onChange={(e) => setDataInicio(e.target.value)}
+          className="border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium bg-slate-50"
+        />
+        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">ATÉ</span>
+        <input
+          type="date"
+          value={dataFim}
+          onChange={(e) => setDataFim(e.target.value)}
           className="border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium bg-slate-50"
         />
         <select

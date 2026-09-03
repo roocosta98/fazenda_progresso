@@ -84,11 +84,11 @@ export function Step1Dados({ data, onChange }: Props) {
             className="w-full rounded-md border border-neutral-300 p-2.5 text-sm focus:ring-1 focus:ring-[#1E3A2F] focus:border-[#1E3A2F] bg-white"
           >
             <option value="">Selecione uma fazenda...</option>
-            <option value="Progresso I">Progresso I</option>
-            <option value="Progresso II">Progresso II</option>
-            <option value="Progresso III">Progresso III</option>
-            <option value="Progresso IV">Progresso IV</option>
-            <option value="Progresso V">Progresso V</option>
+            <option value="Fazenda I">Fazenda I</option>
+            <option value="Fazenda II">Fazenda II</option>
+            <option value="Fazenda III">Fazenda III</option>
+            <option value="Fazenda IV">Fazenda IV</option>
+            <option value="Fazenda V">Fazenda V</option>
             <option value="Outra">Outra</option>
           </select>
         </div>

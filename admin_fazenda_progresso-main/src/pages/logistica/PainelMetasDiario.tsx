@@ -129,6 +129,14 @@ export const PainelMetasDiario: React.FC = () => {
   const [motoristasLista, setMotoristasLista] = useState<OperadorItem[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // Estados de dados dinâmicos da API
+  const [dadosGraficoDiario, setDadosGraficoDiario] = useState<any[]>(DADOS_GRAFICO_DIARIO);
+  const [dadosMotivos, setDadosMotivos] = useState<any[]>(DADOS_MOTIVOS_PARADA);
+  const [dadosUsoMotor, setDadosUsoMotor] = useState<any[]>(DADOS_USO_MOTOR);
+  const [gastos] = useState<any[]>(GASTOS_EQUIPAMENTOS_MOCK);
+  // KPIs executivos ainda mockados até mapeamento completo
+  // const [kpis, setKpis] = useState<any>(null);
+
   // Estados de expansão dos acordeões
   const [expandManutencao, setExpandManutencao] = useState(true);
   const [expandTransbordo, setExpandTransbordo] = useState(false);
@@ -141,22 +149,90 @@ export const PainelMetasDiario: React.FC = () => {
   const [expandInsight1, setExpandInsight1] = useState(true);
   const [expandInsight2, setExpandInsight2] = useState(false);
 
-  // Busca veículos e motoristas diretamente do backend
-  const carregarFiltros = async () => {
+  // Busca veículos, motoristas e métricas do backend
+  const carregarDados = async () => {
     try {
+      setLoading(true);
       const [respEq, respOp] = await Promise.all([
         fetch(`${API_URL}/api/frota/equipamentos`).then((r) => (r.ok ? r.json() : [])),
         fetch(`${API_URL}/api/frota/operadores`).then((r) => (r.ok ? r.json() : [])),
       ]);
       setVeiculosLista(respEq ?? []);
       setMotoristasLista(respOp ?? []);
+
+      // Monta query string
+      const qsParams = new URLSearchParams();
+      qsParams.append('dataInicio', dataDe);
+      qsParams.append('dataFim', dataAte);
+      if (veiculoSelecionado !== 'todos') qsParams.append('equipamentoId', veiculoSelecionado);
+      if (motoristaSelecionado !== 'todos') qsParams.append('motorista', motoristaSelecionado);
+      const qs = `?${qsParams.toString()}`;
+
+      // Tenta buscar os dados se a API responder corretamente
+      try {
+        const [respDiario, respMotivos, respMotor, respExec] = await Promise.all([
+          fetch(`${API_URL}/api/metas/diario${qs}&modo=diario`),
+          fetch(`${API_URL}/api/metas/diario${qs}&modo=motivos`),
+          fetch(`${API_URL}/api/metas/diario${qs}&modo=motor`),
+          fetch(`${API_URL}/api/metas/diario${qs}&modo=executivo`)
+        ]);
+
+        if (respDiario.ok) {
+          const json = await respDiario.json();
+          // Mapeamento condicional caso a view retorne dados. Se vazio, mantemos o mock por enquanto.
+          if (json.porVeiculo && json.porVeiculo.length > 0) {
+            setDadosGraficoDiario(json.porVeiculo.map((v: any) => ({
+              dia: v.Dia ? new Date(v.Dia).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }) : '',
+              previsto: v.CustoEsperadoDia ?? 0,
+              realizado: v.CustoOperacionalRealDia ?? 0,
+              status: (v.CustoOperacionalRealDia ?? 0) <= (v.CustoEsperadoDia ?? 0) ? 'dentro' : 'acima'
+            })));
+          }
+        }
+        
+        if (respMotivos.ok) {
+          const json = await respMotivos.json();
+          if (json.length > 0) {
+            const cores = ['#ef4444', '#f97316', '#3b82f6', '#10b981'];
+            setDadosMotivos(json.map((v: any, i: number) => ({
+              motivo: v.MotivoParada ?? 'Outros',
+              minutos: v.MinutosAproximados ?? 0,
+              cor: cores[i % cores.length]
+            })));
+          }
+        }
+
+        if (respMotor.ok) {
+          const json = await respMotor.json();
+          if (json.length > 0) {
+            const total = json.reduce((acc: number, v: any) => acc + (v.MinutosAproximados ?? 0), 0);
+            if (total > 0) {
+              setDadosUsoMotor([
+                { name: 'Produtivo', value: Math.round((json[0]?.MinutosProdutivos ?? 0) / total * 100), color: '#10b981' },
+                { name: 'Ocioso', value: Math.round((json[0]?.MinutosOciosos ?? 0) / total * 100), color: '#ef4444' }
+              ]);
+            }
+          }
+        }
+
+        if (respExec.ok) {
+          const jsonExec = await respExec.json();
+          // setKpis(jsonExec); // Mapear futuramente
+        }
+
+      } catch (e) {
+        console.warn('As rotas de meta diária ainda não estão 100% integradas. Mantendo dados simulados nos gráficos.', e);
+      }
+
     } catch (e) {
       console.error('Erro ao carregar veículos/motoristas:', e);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    carregarFiltros();
+    carregarDados();
   }, []);
 
   const toggleGasto = (id: number) => {
@@ -164,11 +240,7 @@ export const PainelMetasDiario: React.FC = () => {
   };
 
   const handleAtualizar = () => {
-    setLoading(true);
-    carregarFiltros();
-    setTimeout(() => {
-      setLoading(false);
-    }, 600);
+    carregarDados();
   };
 
   return (
@@ -357,7 +429,7 @@ export const PainelMetasDiario: React.FC = () => {
 
         <div className="h-64 w-full mt-4">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={DADOS_GRAFICO_DIARIO} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+            <BarChart data={dadosGraficoDiario} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
               <XAxis dataKey="dia" tickLine={false} axisLine={{ stroke: '#e2e8f0' }} tick={{ fill: '#64748b', fontSize: 10 }} />
               <YAxis
@@ -383,7 +455,7 @@ export const PainelMetasDiario: React.FC = () => {
               />
               <Bar dataKey="previsto" name="previsto" fill="#e2e8f0" radius={[3, 3, 0, 0]} maxBarSize={16} />
               <Bar dataKey="realizado" name="realizado" radius={[3, 3, 0, 0]} maxBarSize={16}>
-                {DADOS_GRAFICO_DIARIO.map((entry, index) => (
+                {dadosGraficoDiario.map((entry, index) => (
                   <Cell
                     key={`cell-${index}`}
                     fill={entry.status === 'acima' ? '#ef4444' : '#3b82f6'}
@@ -406,7 +478,7 @@ export const PainelMetasDiario: React.FC = () => {
 
             {/* Gráfico de Barras Horizontais */}
             <div className="space-y-2.5 mb-5">
-              {DADOS_MOTIVOS_PARADA.map((item, idx) => (
+              {dadosMotivos.map((item, idx) => (
                 <div key={idx} className="space-y-1">
                   <div className="flex justify-between text-xs">
                     <span className="text-slate-600 font-medium">{item.motivo}</span>
@@ -495,7 +567,7 @@ export const PainelMetasDiario: React.FC = () => {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={DADOS_USO_MOTOR}
+                    data={dadosUsoMotor}
                     cx="50%"
                     cy="50%"
                     innerRadius={55}
@@ -503,7 +575,7 @@ export const PainelMetasDiario: React.FC = () => {
                     paddingAngle={3}
                     dataKey="value"
                   >
-                    {DADOS_USO_MOTOR.map((entry, index) => (
+                    {dadosUsoMotor.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
@@ -559,7 +631,7 @@ export const PainelMetasDiario: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {GASTOS_EQUIPAMENTOS_MOCK.map((gasto) => {
+              {gastos.map((gasto) => {
                 const isExpanded = expandGastos[gasto.id];
                 return (
                   <React.Fragment key={gasto.id}>
