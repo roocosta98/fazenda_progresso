@@ -1,12 +1,18 @@
 import { useAuth } from '../../context/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { useState } from 'react';
-import { Leaf, User, Truck, ArrowRight, Lock, Mail } from 'lucide-react';
+import { Leaf, User, ArrowRight, Lock, Mail } from 'lucide-react';
+
+// Senha da conta de Logística (Carlos) — protótipo em modo de desenvolvimento, sem tabela de
+// usuários/senhas ainda (MOCK_USUARIOS não tem credencial nenhuma hoje). Checagem simples do
+// lado do cliente só pra não deixar qualquer um logar direto como Logística.
+const SENHA_LOGISTICA = 'senhadificil';
 
 export const Login = () => {
   const { usuario, login } = useAuth();
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+  const [erro, setErro] = useState<string | null>(null);
 
   if (usuario) {
     return <Navigate to={usuario.perfil === 'solicitante' ? '/solicitante/minhas' : '/logistica/dashboard'} replace />;
@@ -14,7 +20,12 @@ export const Login = () => {
 
   const handleFakeSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    login('1');
+    if (senha !== SENHA_LOGISTICA) {
+      setErro('Senha incorreta.');
+      return;
+    }
+    setErro(null);
+    login('2');
   };
 
   return (
@@ -98,6 +109,10 @@ export const Login = () => {
               </div>
             </div>
             
+            {erro && (
+              <p className="text-sm text-rose-600 font-medium -mt-2">{erro}</p>
+            )}
+
             <div className="flex items-center justify-between pt-2">
               <label className="flex items-center gap-2 cursor-pointer group">
                 <input type="checkbox" className="w-4 h-4 rounded border-slate-300 text-brand-primary focus:ring-brand-primary cursor-pointer" />
@@ -106,7 +121,7 @@ export const Login = () => {
               <a href="#" className="text-sm font-medium text-brand-primary hover:text-brand-secondary transition-colors">Esqueceu a senha?</a>
             </div>
 
-            <button 
+            <button
               type="submit"
               className="w-full bg-brand-primary text-white py-3.5 rounded-xl font-medium hover:bg-brand-secondary active:scale-[0.98] transition-all flex items-center justify-center gap-2 mt-2 shadow-soft hover:shadow-md"
             >
@@ -124,8 +139,8 @@ export const Login = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <button 
+          <div className="grid grid-cols-1 gap-4">
+            <button
               type="button"
               onClick={() => login('1')}
               className="flex items-center gap-3 p-4 border border-slate-200 bg-white rounded-xl hover:border-brand-primary hover:shadow-md transition-all text-left group"
@@ -138,20 +153,7 @@ export const Login = () => {
                 <p className="text-xs text-slate-500">Solicitante</p>
               </div>
             </button>
-
-            <button 
-              type="button"
-              onClick={() => login('2')}
-              className="flex items-center gap-3 p-4 border border-slate-200 bg-white rounded-xl hover:border-brand-secondary hover:shadow-md transition-all text-left group"
-            >
-              <div className="bg-slate-50 p-2.5 rounded-lg group-hover:bg-brand-secondary/10 transition-colors">
-                <Truck className="w-5 h-5 text-slate-600 group-hover:text-brand-secondary transition-colors" />
-              </div>
-              <div>
-                <p className="font-medium text-slate-900 group-hover:text-brand-secondary transition-colors">Carlos</p>
-                <p className="text-xs text-slate-500">Logística</p>
-              </div>
-            </button>
+            <p className="text-xs text-slate-400 text-center">A conta de Logística (Carlos) exige senha — use o formulário acima.</p>
           </div>
 
         </div>
