@@ -11,6 +11,7 @@ import { MapaViagemMotorista } from './pages/MapaViagemMotorista';
 import { NovaSolicitacao } from './pages/NovaSolicitacao';
 import { MinhaMeta } from './pages/MinhaMeta';
 import { ChecklistAtividade } from './pages/ChecklistAtividade';
+import { ListaAuditorias } from './pages/auditoria/ListaAuditorias';
 import { NovaAuditoria } from './pages/auditoria/NovaAuditoria';
 import { gpsService } from './services/gpsService';
 import { AuthProvider } from './context/AuthContext';
@@ -35,6 +36,7 @@ function App() {
             <Route path="/viagem/:id/checklist" element={<ChecklistAtividade />} />
             <Route path="/viagem/:id/mapa" element={<MapaViagemMotorista />} />
             <Route path="/minha-meta" element={<MinhaMeta />} />
+            <Route path="/auditorias" element={<ListaAuditorias />} />
             <Route path="/auditoria/nova" element={<NovaAuditoria />} />
           </Routes>
         </MobileLayout>

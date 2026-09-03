@@ -91,12 +91,12 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({ isOpen, onClose, onOpenN
               <button 
                 onClick={() => {
                   onClose();
-                  navigate('/auditoria/nova');
+                  navigate('/auditorias');
                 }} 
                 className="w-full flex items-center px-6 py-4 text-slate-800 hover:bg-slate-50 active:bg-slate-100 transition-colors font-semibold"
               >
                 <ClipboardCheck className="w-5 h-5 mr-4 text-primary" />
-                Nova Auditoria
+                Auditorias
               </button>
             </li>
             <li>
