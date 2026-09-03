@@ -134,9 +134,8 @@ export const PainelMetasDiario: React.FC = () => {
   const [dadosBalanco, setDadosBalanco] = useState<any[]>([]);
   const [dadosMotivos, setDadosMotivos] = useState<any[]>(DADOS_MOTIVOS_PARADA);
   const [dadosUsoMotor, setDadosUsoMotor] = useState<any[]>(DADOS_USO_MOTOR);
-  const [gastos] = useState<any[]>(GASTOS_EQUIPAMENTOS_MOCK);
-  // KPIs executivos ainda mockados até mapeamento completo
-  // const [kpis, setKpis] = useState<any>(null);
+  const [gastos, setGastos] = useState<any[]>([]);
+  const [kpis, setKpis] = useState<any>(null);
 
   // Estados de expansão dos acordeões
   const [expandManutencao, setExpandManutencao] = useState(true);
@@ -171,11 +170,12 @@ export const PainelMetasDiario: React.FC = () => {
 
       // Tenta buscar os dados se a API responder corretamente
       try {
-        const [respDiario, respMotivos, respMotor, respExec] = await Promise.all([
+        const [respDiario, respMotivos, respMotor, respExec, respGastos] = await Promise.all([
           fetch(`${API_URL}/api/metas/diario${qs}&modo=diario`),
           fetch(`${API_URL}/api/metas/diario${qs}&modo=motivos`),
           fetch(`${API_URL}/api/metas/diario${qs}&modo=motor`),
-          fetch(`${API_URL}/api/metas/diario${qs}&modo=executivo`)
+          fetch(`${API_URL}/api/metas/diario${qs}&modo=executivo`),
+          fetch(`${API_URL}/api/gastos/resumo${qs}`)
         ]);
 
         if (respDiario.ok) {
@@ -242,7 +242,11 @@ export const PainelMetasDiario: React.FC = () => {
         }
 
         if (respExec.ok) {
-          // await respExec.json(); // Mapear KPIs executivos futuramente se necessário
+          setKpis(await respExec.json());
+        }
+
+        if (respGastos.ok) {
+          setGastos(await respGastos.json());
         }
 
       } catch (e) {
@@ -267,6 +271,18 @@ export const PainelMetasDiario: React.FC = () => {
   const handleAtualizar = () => {
     carregarDados();
   };
+
+  // Cálculo dos totais para os 6 KPIs Superiores
+  const totalCombustivel = gastos.reduce((acc, g) => acc + (g.CustoCombustivelMes ?? 0), 0);
+  const totalManutencao = gastos.reduce((acc, g) => acc + (g.CustoManutencaoMes ?? 0) + (g.CustoPneusMes ?? 0), 0);
+  const totalFixo = gastos.reduce((acc, g) => acc + (g.CustoFixoTotalMes ?? 0), 0);
+  const totalOperacional = gastos.reduce((acc, g) => acc + (g.CustoOperacionalTotalMes ?? g.CustoFixoTotalMes ?? 0), 0);
+  
+  const diasTotal = dadosGraficoDiario.length;
+  const diasDentro = dadosGraficoDiario.filter(d => d.status === 'dentro').length;
+  const porcentagemDentro = diasTotal > 0 ? ((diasDentro / diasTotal) * 100).toFixed(1) : '0.0';
+
+  const formatMoeda = (valor: number) => valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
   return (
     <div className="space-y-5 pb-12 font-sans text-slate-800">
@@ -369,9 +385,9 @@ export const PainelMetasDiario: React.FC = () => {
             Combustível + Consumo
           </span>
           <div className="my-1.5">
-            <span className="text-xl font-black text-slate-900 tracking-tight">R$ 78.400</span>
+            <span className="text-xl font-black text-slate-900 tracking-tight">{formatMoeda(totalCombustivel)}</span>
           </div>
-          <span className="text-[10px] text-slate-500 font-medium">Média: 2,1 km/L</span>
+          <span className="text-[10px] text-slate-500 font-medium">Gasto no período filtrado</span>
         </div>
 
         {/* Card 2 */}
@@ -380,9 +396,9 @@ export const PainelMetasDiario: React.FC = () => {
             Pneus + Manutenção
           </span>
           <div className="my-1.5">
-            <span className="text-xl font-black text-slate-900 tracking-tight">R$ 24.150</span>
+            <span className="text-xl font-black text-slate-900 tracking-tight">{formatMoeda(totalManutencao)}</span>
           </div>
-          <span className="text-[10px] text-slate-500 font-medium">12 intervenções no período</span>
+          <span className="text-[10px] text-slate-500 font-medium">Gasto no período filtrado</span>
         </div>
 
         {/* Card 3 */}
@@ -391,7 +407,7 @@ export const PainelMetasDiario: React.FC = () => {
             Custo Fixo Total
           </span>
           <div className="my-1.5">
-            <span className="text-xl font-black text-slate-900 tracking-tight">R$ 31.200</span>
+            <span className="text-xl font-black text-slate-900 tracking-tight">{formatMoeda(totalFixo)}</span>
           </div>
           <span className="text-[10px] text-slate-500 font-medium">Depreciação + Seguro + Adm</span>
         </div>
@@ -402,7 +418,7 @@ export const PainelMetasDiario: React.FC = () => {
             Custo Operacional Total
           </span>
           <div className="my-1.5">
-            <span className="text-xl font-black text-emerald-700 tracking-tight">R$ 133.750</span>
+            <span className="text-xl font-black text-emerald-700 tracking-tight">{formatMoeda(totalOperacional)}</span>
           </div>
           <span className="text-[10px] text-emerald-700 font-medium">Somatório da operação direta</span>
         </div>
@@ -413,20 +429,20 @@ export const PainelMetasDiario: React.FC = () => {
             Dias Dentro da Meta
           </span>
           <div className="my-1.5">
-            <span className="text-xl font-black text-slate-900 tracking-tight">10 / 14</span>
+            <span className="text-xl font-black text-slate-900 tracking-tight">{diasDentro} / {diasTotal}</span>
           </div>
-          <span className="text-[10px] text-slate-500 font-medium">71,4% de conformidade</span>
+          <span className="text-[10px] text-slate-500 font-medium">{porcentagemDentro}% de conformidade</span>
         </div>
 
         {/* Card 6 */}
         <div className="bg-white p-3.5 rounded-2xl border border-slate-200/80 shadow-2xs flex flex-col justify-between">
           <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-            Alarmes em Aberto
+            Alarmes em Aberto (24h)
           </span>
           <div className="my-1.5">
-            <span className="text-xl font-black text-rose-600 tracking-tight">5</span>
+            <span className="text-xl font-black text-rose-600 tracking-tight">{kpis?.alarmes24h ?? 0}</span>
           </div>
-          <span className="text-[10px] text-slate-500 font-medium">2 de severidade Alta</span>
+          <span className="text-[10px] text-slate-500 font-medium">Registrados no sistema hoje</span>
         </div>
       </div>
 
