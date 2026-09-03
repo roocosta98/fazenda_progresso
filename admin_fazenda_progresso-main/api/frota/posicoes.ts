@@ -1,22 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import sql from 'mssql';
 import { getMssqlPool } from '../_lib/mssql.js';
-import { FILTRO_TIPO_CAMINHAO_LIKE } from '../_lib/tipoEquipamento.js';
 
-// Parte de vw_UltimaPosicao (exatamente como o cliente indicou: ORDER BY 2 = CodigoEquipamento),
-// enriquecida com:
-// - tipo do equipamento (Equipamentos/TiposEquipamento)
-// - a leitura mais recente de sensores e de operação por equipamento (LeiturasSensor/LeiturasOperacao,
-//   via OUTER APPLY TOP 1) — RpmMedio só existe aqui, não tem como calcular RPM a partir do GPS
-// - velocidade média e tempo parado ESTIMADOS a partir do histórico de GPS das últimas 24h
-//   (LeiturasLocalizacao), pra quando LeiturasOperacao ainda não tiver dado oficial calculado
-//   pelo sistema do cliente. O intervalo até a próxima leitura é limitado a 30min (LEAST) pra um
-//   buraco de comunicação longo (equipamento sem sinal por horas) não virar "horas parado" —
-//   sem o limite, uma única leitura parada seguida de um gap de sinal de 12h contava como 12h parado
-// - horímetro/odômetro e implemento acoplado (última leitura de LeiturasLocalizacao + Implementos)
-// - contagem de eventos de risco nas últimas 24h (AlarmesEquipamento, PRD 5.1/5.2) — só a
-//   contagem aqui (pra não pesar essa consulta em lote); o detalhe de cada alarme é buscado
-//   sob demanda em api/frota/alarmes.ts quando o usuário abre um equipamento específico.
+// Consulta posições enriquecidas a partir de vw_UltimaPosicao
+// Filtrando apenas por Nome ou CodigoEquipamento que contenham "cam", "caminhao", "caminhão".
 const QUERY = `
 WITH LeiturasJanela AS (
   SELECT
@@ -42,7 +28,6 @@ ResumoMovimento AS (
 )
 SELECT
   p.*,
-  te.Descricao AS TipoEquipamento,
   sens.PorcentagemCargaBateria, sens.TensaoBateria, sens.TemperaturaBateria,
   sens.UmidadeSolo, sens.UmidadeSolo2, sens.UmidadeSolo3,
   sens.Temperatura AS TemperaturaAmbiente,
@@ -51,11 +36,9 @@ SELECT
   oper.TempoMotorLigadoSegundos, oper.TempoMotorOciosoSegundos, oper.AreaOperacional,
   oper.ColetadoEmUtc AS OperacaoColetadoEmUtc,
   rm.VelocidadeMediaCalculadaKmh, rm.TempoParadoSegundosCalculado, rm.QtdLeiturasJanela,
-  loc.HorimetroOdometro, imp.Descricao AS ImplementoAcoplado,
+  loc.HorimetroOdometro AS HorimetroOdometroLeitura, imp.Descricao AS ImplementoAcoplado,
   alr.AlarmesUltimas24h
 FROM vw_UltimaPosicao p
-LEFT JOIN Equipamentos eq ON eq.EquipamentoId = p.EquipamentoId
-LEFT JOIN TiposEquipamento te ON te.TipoEquipamentoId = eq.TipoEquipamentoId
 OUTER APPLY (
   SELECT TOP 1 ls.*
   FROM LeiturasSensor ls
@@ -82,16 +65,19 @@ OUTER APPLY (
   WHERE al.EquipamentoId = p.EquipamentoId
     AND al.ColetadoEmUtc >= DATEADD(HOUR, -24, SYSUTCDATETIME())
 ) alr
-WHERE te.Descricao LIKE @tipoCaminhao
+WHERE (
+  p.Nome LIKE '%cam%'
+  OR p.Nome LIKE '%caminh%'
+  OR p.Nome LIKE '%caminhão%'
+  OR p.CodigoEquipamento LIKE '%cam%'
+)
 ORDER BY p.CodigoEquipamento
 `;
 
 export default async function handler(_req: VercelRequest, res: VercelResponse) {
   try {
     const pool = await getMssqlPool();
-    const result = await pool.request()
-      .input('tipoCaminhao', sql.NVarChar, FILTRO_TIPO_CAMINHAO_LIKE)
-      .query(QUERY);
+    const result = await pool.request().query(QUERY);
     res.status(200).json(result.recordset);
   } catch (error) {
     console.error('Erro ao consultar posições enriquecidas:', error);

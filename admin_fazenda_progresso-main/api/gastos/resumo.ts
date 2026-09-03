@@ -21,14 +21,16 @@ const QUERY = `
 SELECT
   v.EquipamentoId, v.CompetenciaMeta,
   v.CodigoEquipamento, v.NomeEquipamento, v.Fazenda, v.GrupoFrente,
-  te.Descricao AS TipoEquipamento,
   v.CustoCombustivelMes, v.CustoPneusMes, v.CustoManutencaoMes, v.CustoSeguroMes, v.CustoOutrosMes, v.CustoFixoTotalMes,
   v.MotoristaNomeFicha, v.MotoristaNomeFolha, v.SalarioBase, v.EncargosPercentual, v.CustoMotoristaMes, v.CustoOperacionalTotalMes
 FROM vw_PainelMotoristaVeiculo v
-LEFT JOIN Equipamentos eq ON eq.EquipamentoId = v.EquipamentoId
-LEFT JOIN TiposEquipamento te ON te.TipoEquipamentoId = eq.TipoEquipamentoId
 WHERE v.CompetenciaMeta >= @inicioCompetencia AND v.CompetenciaMeta < @fimCompetencia
-  AND te.Descricao LIKE @tipoCaminhao
+  AND (
+    v.NomeEquipamento LIKE '%cam%'
+    OR v.NomeEquipamento LIKE '%caminh%'
+    OR v.NomeEquipamento LIKE '%caminhão%'
+    OR v.CodigoEquipamento LIKE '%cam%'
+  )
 ORDER BY v.NomeEquipamento
 `;
 

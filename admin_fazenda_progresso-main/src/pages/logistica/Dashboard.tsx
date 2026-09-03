@@ -27,11 +27,12 @@ import { InsightsIA } from './InsightsIA';
 
 const API_URL = import.meta.env.VITE_API_URL ?? '';
 
-// Dashboard unificado (pedido do Rodrigo): junta Dashboard (visão geral de solicitações) +
-// Metas/Diário + Dashboard Executivo + Gastos&Custos + Insights IA numa tela só — KPIs fixos no
-// topo, conteúdo de cada módulo numa aba. "Métricas" (DashboardBI.tsx, mock, domínio de
-// solicitação) fica de fora por decisão explícita do Rodrigo.
-type Aba = 'visao-geral' | 'metas' | 'gastos' | 'insights';
+import { Award } from 'lucide-react';
+import { DashboardDriveAval } from './DashboardDriveAval';
+
+// Dashboard unificado: junta Dashboard DriveAval (Avaliação & Desenvolvimento de Condutores) +
+// Visão geral de solicitações + Metas/Diário + Dashboard Executivo + Gastos&Custos + Insights IA numa tela só.
+type Aba = 'driveaval' | 'visao-geral' | 'metas' | 'gastos' | 'insights';
 
 interface KpiExecutivo {
   tendenciaMensal: { CustoOperacionalTotalMes: number }[];
@@ -45,7 +46,7 @@ const formatMoeda = (valor: number | null | undefined) =>
 export const Dashboard = () => {
   const { solicitacoes, projetos, veiculos } = useAppContext();
 
-  const [aba, setAba] = useState<Aba>('visao-geral');
+  const [aba, setAba] = useState<Aba>('driveaval');
   const [kpi, setKpi] = useState<KpiExecutivo | null>(null);
 
   const [visao, setVisao] = useState<'hoje' | 'semana'>('hoje');
@@ -112,7 +113,8 @@ export const Dashboard = () => {
   };
 
   const abas: { id: Aba; label: string; icon: React.ReactNode }[] = [
-    { id: 'visao-geral', label: 'Visão Geral', icon: <LayoutGrid size={15} /> },
+    { id: 'driveaval', label: 'DriveAval (Performance)', icon: <Award size={15} /> },
+    { id: 'visao-geral', label: 'Solicitações & Frota', icon: <LayoutGrid size={15} /> },
     { id: 'metas', label: 'Metas & Progresso', icon: <Trophy size={15} /> },
     { id: 'gastos', label: 'Gastos & Custos', icon: <CircleDollarSign size={15} /> },
     { id: 'insights', label: 'Insights (IA)', icon: <Sparkles size={15} /> },
@@ -120,39 +122,38 @@ export const Dashboard = () => {
 
   return (
     <div className="space-y-6 pb-12">
-      <div>
-        <h2 className="text-2xl font-bold text-slate-800 tracking-tight">Dashboard</h2>
-        <p className="text-slate-500 mt-1">Visão geral da operação — solicitações, metas, gastos e insights num só lugar.</p>
-      </div>
-
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <StatCard title="Agendamentos Hoje" value={agendamentosHoje} subtitle="planejadas" icon={<CalendarIcon size={22} />} colorClass="text-sky-600" />
-        <StatCard title="Em Execução Agora" value={emExecucaoAgora} subtitle="em trânsito" icon={<Play size={22} />} colorClass="text-violet-600" />
-        <StatCard title="Custo Operacional (mês)" value={formatMoeda(custoMesAtual)} icon={<Wallet size={22} />} colorClass="text-green-600" />
-        <StatCard
-          title="Ponto de Equilíbrio"
-          value={kpi ? `${kpi.pontoEquilibrio.DentroDoPontoDeEquilibrio}/${kpi.pontoEquilibrio.TotalMotoristas}` : '—'}
-          subtitle="motoristas"
-          icon={<ShieldCheck size={22} />}
-          colorClass="text-green-600"
-        />
-        <StatCard title="Alarmes (24h)" value={kpi?.alarmes24h ?? '—'} icon={<AlertTriangle size={22} />} colorClass="text-amber-600" />
-      </div>
-
-      <div className="flex bg-slate-100 p-1 rounded-xl w-fit">
+      <div className="flex bg-slate-100 p-1.5 rounded-2xl w-fit border border-slate-200/60 shadow-2xs">
         {abas.map((a) => (
           <button
             key={a.id}
             onClick={() => setAba(a.id)}
-            className={`flex items-center gap-1.5 px-5 py-2 text-sm font-bold rounded-lg transition-all ${aba === a.id ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+            className={`flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl transition-all ${
+              aba === a.id ? 'bg-white text-blue-600 shadow-xs' : 'text-slate-500 hover:text-slate-800'
+            }`}
           >
             {a.icon} {a.label}
           </button>
         ))}
       </div>
 
+      {aba === 'driveaval' && <DashboardDriveAval />}
+
       {aba === 'visao-geral' && (
         <div className="space-y-6">
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+            <StatCard title="Agendamentos Hoje" value={agendamentosHoje} subtitle="planejadas" icon={<CalendarIcon size={22} />} colorClass="text-sky-600" />
+            <StatCard title="Em Execução Agora" value={emExecucaoAgora} subtitle="em trânsito" icon={<Play size={22} />} colorClass="text-violet-600" />
+            <StatCard title="Custo Operacional (mês)" value={formatMoeda(custoMesAtual)} icon={<Wallet size={22} />} colorClass="text-green-600" />
+            <StatCard
+              title="Ponto de Equilíbrio"
+              value={kpi ? `${kpi.pontoEquilibrio.DentroDoPontoDeEquilibrio}/${kpi.pontoEquilibrio.TotalMotoristas}` : '—'}
+              subtitle="motoristas"
+              icon={<ShieldCheck size={22} />}
+              colorClass="text-green-600"
+            />
+            <StatCard title="Alarmes (24h)" value={kpi?.alarmes24h ?? '—'} icon={<AlertTriangle size={22} />} colorClass="text-amber-600" />
+          </div>
+
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             <StatCard title="Concluídas Hoje" value={concluidasHoje} icon={<CheckCircle2 size={22} />} colorClass="text-green-600" />
             <StatCard title="Veículos (Uso / Livres)" value={`${veiculosEmUso} / ${veiculosDisponiveis}`} icon={<Truck size={22} />} colorClass="text-slate-600" />

@@ -28,7 +28,6 @@ WITH Consumo AS (
 )
 SELECT
   v.*,
-  te.Descricao AS TipoEquipamento,
   c.LitrosConsumidosMes,
   CASE WHEN c.LitrosConsumidosMes > 0
        THEN v.VariacaoHorimetroOdometroMes / c.LitrosConsumidosMes
@@ -37,11 +36,14 @@ SELECT
        THEN (ISNULL(v.CustoCombustivelMes,0) + ISNULL(v.CustoPneusMes,0) + ISNULL(v.CustoManutencaoMes,0)) / v.VariacaoHorimetroOdometroMes
        ELSE NULL END AS CpkRealizado
 FROM vw_PainelMotoristaVeiculo v
-LEFT JOIN Equipamentos eq ON eq.EquipamentoId = v.EquipamentoId
-LEFT JOIN TiposEquipamento te ON te.TipoEquipamentoId = eq.TipoEquipamentoId
 LEFT JOIN Consumo c ON c.EquipamentoId = v.EquipamentoId
 WHERE v.CompetenciaMeta >= @inicioCompetencia AND v.CompetenciaMeta < @fimCompetencia
-  AND te.Descricao LIKE @tipoCaminhao
+  AND (
+    v.NomeEquipamento LIKE '%cam%'
+    OR v.NomeEquipamento LIKE '%caminh%'
+    OR v.NomeEquipamento LIKE '%caminhão%'
+    OR v.CodigoEquipamento LIKE '%cam%'
+  )
 ORDER BY v.Atividade, v.MotoristaNomeFicha
 `;
 

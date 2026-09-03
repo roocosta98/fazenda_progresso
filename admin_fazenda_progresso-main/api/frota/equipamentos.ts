@@ -1,30 +1,33 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import sql from 'mssql';
 import { getMssqlPool } from '../_lib/mssql.js';
-import { FILTRO_TIPO_CAMINHAO_LIKE } from '../_lib/tipoEquipamento.js';
 
-// Só caminhão nesta tela (pedido do Rodrigo: nunca trazer trator nem outro tipo) — filtro
-// hard-coded no backend, não é flag na UI.
+// Busca veículos (caminhões) diretamente de vw_UltimaPosicao / Equipamentos
+// Filtrando apenas por Nome e CodigoEquipamento que contenham "cam", "caminhao", "caminhão".
 const QUERY = `
 SELECT
-  eq.EquipamentoId, eq.CodigoEquipamento, eq.Nome, eq.CriadoEm, eq.AtualizadoEm,
-  te.Descricao AS TipoEquipamento,
-  gf.Nome AS GrupoFrente,
-  fz.Nome AS Fazenda
-FROM Equipamentos eq
-LEFT JOIN TiposEquipamento te ON te.TipoEquipamentoId = eq.TipoEquipamentoId
-LEFT JOIN GruposFrente gf ON gf.GrupoFrenteId = eq.GrupoFrenteId
-LEFT JOIN Fazendas fz ON fz.FazendaId = eq.FazendaId
-WHERE te.Descricao LIKE @tipoCaminhao
-ORDER BY eq.Nome
+  p.EquipamentoId,
+  p.CodigoEquipamento,
+  p.Nome,
+  p.GrupoFrente,
+  p.Fazenda,
+  p.Operador,
+  p.Estado,
+  p.HorimetroOdometro,
+  p.ColetadoEm
+FROM vw_UltimaPosicao p
+WHERE (
+  p.Nome LIKE '%cam%'
+  OR p.Nome LIKE '%caminh%'
+  OR p.Nome LIKE '%caminhão%'
+  OR p.CodigoEquipamento LIKE '%cam%'
+)
+ORDER BY p.Nome
 `;
 
 export default async function handler(_req: VercelRequest, res: VercelResponse) {
   try {
     const pool = await getMssqlPool();
-    const result = await pool.request()
-      .input('tipoCaminhao', sql.NVarChar, FILTRO_TIPO_CAMINHAO_LIKE)
-      .query(QUERY);
+    const result = await pool.request().query(QUERY);
     res.status(200).json(result.recordset);
   } catch (error) {
     console.error('Erro ao consultar Equipamentos:', error);
