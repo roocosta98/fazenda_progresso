@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { RefreshCw, Fuel, Wrench, Shield, CircleDollarSign, Users } from 'lucide-react';
+import { RefreshCw, Fuel, Wrench, Shield, CircleDollarSign, Users, Filter } from 'lucide-react';
 import { DataTable } from '../../components/common/DataTable';
+import { DashboardExecutivo } from './DashboardExecutivo';
 
 const API_URL = import.meta.env.VITE_API_URL ?? '';
 
@@ -48,11 +49,13 @@ export const Gastos = () => {
   const [linhas, setLinhas] = useState<LinhaGasto[]>([]);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+  const [trigger, setTrigger] = useState(0);
 
   const carregar = async () => {
     setLoading(true);
+    setTrigger(prev => prev + 1);
     try {
-      const resp = await fetch(`${API_URL}/api/gastos/resumo?dataInicio=${dataInicio}&dataFim=${dataFim}`);
+      const resp = await fetch(`${API_URL}/api/gastos/resumo?dataInicio=${dataInicio}&dataFim=${dataFim}&tipoEquipamento=${tipoEquipamento}`);
       if (!resp.ok) throw new Error('Falha ao consultar a API');
       setLinhas(await resp.json());
       setErro(null);
@@ -67,7 +70,7 @@ export const Gastos = () => {
   useEffect(() => {
     carregar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dataInicio, dataFim]);
+  }, [dataInicio, dataFim, tipoEquipamento]);
 
   const tiposEquipamento = useMemo(
     () => Array.from(new Set(linhas.map((l) => l.TipoEquipamento).filter(Boolean))) as string[],
@@ -136,15 +139,56 @@ export const Gastos = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-sm font-bold text-slate-700">Detalhamento por equipamento e motorista</h3>
+      {/* Barra de Filtro Unificada no Topo */}
+      <div className="bg-white p-4 rounded-2xl shadow-soft border border-slate-200/80 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">DE</span>
+            <input
+              type="date"
+              value={dataInicio}
+              onChange={(e) => setDataInicio(e.target.value)}
+              className="border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold bg-slate-50 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-slate-700"
+            />
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">ATÉ</span>
+            <input
+              type="date"
+              value={dataFim}
+              onChange={(e) => setDataFim(e.target.value)}
+              className="border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold bg-slate-50 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-slate-700"
+            />
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">EQUIPAMENTO</span>
+            <select
+              value={tipoEquipamento}
+              onChange={(e) => setTipoEquipamento(e.target.value)}
+              className="border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold bg-slate-50 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-slate-700 min-w-[170px]"
+            >
+              <option value="todos">Todos os tipos</option>
+              {tiposEquipamento.map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+          </div>
+        </div>
         <button
           onClick={carregar}
-          className="inline-flex items-center px-4 py-2.5 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition-colors text-sm"
+          className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-xs transition-all active:scale-95 disabled:opacity-50"
         >
-          <RefreshCw size={16} className="mr-2" />
+          <RefreshCw size={13} />
           Atualizar
         </button>
+      </div>
+
+      <DashboardExecutivo dataInicio={dataInicio} dataFim={dataFim} tipoEquipamento={tipoEquipamento} trigger={trigger} />
+
+      <hr className="border-slate-200/60 my-6" />
+
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-bold text-slate-700">Detalhamento por equipamento e motorista</h3>
       </div>
 
       {erro && <div className="bg-rose-50 border border-rose-200 text-rose-700 rounded-xl p-4 text-sm">{erro}</div>}
@@ -156,33 +200,7 @@ export const Gastos = () => {
         <CardTotal icon={<Users size={20} />} label="Custo Operacional Total" valor={totais.operacionalTotal} />
       </div>
 
-      <div className="bg-white p-4 rounded-2xl shadow-soft border border-slate-200/80 flex flex-wrap items-center gap-3">
-        <CircleDollarSign size={16} className="text-slate-400" />
-        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">DE</span>
-        <input
-          type="date"
-          value={dataInicio}
-          onChange={(e) => setDataInicio(e.target.value)}
-          className="border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium bg-slate-50"
-        />
-        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">ATÉ</span>
-        <input
-          type="date"
-          value={dataFim}
-          onChange={(e) => setDataFim(e.target.value)}
-          className="border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium bg-slate-50"
-        />
-        <select
-          value={tipoEquipamento}
-          onChange={(e) => setTipoEquipamento(e.target.value)}
-          className="border border-slate-200 rounded-xl px-3 py-2 text-sm font-medium bg-slate-50"
-        >
-          <option value="todos">Todos os equipamentos</option>
-          {tiposEquipamento.map((t) => (
-            <option key={t} value={t}>{t}</option>
-          ))}
-        </select>
-      </div>
+
 
       {loading ? (
         <div className="bg-white rounded-2xl border border-slate-200/80 p-12 text-center text-slate-400">Carregando...</div>

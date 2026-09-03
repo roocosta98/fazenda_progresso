@@ -338,7 +338,6 @@ export const Dashboard = () => {
 
       {aba === 'gastos' && (
         <div className="space-y-8">
-          <DashboardExecutivo />
           <Gastos />
         </div>
       )}

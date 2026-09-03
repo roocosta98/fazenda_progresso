@@ -67,8 +67,17 @@ const competenciaAtual = () => {
   return `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}`;
 };
 
-export const DashboardExecutivo = () => {
-  const [competencia, setCompetencia] = useState(competenciaAtual());
+export const DashboardExecutivo = ({
+  dataInicio,
+  dataFim,
+  tipoEquipamento,
+  trigger
+}: {
+  dataInicio: string;
+  dataFim: string;
+  tipoEquipamento: string;
+  trigger: number;
+}) => {
   const [dados, setDados] = useState<DashboardExecutivoResposta | null>(null);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
@@ -76,7 +85,7 @@ export const DashboardExecutivo = () => {
   const carregar = async () => {
     setLoading(true);
     try {
-      const resp = await fetch(`${API_URL}/api/metas/diario?modo=executivo&competencia=${competencia}`);
+      const resp = await fetch(`${API_URL}/api/metas/diario?modo=executivo&dataInicio=${dataInicio}&dataFim=${dataFim}&tipoEquipamento=${tipoEquipamento}`);
       if (!resp.ok) throw new Error('Falha ao consultar a API');
       setDados(await resp.json());
       setErro(null);
@@ -91,7 +100,7 @@ export const DashboardExecutivo = () => {
   useEffect(() => {
     carregar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [competencia]);
+  }, [dataInicio, dataFim, tipoEquipamento, trigger]);
 
   const custoMesAtual = dados?.tendenciaMensal[dados.tendenciaMensal.length - 1];
   const custoMesAnterior = dados?.tendenciaMensal[dados.tendenciaMensal.length - 2];
@@ -101,17 +110,10 @@ export const DashboardExecutivo = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between border-b border-slate-100 pb-2">
         <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2">
           <PieChartIcon size={16} className="text-green-600" /> Custo consolidado — tendência e comparação por frente/fazenda
         </h3>
-        <div className="flex items-center gap-2">
-          <input type="month" value={competencia} onChange={(e) => setCompetencia(e.target.value)} className="border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-medium bg-slate-50" />
-          <button onClick={carregar} className="inline-flex items-center px-4 py-2.5 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition-colors text-sm">
-            <RefreshCw size={16} className="mr-2" />
-            Atualizar
-          </button>
-        </div>
       </div>
 
       {erro && <div className="bg-rose-50 border border-rose-200 text-rose-700 rounded-xl p-4 text-sm">{erro}</div>}
