@@ -129,7 +129,7 @@ export const MetasOrfas = () => {
         <button
           onClick={() => vincular(l.MetaMotoristaId)}
           disabled={!vinculoEscolhido[l.MetaMotoristaId] || vinculando === l.MetaMotoristaId}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 disabled:opacity-40 disabled:cursor-not-allowed"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-green-700 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100 disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <Link2 size={13} /> {vinculando === l.MetaMotoristaId ? 'Vinculando...' : 'Vincular'}
         </button>
@@ -142,7 +142,7 @@ export const MetasOrfas = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
-            <Link2 size={22} className="text-emerald-600" /> Metas Órfãs
+            <Link2 size={22} className="text-green-600" /> Metas Órfãs
           </h2>
           <p className="text-slate-500 mt-1">{orfas.length} meta(s) sem motorista vinculado nesta competência (PRD §4.3).</p>
         </div>
@@ -157,7 +157,7 @@ export const MetasOrfas = () => {
 
       {erro && <div className="bg-rose-50 border border-rose-200 text-rose-700 rounded-xl p-4 text-sm">{erro}</div>}
       {sucesso && (
-        <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl p-4 text-sm flex items-center gap-2">
+        <div className="bg-green-50 border border-green-200 text-green-700 rounded-xl p-4 text-sm flex items-center gap-2">
           <CheckCircle2 size={16} /> {sucesso}
         </div>
       )}

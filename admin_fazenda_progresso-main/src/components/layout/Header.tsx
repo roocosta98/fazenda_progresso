@@ -15,8 +15,8 @@ export const Header = () => {
 
       <div className="flex items-center space-x-6">
         <div className="hidden md:flex items-center space-x-4 mr-2">
-          <div className="flex items-center space-x-1.5 bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full text-xs font-bold border border-emerald-100 shadow-sm">
-            <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse-ring"></span>
+          <div className="flex items-center space-x-1.5 bg-green-50 text-green-700 px-2.5 py-1 rounded-full text-xs font-bold border border-green-100 shadow-sm">
+            <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse-ring"></span>
             <span>Sankhya Online</span>
           </div>
           <div className="flex items-center space-x-1.5 bg-teal-50 text-teal-700 px-2.5 py-1 rounded-full text-xs font-bold border border-teal-100 shadow-sm">
@@ -36,10 +36,10 @@ export const Header = () => {
             className="flex items-center space-x-3 focus:outline-none group"
           >
             <div className="text-right hidden sm:block">
-              <p className="text-sm font-bold text-slate-800 leading-tight group-hover:text-emerald-700 transition-colors">{usuario?.nome}</p>
+              <p className="text-sm font-bold text-slate-800 leading-tight group-hover:text-green-700 transition-colors">{usuario?.nome}</p>
               <p className="text-xs text-slate-500 font-medium capitalize">{usuario?.perfil === 'logistica' ? 'Gestor de Frota' : usuario?.perfil}</p>
             </div>
-            <div className="h-9 w-9 rounded-full bg-gradient-to-br from-emerald-500 to-emerald-700 ring-2 ring-slate-100 shadow-sm flex items-center justify-center text-white font-bold text-sm group-hover:ring-emerald-200 transition-all">
+            <div className="h-9 w-9 rounded-full bg-gradient-to-br from-green-500 to-green-700 ring-2 ring-slate-100 shadow-sm flex items-center justify-center text-white font-bold text-sm group-hover:ring-green-200 transition-all">
               {usuario?.nome.charAt(0)}
             </div>
           </button>
@@ -50,7 +50,7 @@ export const Header = () => {
                 <p className="text-sm font-bold text-slate-800">{usuario?.nome}</p>
                 <p className="text-xs text-slate-500 capitalize">{usuario?.perfil}</p>
               </div>
-              <button className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-emerald-600 flex items-center font-medium transition-colors">
+              <button className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-green-600 flex items-center font-medium transition-colors">
                 <Settings size={16} className="mr-3 text-slate-400" /> Configurações
               </button>
               <div className="h-px bg-slate-100 my-1"></div>

@@ -30,8 +30,8 @@ export const Configuracoes: React.FC = () => {
             
             <div className="p-4 flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className="p-2 bg-emerald-50 rounded-lg">
-                  <Bell className="w-5 h-5 text-emerald-600" />
+                <div className="p-2 bg-green-50 rounded-lg">
+                  <Bell className="w-5 h-5 text-green-600" />
                 </div>
                 <div>
                   <p className="text-sm font-bold text-gray-900">Notificações Push</p>
@@ -40,7 +40,7 @@ export const Configuracoes: React.FC = () => {
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input type="checkbox" className="sr-only peer" checked={notificationsEnabled} onChange={() => setNotificationsEnabled(!notificationsEnabled)} />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-500"></div>
               </label>
             </div>
 

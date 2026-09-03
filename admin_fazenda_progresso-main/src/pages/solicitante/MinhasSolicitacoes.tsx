@@ -202,18 +202,18 @@ export const MinhasSolicitacoes = () => {
             {selectedOS.status !== 'pendente' && selectedOS.status !== 'cancelada' && (
               <div className="space-y-4">
                 <h4 className="font-bold text-slate-800 uppercase tracking-wide text-xs">Alocação da Logística</h4>
-                <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-100 space-y-3">
+                <div className="bg-green-50 rounded-xl p-4 border border-green-100 space-y-3">
                   <div className="flex items-start">
-                    <Truck className="w-4 h-4 text-emerald-600 mt-0.5 mr-3" />
+                    <Truck className="w-4 h-4 text-green-600 mt-0.5 mr-3" />
                     <div>
-                      <p className="text-xs font-semibold text-emerald-700 uppercase">Veículo Alocado</p>
-                      <p className="text-slate-800 font-bold text-sm">{selectedOS.veiculoAlocado?.modelo} <span className="font-mono font-normal text-slate-500 text-sm bg-white px-1.5 py-0.5 rounded ml-1 border border-emerald-200">{selectedOS.veiculoAlocado?.placa}</span></p>
+                      <p className="text-xs font-semibold text-green-700 uppercase">Veículo Alocado</p>
+                      <p className="text-slate-800 font-bold text-sm">{selectedOS.veiculoAlocado?.modelo} <span className="font-mono font-normal text-slate-500 text-sm bg-white px-1.5 py-0.5 rounded ml-1 border border-green-200">{selectedOS.veiculoAlocado?.placa}</span></p>
                     </div>
                   </div>
                   <div className="flex items-start">
-                    <UserIcon className="w-4 h-4 text-emerald-600 mt-0.5 mr-3" />
+                    <UserIcon className="w-4 h-4 text-green-600 mt-0.5 mr-3" />
                     <div>
-                      <p className="text-xs font-semibold text-emerald-700 uppercase">Motorista Designado</p>
+                      <p className="text-xs font-semibold text-green-700 uppercase">Motorista Designado</p>
                       <p className="text-slate-800 font-medium text-sm">{selectedOS.motoristaAlocado?.nome}</p>
                     </div>
                   </div>

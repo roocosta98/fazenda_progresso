@@ -140,7 +140,7 @@ export const FilaPendentes = () => {
       render: (row: SolicitacaoTransporte) => (
         <div>
           <div className="font-medium text-slate-800 flex items-center">
-            <Truck size={14} className="mr-1 text-emerald-600" /> {row.tipoServico}
+            <Truck size={14} className="mr-1 text-green-600" /> {row.tipoServico}
           </div>
           <div className="text-xs text-slate-500 mt-1">
             {row.origem} &rarr; {row.destino}
@@ -178,7 +178,7 @@ export const FilaPendentes = () => {
       render: (row: SolicitacaoTransporte) => (
         <button
           onClick={(e) => { e.stopPropagation(); handleAnalise(row); }}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-bold rounded-lg shadow-sm text-white bg-emerald-600 hover:bg-emerald-700 transition-colors"
+          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-bold rounded-lg shadow-sm text-white bg-green-600 hover:bg-green-700 transition-colors"
         >
           Analisar
         </button>
@@ -202,7 +202,7 @@ export const FilaPendentes = () => {
       render: (row: SolicitacaoTransporte) => (
         <div>
           <div className="font-medium text-slate-800 flex items-center">
-            <Truck size={14} className="mr-1 text-emerald-600" /> {row.tipoServico}
+            <Truck size={14} className="mr-1 text-green-600" /> {row.tipoServico}
           </div>
           <div className="text-xs text-slate-500 mt-1">
             {row.origem} &rarr; {row.destino}
@@ -280,7 +280,7 @@ export const FilaPendentes = () => {
     <div className="space-y-6 pb-12">
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 bg-slate-900 text-white px-6 py-4 rounded-xl shadow-2xl flex items-center space-x-3 animate-fade-in-up border border-slate-700">
-          <CheckCircle2 className="text-emerald-400" />
+          <CheckCircle2 className="text-green-400" />
           <span className="font-medium tracking-wide">{toastMessage}</span>
         </div>
       )}
@@ -292,7 +292,7 @@ export const FilaPendentes = () => {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Pendentes" value={pendentes.length} icon={<Clock size={24} />} colorClass="text-amber-600 bg-amber-500" />
-        <StatCard title="Aprovados / Agendados" value={aprovados.length} icon={<CheckCircle2 size={24} />} colorClass="text-emerald-600 bg-emerald-500" />
+        <StatCard title="Aprovados / Agendados" value={aprovados.length} icon={<CheckCircle2 size={24} />} colorClass="text-green-600 bg-green-500" />
         <StatCard title="Veículos Cadastrados" value={equipamentosReais.length} icon={<Truck size={24} />} colorClass="text-blue-600 bg-blue-500" />
         <StatCard title="Operadores Cadastrados" value={operadoresReais.length} icon={<UserIcon size={24} />} colorClass="text-indigo-600 bg-indigo-500" />
       </div>
@@ -311,7 +311,7 @@ export const FilaPendentes = () => {
           <button
             onClick={() => setActiveTab('aprovados')}
             className={`flex-1 md:flex-none px-6 py-2.5 text-xs font-extrabold uppercase tracking-wider rounded-lg transition-all ${
-              activeTab === 'aprovados' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'
+              activeTab === 'aprovados' ? 'bg-green-600 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'
             }`}
           >
             Aprovados & Agendados ({aprovados.length})
@@ -328,7 +328,7 @@ export const FilaPendentes = () => {
             value={busca}
             onChange={(e) => setBusca(e.target.value)}
             placeholder="Buscar por OS, serviço ou projeto..."
-            className="block w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-slate-50 text-xs font-medium transition-all"
+            className="block w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 bg-slate-50 text-xs font-medium transition-all"
           />
         </div>
       </div>
@@ -407,16 +407,16 @@ export const FilaPendentes = () => {
 
             <div className="space-y-4">
               <h4 className="font-bold text-slate-800 uppercase tracking-wide text-xs">Alocação da Logística</h4>
-              <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-100 space-y-3">
+              <div className="bg-green-50 rounded-xl p-4 border border-green-100 space-y-3">
                 <div className="flex items-start justify-between">
                   <div className="flex items-start">
-                    <Truck className="w-4 h-4 text-emerald-600 mt-0.5 mr-3" />
+                    <Truck className="w-4 h-4 text-green-600 mt-0.5 mr-3" />
                     <div>
-                      <p className="text-xs font-semibold text-emerald-700 uppercase">Veículo Alocado</p>
+                      <p className="text-xs font-semibold text-green-700 uppercase">Veículo Alocado</p>
                       <p className="text-slate-800 font-bold text-sm">
                         {solicitacaoVisualizar.veiculoAlocado?.modelo || 'N/A'} 
                         {solicitacaoVisualizar.veiculoAlocado?.placa && (
-                          <span className="font-mono font-normal text-slate-500 text-sm bg-white px-1.5 py-0.5 rounded ml-1.5 border border-emerald-200">
+                          <span className="font-mono font-normal text-slate-500 text-sm bg-white px-1.5 py-0.5 rounded ml-1.5 border border-green-200">
                             {solicitacaoVisualizar.veiculoAlocado.placa}
                           </span>
                         )}
@@ -428,16 +428,16 @@ export const FilaPendentes = () => {
                       setDetalhesOpen(false);
                       setSubstituirVeiculoModal({ open: true, os: solicitacaoVisualizar });
                     }}
-                    className="text-xs font-bold text-emerald-700 hover:underline flex items-center bg-white px-2.5 py-1 rounded-lg border border-emerald-200 shadow-sm"
+                    className="text-xs font-bold text-green-700 hover:underline flex items-center bg-white px-2.5 py-1 rounded-lg border border-green-200 shadow-sm"
                   >
                     <RefreshCw size={12} className="mr-1" /> Trocar Veículo
                   </button>
                 </div>
-                <div className="flex items-start justify-between pt-2 border-t border-emerald-100">
+                <div className="flex items-start justify-between pt-2 border-t border-green-100">
                   <div className="flex items-start">
-                    <UserIcon className="w-4 h-4 text-emerald-600 mt-0.5 mr-3" />
+                    <UserIcon className="w-4 h-4 text-green-600 mt-0.5 mr-3" />
                     <div>
-                      <p className="text-xs font-semibold text-emerald-700 uppercase">Motorista Designado</p>
+                      <p className="text-xs font-semibold text-green-700 uppercase">Motorista Designado</p>
                       <p className="text-slate-800 font-medium text-sm">{solicitacaoVisualizar.motoristaAlocado?.nome || 'Não atribuído'}</p>
                     </div>
                   </div>
@@ -506,7 +506,7 @@ export const FilaPendentes = () => {
             <select
               value={novoMotoristaId}
               onChange={(e) => setNovoMotoristaId(e.target.value)}
-              className="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all bg-white text-sm shadow-sm font-medium appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-[length:1.2em] bg-[right_1rem_center] bg-no-repeat"
+              className="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-4 focus:ring-green-500/10 focus:border-green-500 transition-all bg-white text-sm shadow-sm font-medium appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-[length:1.2em] bg-[right_1rem_center] bg-no-repeat"
             >
               <option value="">Selecione o novo operador...</option>
               {operadoresReais
@@ -558,8 +558,8 @@ export const FilaPendentes = () => {
         title="Trocar Veículo de OS Agendada"
       >
         <div className="p-6 space-y-5">
-          <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-200 flex items-start space-x-3">
-            <Truck className="text-emerald-600 shrink-0 mt-0.5" size={20} />
+          <div className="bg-green-50 p-4 rounded-xl border border-green-200 flex items-start space-x-3">
+            <Truck className="text-green-600 shrink-0 mt-0.5" size={20} />
             <div>
               <p className="text-sm font-bold text-slate-800">Troca de Veículo na Operação</p>
               <p className="text-xs text-slate-600 mt-1">
@@ -576,7 +576,7 @@ export const FilaPendentes = () => {
             <select
               value={novoVeiculoId}
               onChange={(e) => setNovoVeiculoId(e.target.value)}
-              className="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all bg-white text-sm shadow-sm font-medium appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-[length:1.2em] bg-[right_1rem_center] bg-no-repeat"
+              className="w-full border border-slate-300 rounded-xl px-4 py-3 focus:ring-4 focus:ring-green-500/10 focus:border-green-500 transition-all bg-white text-sm shadow-sm font-medium appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%2394a3b8%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')] bg-[length:1.2em] bg-[right_1rem_center] bg-no-repeat"
             >
               <option value="">Selecione o novo veículo...</option>
               {equipamentosReais
@@ -597,7 +597,7 @@ export const FilaPendentes = () => {
               rows={3}
               required
               placeholder="Ex: Veículo anterior apresentou falha mecânica / Remanejamento por prioridade de carga..."
-              className="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-600 resize-none shadow-sm font-medium text-slate-800"
+              className="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:ring-4 focus:ring-green-500/10 focus:border-green-600 resize-none shadow-sm font-medium text-slate-800"
               value={justificativaTrocaVeiculo}
               onChange={(e) => setJustificativaTrocaVeiculo(e.target.value)}
             ></textarea>
@@ -615,7 +615,7 @@ export const FilaPendentes = () => {
               type="button"
               onClick={handleConfirmarTrocaVeiculo}
               disabled={!novoVeiculoId || !justificativaTrocaVeiculo.trim()}
-              className="px-6 py-2.5 rounded-xl font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center"
+              className="px-6 py-2.5 rounded-xl font-bold text-white bg-green-600 hover:bg-green-700 transition-colors shadow-md disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center"
             >
               <RefreshCw size={15} className="mr-2" /> Confirmar Troca de Veículo
             </button>

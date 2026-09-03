@@ -39,13 +39,13 @@ export const Login = () => {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-agro-950/90 via-agro-900/40 to-transparent flex flex-col justify-end p-16">
           <div className="flex items-center gap-3 mb-6 animate-fade-in-up">
-            <div className="p-3 bg-emerald-500/20 backdrop-blur-md rounded-xl border border-emerald-500/30 shadow-sm">
-              <Leaf className="w-10 h-10 text-emerald-400" />
+            <div className="p-3 bg-green-500/20 backdrop-blur-md rounded-xl border border-green-500/30 shadow-sm">
+              <Leaf className="w-10 h-10 text-green-400" />
             </div>
             <div className="flex flex-col">
-              <span className="text-sm font-bold tracking-widest text-emerald-400 uppercase">AgroTech</span>
+              <span className="text-sm font-bold tracking-widest text-green-400 uppercase">AgroTech</span>
               <h1 className="text-4xl font-black tracking-tight text-white leading-none drop-shadow-sm mt-1">
-                FAZENDA<span className="text-emerald-400">PROGRESSO</span>
+                FAZENDA<span className="text-green-400">PROGRESSO</span>
               </h1>
             </div>
           </div>
@@ -60,13 +60,13 @@ export const Login = () => {
         <div className="w-full max-w-md animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
           
           <div className="flex items-center gap-3 mb-12 lg:hidden">
-            <div className="p-2 bg-emerald-500/10 rounded-xl border border-emerald-500/20 shadow-sm">
-              <Leaf className="w-8 h-8 text-emerald-600" />
+            <div className="p-2 bg-green-500/10 rounded-xl border border-green-500/20 shadow-sm">
+              <Leaf className="w-8 h-8 text-green-600" />
             </div>
             <div className="flex flex-col">
-              <span className="text-[10px] font-bold tracking-widest text-emerald-600 uppercase">AgroTech</span>
+              <span className="text-[10px] font-bold tracking-widest text-green-600 uppercase">AgroTech</span>
               <h1 className="text-2xl font-black tracking-tight text-slate-800 leading-none mt-0.5">
-                FAZENDA<span className="text-emerald-600">PROGRESSO</span>
+                FAZENDA<span className="text-green-600">PROGRESSO</span>
               </h1>
             </div>
           </div>

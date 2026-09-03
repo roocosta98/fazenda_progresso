@@ -23,7 +23,7 @@ export const StatusBadge = ({ status }: StatusBadgeProps) => {
       label: 'Em Execução'
     },
     concluida: {
-      color: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+      color: 'bg-green-100 text-green-700 border-green-200',
       icon: <CheckCircle2 size={12} className="mr-1.5" />,
       label: 'Concluída'
     },

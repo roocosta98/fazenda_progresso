@@ -51,17 +51,17 @@ export const MinhaMeta: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-slate-50">
-      <div className="bg-emerald-600 text-white px-4 py-4 shadow-md flex items-center justify-between sticky top-0 z-20">
+      <div className="bg-green-600 text-white px-4 py-4 shadow-md flex items-center justify-between sticky top-0 z-20">
         <div className="flex items-center">
-          <button onClick={() => navigate(-1)} className="mr-3 p-1.5 rounded-full hover:bg-emerald-700 active:bg-emerald-800 transition-colors">
+          <button onClick={() => navigate(-1)} className="mr-3 p-1.5 rounded-full hover:bg-green-700 active:bg-green-800 transition-colors">
             <ArrowLeft size={24} />
           </button>
           <div>
             <h1 className="text-lg font-bold leading-tight">Minha Meta</h1>
-            <p className="text-xs text-emerald-100">Programa Motorista de Excelência</p>
+            <p className="text-xs text-green-100">Programa Motorista de Excelência</p>
           </div>
         </div>
-        <Trophy size={22} className="text-emerald-100" />
+        <Trophy size={22} className="text-green-100" />
       </div>
 
       <div className="flex-1 p-4 space-y-4 pb-10">
@@ -80,12 +80,12 @@ export const MinhaMeta: React.FC = () => {
         {progresso && (
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
             <div className="flex items-center justify-between mb-1">
-              <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2"><TrendingUp size={16} className="text-emerald-600" /> Ponto de equilíbrio do mês</h3>
+              <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2"><TrendingUp size={16} className="text-green-600" /> Ponto de equilíbrio do mês</h3>
               {progresso.QtdCaminhoes > 1 && (
                 <span className="text-[11px] font-bold text-slate-500 flex items-center gap-1"><Truck size={12} /> {progresso.QtdCaminhoes} caminhões</span>
               )}
             </div>
-            <p className={`text-2xl font-black ${((progresso.SaldoAcumuladoMes ?? 0) >= 0) ? 'text-emerald-600' : 'text-rose-600'}`}>
+            <p className={`text-2xl font-black ${((progresso.SaldoAcumuladoMes ?? 0) >= 0) ? 'text-green-600' : 'text-rose-600'}`}>
               {formatMoeda(progresso.SaldoAcumuladoMes)}
             </p>
             <p className="text-xs text-slate-500 mt-1">
@@ -97,7 +97,7 @@ export const MinhaMeta: React.FC = () => {
 
         {diario.length > 0 && (
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
-            <h3 className="text-sm font-bold text-slate-700 mb-1 flex items-center gap-2"><CalendarDays size={16} className="text-emerald-600" /> Meta x realizado por dia</h3>
+            <h3 className="text-sm font-bold text-slate-700 mb-1 flex items-center gap-2"><CalendarDays size={16} className="text-green-600" /> Meta x realizado por dia</h3>
             <p className="text-[11px] text-slate-400 mb-3">Barras verdes = bateu a meta do dia. Linha = custo esperado.</p>
             <div style={{ width: '100%', height: 160 }}>
               <ResponsiveContainer width="100%" height="100%">
@@ -111,7 +111,7 @@ export const MinhaMeta: React.FC = () => {
                   <Tooltip formatter={(value) => formatMoeda(Number(value))} />
                   <Bar dataKey="realizado" radius={[4, 4, 0, 0]}>
                     {diario.map((d, idx) => (
-                      <Cell key={idx} fill={(d.ResultadoDia ?? 0) >= 0 ? '#059669' : '#e11d48'} />
+                      <Cell key={idx} fill={(d.ResultadoDia ?? 0) >= 0 ? '#16a34a' : '#e11d48'} />
                     ))}
                   </Bar>
                   <Line type="monotone" dataKey="esperado" stroke="#0f172a" strokeWidth={2} dot={false} />
@@ -142,19 +142,19 @@ export const MinhaMeta: React.FC = () => {
                 <p className="text-sm font-bold text-slate-700 mb-4">{meta.NomeEquipamento}</p>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-3">
-                    <p className="text-[10px] font-bold text-emerald-600 uppercase flex items-center gap-1"><Fuel size={12} /> Km/L</p>
-                    <p className="text-xl font-black text-emerald-800">{formatNumero(meta.KmLRealizado)}</p>
-                    <p className="text-[11px] text-emerald-600">Meta: {formatNumero(meta.MetaKmL)}</p>
+                  <div className="bg-green-50 border border-green-100 rounded-xl p-3">
+                    <p className="text-[10px] font-bold text-green-600 uppercase flex items-center gap-1"><Fuel size={12} /> Km/L</p>
+                    <p className="text-xl font-black text-green-800">{formatNumero(meta.KmLRealizado)}</p>
+                    <p className="text-[11px] text-green-600">Meta: {formatNumero(meta.MetaKmL)}</p>
                     {meta.PercentualMetaKmL !== null && (
-                      <div className="mt-2 h-1.5 bg-emerald-100 rounded-full overflow-hidden">
+                      <div className="mt-2 h-1.5 bg-green-100 rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-emerald-500 rounded-full"
+                          className="h-full bg-green-500 rounded-full"
                           style={{ width: `${Math.min(100, meta.PercentualMetaKmL)}%` }}
                         />
                       </div>
                     )}
-                    <p className="text-[11px] font-bold text-emerald-700 mt-1">
+                    <p className="text-[11px] font-bold text-green-700 mt-1">
                       {meta.PercentualMetaKmL !== null ? `${formatNumero(meta.PercentualMetaKmL, 0)}% da meta` : 'Sem leitura suficiente ainda'}
                     </p>
                   </div>
@@ -189,7 +189,7 @@ export const MinhaMeta: React.FC = () => {
                 )}
 
                 {meta.ReconhecimentoMensal !== null && (
-                  <div className="mt-3 bg-emerald-600 text-white rounded-xl p-3 flex items-center justify-between">
+                  <div className="mt-3 bg-green-600 text-white rounded-xl p-3 flex items-center justify-between">
                     <span className="text-xs font-bold">Reconhecimento do mês</span>
                     <span className="text-sm font-black">{formatMoeda(meta.ReconhecimentoMensal)}</span>
                   </div>
@@ -212,7 +212,7 @@ export const MinhaMeta: React.FC = () => {
                       <XAxis dataKey="fase" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
                       <YAxis tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
                       <Tooltip formatter={(value) => [`${value} km/L`, 'Km/L']} />
-                      <Bar dataKey="KmL" radius={[6, 6, 0, 0]} fill="#059669" />
+                      <Bar dataKey="KmL" radius={[6, 6, 0, 0]} fill="#16a34a" />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>

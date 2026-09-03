@@ -1,8 +1,9 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #10b981; /* emerald-500 */
-  --color-primary-dark: #059669; /* emerald-600 */
+  /* Paleta puxada da logo da Fazenda Progresso: verde-grama, não mais o verde-azulado (emerald) */
+  --color-primary: #22c55e; /* green-500 */
+  --color-primary-dark: #16a34a; /* green-600 */
   --color-secondary: #facc15; /* yellow-400 */
   --color-dark: #1f2937; /* gray-800 */
   --color-light: #f3f4f6; /* gray-100 */

@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getMssqlPool } from '../_lib/mssql.js';
 import sql from 'mssql';
+import { FILTRO_TIPO_CAMINHAO_LIKE } from '../_lib/tipoEquipamento.js';
 
 // Painel de Metas (PRD "Metas, Leituras, Gastos e Consumos", seção 4.3/4.4/8.1).
 // Lê vw_PainelMotoristaVeiculo (já cruza Equipamentos + posição + MetasMotoristas + Motoristas +
@@ -40,6 +41,7 @@ LEFT JOIN Equipamentos eq ON eq.EquipamentoId = v.EquipamentoId
 LEFT JOIN TiposEquipamento te ON te.TipoEquipamentoId = eq.TipoEquipamentoId
 LEFT JOIN Consumo c ON c.EquipamentoId = v.EquipamentoId
 WHERE v.CompetenciaMeta >= @inicioCompetencia AND v.CompetenciaMeta < @fimCompetencia
+  AND te.Descricao LIKE @tipoCaminhao
 ORDER BY v.Atividade, v.MotoristaNomeFicha
 `;
 
@@ -61,6 +63,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .request()
       .input('inicioCompetencia', sql.DateTime2, inicioCompetencia)
       .input('fimCompetencia', sql.DateTime2, fimCompetencia)
+      .input('tipoCaminhao', sql.NVarChar, FILTRO_TIPO_CAMINHAO_LIKE)
       .query(QUERY);
 
     const linhas = result.recordset.map((linha) => ({

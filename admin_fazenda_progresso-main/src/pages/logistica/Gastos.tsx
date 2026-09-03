@@ -36,7 +36,7 @@ const competenciaAtual = () => {
 
 const CardTotal = ({ icon, label, valor }: { icon: React.ReactNode; label: string; valor: number }) => (
   <div className="bg-white rounded-2xl shadow-soft border border-slate-200/80 p-5 flex items-center gap-4">
-    <div className="p-3 rounded-xl bg-emerald-50 text-emerald-600">{icon}</div>
+    <div className="p-3 rounded-xl bg-green-50 text-green-600">{icon}</div>
     <div>
       <p className="text-xs font-bold text-slate-500 uppercase tracking-wide">{label}</p>
       <p className="text-lg font-bold text-slate-800">{formatMoeda(valor)}</p>
@@ -131,18 +131,15 @@ export const Gastos = () => {
       header: 'Custo Operacional Total',
       align: 'right' as const,
       render: (l: LinhaGasto) => (
-        <span className="font-mono font-bold text-emerald-700">{formatMoeda(l.CustoOperacionalTotalMes ?? l.CustoFixoTotalMes)}</span>
+        <span className="font-mono font-bold text-green-700">{formatMoeda(l.CustoOperacionalTotalMes ?? l.CustoFixoTotalMes)}</span>
       ),
     },
   ];
 
   return (
-    <div className="space-y-6 pb-12">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-800 tracking-tight">Gastos e Custo Operacional</h2>
-          <p className="text-slate-500 mt-1">Custo fixo por equipamento e custo do motorista — visão gerencial completa (CustosFixosEquipamento + Motoristas).</p>
-        </div>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-bold text-slate-700">Detalhamento por equipamento e motorista</h3>
         <button
           onClick={carregar}
           className="inline-flex items-center px-4 py-2.5 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition-colors text-sm"

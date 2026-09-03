@@ -106,14 +106,9 @@ export const InsightsIA = () => {
   };
 
   return (
-    <div className="space-y-6 pb-12">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
-            <Sparkles size={22} className="text-emerald-600" /> Insights (IA)
-          </h2>
-          <p className="text-slate-500 mt-1">A IA lê Metas, Gastos e Alarmes agregados e sugere o que vale a pena olhar — nunca envia remuneração de motorista pra fora.</p>
-        </div>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-slate-500 max-w-xl">A IA lê Metas, Gastos e Alarmes agregados e sugere o que vale a pena olhar — nunca envia remuneração de motorista pra fora.</p>
         <div className="flex items-center gap-2">
           <button
             onClick={carregar}
@@ -125,7 +120,7 @@ export const InsightsIA = () => {
           <button
             onClick={gerarInsights}
             disabled={gerando}
-            className="inline-flex items-center px-5 py-2.5 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-colors text-sm disabled:opacity-50"
+            className="inline-flex items-center px-5 py-2.5 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 transition-colors text-sm disabled:opacity-50"
           >
             <Sparkles size={16} className="mr-2" />
             {gerando ? 'Gerando...' : 'Gerar novos insights'}
@@ -195,7 +190,7 @@ export const InsightsIA = () => {
                   )}
                   <button
                     onClick={() => atualizarInsight(insight.InsightId, { resolvido: true })}
-                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100"
+                    className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-green-700 bg-green-50 border border-green-200 rounded-lg hover:bg-green-100"
                   >
                     <CheckCircle2 size={13} /> Resolver
                   </button>

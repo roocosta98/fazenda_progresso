@@ -16,7 +16,7 @@ export const CentralNotificacoes: React.FC<CentralNotificacoesProps> = ({ isOpen
       case 'viagem_reagendada': return <Calendar className="w-5 h-5 text-blue-500" />;
       case 'viagem_cancelada': return <AlertTriangle className="w-5 h-5 text-red-500" />;
       case 'substituicao_motorista': return <UserX className="w-5 h-5 text-orange-500" />;
-      default: return <Bell className="w-5 h-5 text-emerald-500" />;
+      default: return <Bell className="w-5 h-5 text-green-500" />;
     }
   };
 
@@ -59,8 +59,8 @@ export const CentralNotificacoes: React.FC<CentralNotificacoesProps> = ({ isOpen
         {/* Header */}
         <div className="bg-white p-5 flex items-center justify-between border-b border-slate-200">
           <div className="flex items-center space-x-2">
-            <div className="p-2 bg-emerald-100 rounded-lg">
-              <Bell className="w-5 h-5 text-emerald-600" />
+            <div className="p-2 bg-green-100 rounded-lg">
+              <Bell className="w-5 h-5 text-green-600" />
             </div>
             <h2 className="text-slate-800 font-bold text-lg">Notificações</h2>
           </div>
@@ -87,7 +87,7 @@ export const CentralNotificacoes: React.FC<CentralNotificacoesProps> = ({ isOpen
                 className={`p-4 rounded-xl border transition-colors cursor-pointer ${
                   notif.lida 
                     ? 'bg-white border-slate-200 opacity-75' 
-                    : 'bg-emerald-50 border-emerald-200 shadow-sm'
+                    : 'bg-green-50 border-green-200 shadow-sm'
                 }`}
               >
                 <div className="flex items-start space-x-3">
@@ -103,7 +103,7 @@ export const CentralNotificacoes: React.FC<CentralNotificacoesProps> = ({ isOpen
                     </p>
                   </div>
                   {!notif.lida && (
-                    <div className="w-2 h-2 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
+                    <div className="w-2 h-2 rounded-full bg-green-500 mt-1.5 shrink-0" />
                   )}
                 </div>
               </div>

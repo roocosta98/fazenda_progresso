@@ -35,7 +35,7 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({ isOpen, onClose, onOpenN
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="bg-emerald-600 p-6 flex flex-col items-start justify-end h-[160px] relative">
+        <div className="bg-green-600 p-6 flex flex-col items-start justify-end h-[160px] relative">
           <button 
             onClick={onClose}
             className="absolute top-4 right-4 p-2 text-white/80 hover:text-white transition-colors"
@@ -44,10 +44,10 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({ isOpen, onClose, onOpenN
           </button>
           
           <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-inner mb-3">
-            <User className="w-8 h-8 text-emerald-600" />
+            <User className="w-8 h-8 text-green-600" />
           </div>
           <h2 className="text-white font-bold text-lg leading-tight">{motorista ?? 'Motorista'}</h2>
-          <p className="text-emerald-100 text-sm font-medium">Portal do Motorista</p>
+          <p className="text-green-100 text-sm font-medium">Portal do Motorista</p>
         </div>
 
         <div className="flex-1 overflow-y-auto py-4">
@@ -67,9 +67,9 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({ isOpen, onClose, onOpenN
                   onClose();
                   navigate('/minha-meta');
                 }}
-                className="w-full flex items-center px-6 py-4 text-emerald-700 hover:bg-emerald-50 active:bg-emerald-100 transition-colors font-bold"
+                className="w-full flex items-center px-6 py-4 text-green-700 hover:bg-green-50 active:bg-green-100 transition-colors font-bold"
               >
-                <Trophy className="w-5 h-5 mr-4 text-emerald-600" />
+                <Trophy className="w-5 h-5 mr-4 text-green-600" />
                 Minha Meta
               </button>
             </li>
@@ -80,9 +80,9 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({ isOpen, onClose, onOpenN
                     onClose();
                     onOpenNovaSolicitacao();
                   }} 
-                  className="w-full flex items-center px-6 py-4 text-emerald-700 hover:bg-emerald-50 active:bg-emerald-100 transition-colors font-bold"
+                  className="w-full flex items-center px-6 py-4 text-green-700 hover:bg-green-50 active:bg-green-100 transition-colors font-bold"
                 >
-                  <PlusCircle className="w-5 h-5 mr-4 text-emerald-600" />
+                  <PlusCircle className="w-5 h-5 mr-4 text-green-600" />
                   Nova Solicitação
                 </button>
               </li>

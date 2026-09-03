@@ -1,6 +1,18 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import sql from 'mssql';
 import { getMssqlPool } from '../_lib/mssql.js';
+import { FILTRO_TIPO_CAMINHAO_LIKE } from '../_lib/tipoEquipamento.js';
+
+// Só caminhão em todas as views por equipamento (pedido do Rodrigo) — nenhuma delas traz
+// TipoEquipamento no próprio contrato de campos, então filtro via EXISTS contra
+// Equipamentos/TiposEquipamento pelo EquipamentoId de cada view, sem mexer no restante da query.
+const EXISTS_CAMINHAO = (equipamentoIdExpr: string) => `
+  EXISTS (
+    SELECT 1 FROM Equipamentos eq
+    JOIN TiposEquipamento te ON te.TipoEquipamentoId = eq.TipoEquipamentoId
+    WHERE eq.EquipamentoId = ${equipamentoIdExpr} AND te.Descricao LIKE @tipoCaminhao
+  )
+`;
 
 // Painel de Metas Completo (diário) — PRD v3 seção 5. As 6 views novas (migração
 // sql/013_painel_metas_completo.sql, já aplicada pelo cliente) resolvem todo o dado — aqui só
@@ -61,10 +73,12 @@ async function modoDiario(req: VercelRequest, res: VercelResponse) {
     .input('dataInicio', sql.DateTime2, dataInicio)
     .input('dataFim', sql.DateTime2, dataFim)
     .input('equipamentoId', sql.Int, equipamentoId)
+    .input('tipoCaminhao', sql.NVarChar, FILTRO_TIPO_CAMINHAO_LIKE)
     .query(`
       SELECT * FROM vw_ResultadoDiarioVeiculo
       WHERE Dia >= @dataInicio AND Dia < @dataFim
         AND (@equipamentoId IS NULL OR EquipamentoId = @equipamentoId)
+        AND ${EXISTS_CAMINHAO('EquipamentoId')}
       ORDER BY Dia
     `);
 
@@ -95,9 +109,11 @@ async function modoMotivos(req: VercelRequest, res: VercelResponse) {
     .input('equipamentoId', sql.Int, equipamentoId)
     .input('dataInicio', sql.DateTime2, dataInicio)
     .input('dataFim', sql.DateTime2, dataFim)
+    .input('tipoCaminhao', sql.NVarChar, FILTRO_TIPO_CAMINHAO_LIKE)
     .query(`
       SELECT * FROM vw_MotivosOperacaoEquipamento
       WHERE EquipamentoId = @equipamentoId AND Dia >= @dataInicio AND Dia < @dataFim
+        AND ${EXISTS_CAMINHAO('EquipamentoId')}
       ORDER BY MinutosAproximados DESC
     `);
 
@@ -117,9 +133,11 @@ async function modoMotor(req: VercelRequest, res: VercelResponse) {
     .input('equipamentoId', sql.Int, equipamentoId)
     .input('dataInicio', sql.DateTime2, dataInicio)
     .input('dataFim', sql.DateTime2, dataFim)
+    .input('tipoCaminhao', sql.NVarChar, FILTRO_TIPO_CAMINHAO_LIKE)
     .query(`
       SELECT * FROM vw_TempoMotorEquipamento
       WHERE EquipamentoId = @equipamentoId AND Dia >= @dataInicio AND Dia < @dataFim
+        AND ${EXISTS_CAMINHAO('EquipamentoId')}
       ORDER BY Dia
     `);
 
@@ -134,9 +152,11 @@ async function modoProgresso(req: VercelRequest, res: VercelResponse) {
   const porVeiculo = await pool.request()
     .input('inicioCompetencia', sql.DateTime2, inicio)
     .input('fimCompetencia', sql.DateTime2, fim)
+    .input('tipoCaminhao', sql.NVarChar, FILTRO_TIPO_CAMINHAO_LIKE)
     .query(`
       SELECT * FROM vw_ProgressoMensalVeiculo
       WHERE Competencia >= @inicioCompetencia AND Competencia < @fimCompetencia
+        AND ${EXISTS_CAMINHAO('EquipamentoId')}
       ORDER BY SaldoAcumuladoMes DESC
     `);
 
@@ -165,6 +185,7 @@ async function modoExecutivo(req: VercelRequest, res: VercelResponse) {
   const tendenciaMensal = await pool.request()
     .input('inicioTendencia', sql.DateTime2, inicioTendencia)
     .input('fimMesCorrente', sql.DateTime2, fimMesCorrente)
+    .input('tipoCaminhao', sql.NVarChar, FILTRO_TIPO_CAMINHAO_LIKE)
     .query(`
       SELECT
         CompetenciaMeta,
@@ -172,6 +193,7 @@ async function modoExecutivo(req: VercelRequest, res: VercelResponse) {
         SUM(ISNULL(CustoOperacionalTotalMes, CustoFixoTotalMes)) AS CustoOperacionalTotalMes
       FROM vw_PainelMotoristaVeiculo
       WHERE CompetenciaMeta >= @inicioTendencia AND CompetenciaMeta < @fimMesCorrente
+        AND ${EXISTS_CAMINHAO('EquipamentoId')}
       GROUP BY CompetenciaMeta
       ORDER BY CompetenciaMeta
     `);
@@ -179,6 +201,7 @@ async function modoExecutivo(req: VercelRequest, res: VercelResponse) {
   const porFrenteFazenda = await pool.request()
     .input('inicioMesCorrente', sql.DateTime2, inicioMesCorrente)
     .input('fimMesCorrente', sql.DateTime2, fimMesCorrente)
+    .input('tipoCaminhao', sql.NVarChar, FILTRO_TIPO_CAMINHAO_LIKE)
     .query(`
       SELECT
         GrupoFrente, Fazenda,
@@ -186,6 +209,7 @@ async function modoExecutivo(req: VercelRequest, res: VercelResponse) {
         SUM(ISNULL(CustoOperacionalTotalMes, CustoFixoTotalMes)) AS CustoOperacionalTotalMes
       FROM vw_PainelMotoristaVeiculo
       WHERE CompetenciaMeta >= @inicioMesCorrente AND CompetenciaMeta < @fimMesCorrente
+        AND ${EXISTS_CAMINHAO('EquipamentoId')}
       GROUP BY GrupoFrente, Fazenda
       ORDER BY CustoOperacionalTotalMes DESC
     `);
@@ -207,7 +231,12 @@ async function modoExecutivo(req: VercelRequest, res: VercelResponse) {
         return { TotalMotoristas: 0, DentroDoPontoDeEquilibrio: 0 };
       }),
     pool.request()
-      .query(`SELECT COUNT(*) AS QtdAlarmes24h FROM AlarmesEquipamento WHERE ColetadoEmUtc >= DATEADD(HOUR, -24, SYSUTCDATETIME())`)
+      .input('tipoCaminhao', sql.NVarChar, FILTRO_TIPO_CAMINHAO_LIKE)
+      .query(`
+        SELECT COUNT(*) AS QtdAlarmes24h FROM AlarmesEquipamento
+        WHERE ColetadoEmUtc >= DATEADD(HOUR, -24, SYSUTCDATETIME())
+          AND ${EXISTS_CAMINHAO('EquipamentoId')}
+      `)
       .then((r) => r.recordset[0].QtdAlarmes24h as number)
       .catch((error) => {
         console.error('Dashboard executivo: falha ao contar alarmes:', error);

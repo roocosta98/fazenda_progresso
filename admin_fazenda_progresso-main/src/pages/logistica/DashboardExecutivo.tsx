@@ -40,7 +40,7 @@ const formatCompetencia = (iso: string) => {
 
 const CardKpi = ({ icon, label, valor, tom }: { icon: React.ReactNode; label: string; valor: string; tom: 'emerald' | 'amber' | 'rose' }) => {
   const cores = {
-    emerald: 'bg-emerald-50 text-emerald-600',
+    emerald: 'bg-green-50 text-green-600',
     amber: 'bg-amber-50 text-amber-600',
     rose: 'bg-rose-50 text-rose-600',
   } as const;
@@ -100,14 +100,11 @@ export const DashboardExecutivo = () => {
     : null;
 
   return (
-    <div className="space-y-6 pb-12">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
-            <PieChartIcon size={22} className="text-emerald-600" /> Dashboard Executivo
-          </h2>
-          <p className="text-slate-500 mt-1">Custo consolidado da frota — tendência mensal, comparação por frente/fazenda e ponto de equilíbrio dos motoristas.</p>
-        </div>
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2">
+          <PieChartIcon size={16} className="text-green-600" /> Custo consolidado — tendência e comparação por frente/fazenda
+        </h3>
         <div className="flex items-center gap-2">
           <input type="month" value={competencia} onChange={(e) => setCompetencia(e.target.value)} className="border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-medium bg-slate-50" />
           <button onClick={carregar} className="inline-flex items-center px-4 py-2.5 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 transition-colors text-sm">
@@ -158,7 +155,7 @@ export const DashboardExecutivo = () => {
                   <XAxis dataKey="mes" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
                   <YAxis tickFormatter={(v) => formatMoedaCompacta(Number(v))} tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
                   <Tooltip formatter={(value) => formatMoeda(Number(value))} />
-                  <Area type="monotone" dataKey="custo" name="Custo operacional" stroke="#059669" fill="#059669" fillOpacity={0.15} strokeWidth={2} />
+                  <Area type="monotone" dataKey="custo" name="Custo operacional" stroke="#16a34a" fill="#16a34a" fillOpacity={0.15} strokeWidth={2} />
                 </AreaChart>
               </ResponsiveContainer>
             </ChartCard>
