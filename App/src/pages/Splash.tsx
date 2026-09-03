@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Truck } from 'lucide-react';
+
 
 export const Splash: React.FC = () => {
   const navigate = useNavigate();
