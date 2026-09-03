@@ -36,36 +36,6 @@ interface OperadorItem {
   Nome: string;
 }
 
-// Dados padrão da referência para quando não houver dados do período no banco
-const DADOS_GRAFICO_DIARIO = [
-  { dia: '20/Aug', previsto: 8800, realizado: 8200, status: 'dentro' },
-  { dia: '21/Aug', previsto: 9200, realizado: 8900, status: 'dentro' },
-  { dia: '22/Aug', previsto: 9000, realizado: 10400, status: 'acima' },
-  { dia: '23/Aug', previsto: 8500, realizado: 7800, status: 'dentro' },
-  { dia: '24/Aug', previsto: 9100, realizado: 8500, status: 'dentro' },
-  { dia: '25/Aug', previsto: 9300, realizado: 10800, status: 'acima' },
-  { dia: '26/Aug', previsto: 8900, realizado: 8400, status: 'dentro' },
-  { dia: '27/Aug', previsto: 9200, realizado: 8600, status: 'dentro' },
-  { dia: '28/Aug', previsto: 9400, realizado: 12100, status: 'acima' },
-  { dia: '29/Aug', previsto: 8800, realizado: 8200, status: 'dentro' },
-  { dia: '30/Aug', previsto: 9000, realizado: 8500, status: 'dentro' },
-  { dia: '31/Aug', previsto: 9300, realizado: 11200, status: 'acima' },
-  { dia: '01/Sep', previsto: 8700, realizado: 8300, status: 'dentro' },
-  { dia: '02/Sep', previsto: 9100, realizado: 8600, status: 'dentro' },
-];
-
-const DADOS_MOTIVOS_PARADA = [
-  { motivo: 'Manutenção Não Prog', minutos: 420, cor: '#ef4444' },
-  { motivo: 'Aguardando Transbordo', minutos: 280, cor: '#f97316' },
-  { motivo: 'Refeição/Descanso', minutos: 180, cor: '#3b82f6' },
-  { motivo: 'Troca de Turno', minutos: 90, cor: '#3b82f6' },
-];
-
-const DADOS_USO_MOTOR = [
-  { name: 'Motor Produtivo (Operação)', value: 78, color: '#10b981' },
-  { name: 'Motor Ocioso (Parado)', value: 22, color: '#ef4444' },
-];
-
 export const PainelMetasDiario: React.FC = () => {
   // Filtros de cabeçalho
   const [dataDe, setDataDe] = useState('2026-08-20');
@@ -87,9 +57,6 @@ export const PainelMetasDiario: React.FC = () => {
   const [kpis, setKpis] = useState<any>(null);
 
   // Estados de expansão dos acordeões
-  const [expandManutencao, setExpandManutencao] = useState(true);
-  const [expandTransbordo, setExpandTransbordo] = useState(false);
-  const [expandTempoOcioso, setExpandTempoOcioso] = useState(true);
   const [expandGastos, setExpandGastos] = useState<Record<number, boolean>>({
     1: true,
     2: false,
@@ -558,80 +525,40 @@ export const PainelMetasDiario: React.FC = () => {
 
             {/* Gráfico de Barras Horizontais */}
             <div className="space-y-2.5 mb-5">
-              {dadosMotivos.map((item, idx) => (
-                <div key={idx} className="space-y-1">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-slate-600 font-medium">{item.motivo}</span>
-                    <span className="font-bold text-slate-800">{item.minutos} min</span>
-                  </div>
-                  <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
-                    <div
-                      className="h-3 rounded-full transition-all duration-500"
-                      style={{
-                        width: `${(item.minutos / 450) * 100}%`,
-                        backgroundColor: item.cor,
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
-              <div className="flex justify-between text-[9px] text-slate-400 pt-1">
-                <span>0</span>
-                <span>50</span>
-                <span>100</span>
-                <span>150</span>
-                <span>200</span>
-                <span>250</span>
-                <span>300</span>
-                <span>350</span>
-                <span>400</span>
-                <span>450</span>
-              </div>
-            </div>
-
-            {/* Acordeões de Ocorrências */}
-            <div className="space-y-2.5">
-              {/* Acordeão 1: Manutenção Não Programada */}
-              <div className="border border-slate-200/80 rounded-xl overflow-hidden text-xs">
-                <button
-                  onClick={() => setExpandManutencao(!expandManutencao)}
-                  className="w-full p-3 bg-slate-50 hover:bg-slate-100/80 flex items-center justify-between text-slate-800 font-semibold transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-rose-500" />
-                    <span>Manutenção Não Programada (420 min)</span>
-                  </div>
-                  {expandManutencao ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
-                </button>
-                {expandManutencao && (
-                  <div className="p-3 bg-white space-y-1.5 text-slate-600 border-t border-slate-100">
-                    <p className="font-bold text-slate-700 mb-1 text-[11px]">Ocorrências registradas:</p>
-                    <p>• 22/08 - VW 32.380: Troca de mangueira hidráulica (210 min)</p>
-                    <p>• 28/08 - MB Atego 2429: Reparo em sistema elétrico (210 min)</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Acordeão 2: Aguardando Transbordo */}
-              <div className="border border-slate-200/80 rounded-xl overflow-hidden text-xs">
-                <button
-                  onClick={() => setExpandTransbordo(!expandTransbordo)}
-                  className="w-full p-3 bg-slate-50 hover:bg-slate-100/80 flex items-center justify-between text-slate-800 font-semibold transition-colors"
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-orange-500" />
-                    <span>Aguardando Transbordo (280 min)</span>
-                  </div>
-                  {expandTransbordo ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
-                </button>
-                {expandTransbordo && (
-                  <div className="p-3 bg-white space-y-1.5 text-slate-600 border-t border-slate-100">
-                    <p className="font-bold text-slate-700 mb-1 text-[11px]">Ocorrências registradas:</p>
-                    <p>• 25/08 - Volvo FMX 500: Gargalo na moega do Talhão 4 (160 min)</p>
-                    <p>• 30/08 - VW 32.380: Fila no transbordo central (120 min)</p>
-                  </div>
-                )}
-              </div>
+              {(() => {
+                const maxMinutos = dadosMotivos.length > 0 ? Math.max(...dadosMotivos.map(d => d.minutos)) : 1;
+                return (
+                  <>
+                    {dadosMotivos.map((item, idx) => (
+                      <div key={idx} className="space-y-1">
+                        <div className="flex justify-between text-xs">
+                          <span className="text-slate-600 font-medium">{item.motivo}</span>
+                          <span className="font-bold text-slate-800">{item.minutos} min</span>
+                        </div>
+                        <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
+                          <div
+                            className="h-3 rounded-full transition-all duration-500"
+                            style={{
+                              width: `${Math.min((item.minutos / maxMinutos) * 100, 100)}%`,
+                              backgroundColor: item.cor,
+                            }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                    {dadosMotivos.length > 0 && (
+                      <div className="flex justify-between text-[9px] text-slate-400 pt-1">
+                        <span>0</span>
+                        <span>{Math.round(maxMinutos / 2)}</span>
+                        <span>{maxMinutos}</span>
+                      </div>
+                    )}
+                    {dadosMotivos.length === 0 && (
+                      <div className="text-center text-slate-400 text-xs py-4">Nenhum dado encontrado no período.</div>
+                    )}
+                  </>
+                );
+              })()}
             </div>
           </div>
         </div>
@@ -647,7 +574,7 @@ export const PainelMetasDiario: React.FC = () => {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={dadosUsoMotor}
+                    data={dadosUsoMotor.length > 0 ? dadosUsoMotor : [{ name: 'Nenhum', value: 100, color: '#e2e8f0' }]}
                     cx="50%"
                     cy="50%"
                     innerRadius={55}
@@ -655,7 +582,7 @@ export const PainelMetasDiario: React.FC = () => {
                     paddingAngle={3}
                     dataKey="value"
                   >
-                    {dadosUsoMotor.map((entry, index) => (
+                    {(dadosUsoMotor.length > 0 ? dadosUsoMotor : [{ name: 'Nenhum', value: 100, color: '#e2e8f0' }]).map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
                     ))}
                   </Pie>
@@ -668,27 +595,6 @@ export const PainelMetasDiario: React.FC = () => {
                   />
                 </PieChart>
               </ResponsiveContainer>
-            </div>
-
-            {/* Detalhamento do Tempo Ocioso */}
-            <div className="border border-slate-200/80 rounded-xl overflow-hidden text-xs mt-3">
-              <button
-                onClick={() => setExpandTempoOcioso(!expandTempoOcioso)}
-                className="w-full p-3 bg-slate-50 hover:bg-slate-100/80 flex items-center justify-between text-slate-800 font-semibold transition-colors"
-              >
-                <span>Ver Detalhamento do Tempo Ocioso</span>
-                {expandTempoOcioso ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
-              </button>
-              {expandTempoOcioso && (
-                <div className="p-3 bg-white space-y-1.5 text-slate-600 border-t border-slate-100">
-                  <p className="font-semibold text-slate-800">
-                    Total de tempo ocioso: <span className="text-rose-600 font-bold">48 Horas</span> (22% do tempo total ligado)
-                  </p>
-                  <p className="text-slate-500">
-                    Impacto financeiro estimado: <span className="font-bold text-slate-800">~R$ 4.320,00</span> em combustível desperdiçado no período.
-                  </p>
-                </div>
-              )}
             </div>
           </div>
         </div>
