@@ -79,10 +79,10 @@ export const PainelMetasDiario: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
   // Estados de dados dinâmicos da API
-  const [dadosGraficoDiario, setDadosGraficoDiario] = useState<any[]>(DADOS_GRAFICO_DIARIO);
+  const [dadosGraficoDiario, setDadosGraficoDiario] = useState<any[]>([]);
   const [dadosBalanco, setDadosBalanco] = useState<any[]>([]);
-  const [dadosMotivos, setDadosMotivos] = useState<any[]>(DADOS_MOTIVOS_PARADA);
-  const [dadosUsoMotor, setDadosUsoMotor] = useState<any[]>(DADOS_USO_MOTOR);
+  const [dadosMotivos, setDadosMotivos] = useState<any[]>([]);
+  const [dadosUsoMotor, setDadosUsoMotor] = useState<any[]>([]);
   const [gastos, setGastos] = useState<any[]>([]);
   const [kpis, setKpis] = useState<any>(null);
 
