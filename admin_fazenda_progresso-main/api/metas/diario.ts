@@ -92,10 +92,6 @@ async function modoDiario(req: VercelRequest, res: VercelResponse) {
 
 async function modoMotivos(req: VercelRequest, res: VercelResponse) {
   const equipamentoId = equipamentoIdNumerico(req);
-  if (equipamentoId === null) {
-    res.status(400).json({ error: 'Parâmetro equipamentoId é obrigatório e deve ser numérico' });
-    return;
-  }
   const { dataInicio, dataFim } = parseIntervaloDatas(req);
 
   const pool = await getMssqlPool();
@@ -106,7 +102,8 @@ async function modoMotivos(req: VercelRequest, res: VercelResponse) {
     .input('tipoCaminhao', sql.NVarChar, FILTRO_TIPO_CAMINHAO_LIKE)
     .query(`
       SELECT * FROM vw_MotivosOperacaoEquipamento
-      WHERE EquipamentoId = @equipamentoId AND Dia >= @dataInicio AND Dia < @dataFim
+      WHERE (@equipamentoId IS NULL OR EquipamentoId = @equipamentoId) 
+        AND Dia >= @dataInicio AND Dia < @dataFim
         AND ${EXISTS_CAMINHAO('EquipamentoId')}
       ORDER BY MinutosAproximados DESC
     `);
@@ -116,10 +113,6 @@ async function modoMotivos(req: VercelRequest, res: VercelResponse) {
 
 async function modoMotor(req: VercelRequest, res: VercelResponse) {
   const equipamentoId = equipamentoIdNumerico(req);
-  if (equipamentoId === null) {
-    res.status(400).json({ error: 'Parâmetro equipamentoId é obrigatório e deve ser numérico' });
-    return;
-  }
   const { dataInicio, dataFim } = parseIntervaloDatas(req);
 
   const pool = await getMssqlPool();
@@ -130,7 +123,8 @@ async function modoMotor(req: VercelRequest, res: VercelResponse) {
     .input('tipoCaminhao', sql.NVarChar, FILTRO_TIPO_CAMINHAO_LIKE)
     .query(`
       SELECT * FROM vw_TempoMotorEquipamento
-      WHERE EquipamentoId = @equipamentoId AND Dia >= @dataInicio AND Dia < @dataFim
+      WHERE (@equipamentoId IS NULL OR EquipamentoId = @equipamentoId) 
+        AND Dia >= @dataInicio AND Dia < @dataFim
         AND ${EXISTS_CAMINHAO('EquipamentoId')}
       ORDER BY Dia
     `);
@@ -173,12 +167,17 @@ async function modoProgresso(req: VercelRequest, res: VercelResponse) {
 async function modoExecutivo(req: VercelRequest, res: VercelResponse) {
   const { inicio: inicioMesCorrente, fim: fimMesCorrente } = parseCompetencia(req.query.competencia);
   const inicioTendencia = new Date(Date.UTC(inicioMesCorrente.getUTCFullYear(), inicioMesCorrente.getUTCMonth() - 5, 1));
+  
+  const equipamentoId = equipamentoIdNumerico(req);
+  const motorista = typeof req.query.motorista === 'string' ? req.query.motorista : null;
 
   const pool = await getMssqlPool();
 
   const tendenciaMensal = await pool.request()
     .input('inicioTendencia', sql.DateTime2, inicioTendencia)
     .input('fimMesCorrente', sql.DateTime2, fimMesCorrente)
+    .input('equipamentoId', sql.Int, equipamentoId)
+    .input('motorista', sql.NVarChar, motorista)
     .input('tipoCaminhao', sql.NVarChar, FILTRO_TIPO_CAMINHAO_LIKE)
     .query(`
       SELECT
@@ -187,6 +186,8 @@ async function modoExecutivo(req: VercelRequest, res: VercelResponse) {
         SUM(ISNULL(CustoOperacionalTotalMes, CustoFixoTotalMes)) AS CustoOperacionalTotalMes
       FROM vw_PainelMotoristaVeiculo
       WHERE CompetenciaMeta >= @inicioTendencia AND CompetenciaMeta < @fimMesCorrente
+        AND (@equipamentoId IS NULL OR EquipamentoId = @equipamentoId)
+        AND (@motorista IS NULL OR MotoristaNomeFicha = @motorista)
         AND ${EXISTS_CAMINHAO('EquipamentoId')}
       GROUP BY CompetenciaMeta
       ORDER BY CompetenciaMeta
@@ -195,6 +196,8 @@ async function modoExecutivo(req: VercelRequest, res: VercelResponse) {
   const porFrenteFazenda = await pool.request()
     .input('inicioMesCorrente', sql.DateTime2, inicioMesCorrente)
     .input('fimMesCorrente', sql.DateTime2, fimMesCorrente)
+    .input('equipamentoId', sql.Int, equipamentoId)
+    .input('motorista', sql.NVarChar, motorista)
     .input('tipoCaminhao', sql.NVarChar, FILTRO_TIPO_CAMINHAO_LIKE)
     .query(`
       SELECT
@@ -203,6 +206,8 @@ async function modoExecutivo(req: VercelRequest, res: VercelResponse) {
         SUM(ISNULL(CustoOperacionalTotalMes, CustoFixoTotalMes)) AS CustoOperacionalTotalMes
       FROM vw_PainelMotoristaVeiculo
       WHERE CompetenciaMeta >= @inicioMesCorrente AND CompetenciaMeta < @fimMesCorrente
+        AND (@equipamentoId IS NULL OR EquipamentoId = @equipamentoId)
+        AND (@motorista IS NULL OR MotoristaNomeFicha = @motorista)
         AND ${EXISTS_CAMINHAO('EquipamentoId')}
       GROUP BY GrupoFrente, Fazenda
       ORDER BY CustoOperacionalTotalMes DESC
@@ -212,12 +217,14 @@ async function modoExecutivo(req: VercelRequest, res: VercelResponse) {
     pool.request()
       .input('inicioMesCorrente', sql.DateTime2, inicioMesCorrente)
       .input('fimMesCorrente', sql.DateTime2, fimMesCorrente)
+      .input('motorista', sql.NVarChar, motorista)
       .query(`
         SELECT
           COUNT(*) AS TotalMotoristas,
           SUM(CASE WHEN SaldoAcumuladoMes >= 0 THEN 1 ELSE 0 END) AS DentroDoPontoDeEquilibrio
         FROM vw_ProgressoMensalMotorista
         WHERE Competencia >= @inicioMesCorrente AND Competencia < @fimMesCorrente
+          AND (@motorista IS NULL OR MotoristaNomeFicha = @motorista)
       `)
       .then((r) => r.recordset[0])
       .catch((error) => {
@@ -225,10 +232,12 @@ async function modoExecutivo(req: VercelRequest, res: VercelResponse) {
         return { TotalMotoristas: 0, DentroDoPontoDeEquilibrio: 0 };
       }),
     pool.request()
+      .input('equipamentoId', sql.Int, equipamentoId)
       .input('tipoCaminhao', sql.NVarChar, FILTRO_TIPO_CAMINHAO_LIKE)
       .query(`
         SELECT COUNT(*) AS QtdAlarmes24h FROM AlarmesEquipamento
         WHERE ColetadoEmUtc >= DATEADD(HOUR, -24, SYSUTCDATETIME())
+          AND (@equipamentoId IS NULL OR EquipamentoId = @equipamentoId)
           AND ${EXISTS_CAMINHAO('EquipamentoId')}
       `)
       .then((r) => r.recordset[0].QtdAlarmes24h as number)
