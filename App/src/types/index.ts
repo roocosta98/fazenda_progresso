@@ -112,3 +112,50 @@ export interface ChecklistAtividadeLocal {
   timestamp: string;
   sincronizado: boolean;
 }
+
+export type TipoAtividadeAuditoria = 
+  | 'Transporte de Máquinas'
+  | 'Abastecimento (Comboio)'
+  | 'Operação de Munck'
+  | 'Transporte de Pessoas'
+  | 'Serviços de Caçamba'
+  | 'Transporte de Batata Consumo'
+  | 'Transporte de Sementes'
+  | 'Transporte de Insumos'
+  | 'Transporte de Água (Pipa)';
+
+export interface AuditoriaDimension {
+  [criterio: string]: number; // 0 to 10
+}
+
+export interface AuditoriaOTIF {
+  [criterio: string]: boolean; // true = Yes, false = No
+}
+
+export interface AuditoriaData {
+  atividade: TipoAtividadeAuditoria | null;
+  dadosAuditoria: {
+    data: string;
+    hora: string;
+    fazenda: string;
+    localTalhao: string;
+    motorista: string;
+    veiculo: string;
+    supervisor: string;
+    kmInicial: string;
+    kmFinal: string;
+    horimetro: string;
+    geolocation: { lat: number; lng: number } | null;
+  };
+  seguranca: AuditoriaDimension;
+  operacional: AuditoriaDimension;
+  veiculo: AuditoriaDimension;
+  vias: AuditoriaDimension;
+  comportamento: AuditoriaDimension;
+  entregaOTIF: AuditoriaOTIF;
+  conclusao: {
+    observacoes: string;
+    assinaturaMotorista: string | null; // base64
+    assinaturaSupervisor: string | null; // base64
+  };
+}

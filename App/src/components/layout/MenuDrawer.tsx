@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, User, Map, RefreshCw, Settings, LogOut, PlusCircle, Trophy } from 'lucide-react';
+import { X, User, Map, RefreshCw, Settings, LogOut, PlusCircle, Trophy, ClipboardCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
@@ -87,6 +87,18 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({ isOpen, onClose, onOpenN
                 </button>
               </li>
             )}
+            <li>
+              <button 
+                onClick={() => {
+                  onClose();
+                  navigate('/auditoria/nova');
+                }} 
+                className="w-full flex items-center px-6 py-4 text-green-700 hover:bg-green-50 active:bg-green-100 transition-colors font-bold"
+              >
+                <ClipboardCheck className="w-5 h-5 mr-4 text-green-600" />
+                Nova Auditoria
+              </button>
+            </li>
             <li>
               <button 
                 onClick={onClose} 
