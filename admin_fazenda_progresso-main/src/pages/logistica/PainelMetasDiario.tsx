@@ -131,6 +131,7 @@ export const PainelMetasDiario: React.FC = () => {
 
   // Estados de dados dinâmicos da API
   const [dadosGraficoDiario, setDadosGraficoDiario] = useState<any[]>(DADOS_GRAFICO_DIARIO);
+  const [dadosBalanco, setDadosBalanco] = useState<any[]>([]);
   const [dadosMotivos, setDadosMotivos] = useState<any[]>(DADOS_MOTIVOS_PARADA);
   const [dadosUsoMotor, setDadosUsoMotor] = useState<any[]>(DADOS_USO_MOTOR);
   const [gastos] = useState<any[]>(GASTOS_EQUIPAMENTOS_MOCK);
@@ -187,6 +188,31 @@ export const PainelMetasDiario: React.FC = () => {
               realizado: v.CustoOperacionalRealDia ?? 0,
               status: (v.CustoOperacionalRealDia ?? 0) <= (v.CustoEsperadoDia ?? 0) ? 'dentro' : 'acima'
             })));
+
+            // Calcular Balanço Financeiro (Lucro vs Prejuízo) por Veículo
+            const saldoPorVeiculo: Record<number, number> = {};
+            json.porVeiculo.forEach((v: any) => {
+              const id = v.EquipamentoId;
+              const previsto = v.CustoEsperadoDia ?? 0;
+              const realizado = v.CustoOperacionalRealDia ?? 0;
+              if (id) {
+                if (!saldoPorVeiculo[id]) saldoPorVeiculo[id] = 0;
+                saldoPorVeiculo[id] += (previsto - realizado);
+              }
+            });
+
+            const balancoData = Object.entries(saldoPorVeiculo).map(([idStr, saldo]) => {
+              const eqId = Number(idStr);
+              // Busca nome na lista carregada, se não achar usa 'Veículo ' + id
+              const nome = respEq?.find((e: any) => e.EquipamentoId === eqId)?.Nome || `Veículo ${eqId}`;
+              return {
+                nome: nome.split(' ')[0] + ' ' + (nome.split(' ')[1] || ''), // Nome abreviado
+                saldo: saldo
+              };
+            });
+            // Ordenar para mostrar os maiores lucros primeiro
+            balancoData.sort((a, b) => b.saldo - a.saldo);
+            setDadosBalanco(balancoData);
           }
         }
         
@@ -216,8 +242,7 @@ export const PainelMetasDiario: React.FC = () => {
         }
 
         if (respExec.ok) {
-          const jsonExec = await respExec.json();
-          // setKpis(jsonExec); // Mapear futuramente
+          // await respExec.json(); // Mapear KPIs executivos futuramente se necessário
         }
 
       } catch (e) {
@@ -459,6 +484,62 @@ export const PainelMetasDiario: React.FC = () => {
                   <Cell
                     key={`cell-${index}`}
                     fill={entry.status === 'acima' ? '#ef4444' : '#3b82f6'}
+                  />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* 3.1 Gráfico de Balanço Financeiro (Lucro vs Prejuízo) */}
+      <div className="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-2">
+          <h3 className="text-sm font-bold text-slate-900">
+            Balanço Financeiro (Economia vs Excesso de Custo)
+          </h3>
+          <div className="flex items-center gap-4 text-xs">
+            <div className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-xs bg-emerald-500 inline-block" />
+              <span className="text-slate-700 text-[11px] font-medium">Lucro (Economia)</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-xs bg-rose-500 inline-block" />
+              <span className="text-slate-700 text-[11px] font-medium">Prejuízo (Excedeu Meta)</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="h-64 w-full mt-4">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={dadosBalanco.length > 0 ? dadosBalanco : [{ nome: 'Nenhum dado', saldo: 0 }]} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+              <XAxis dataKey="nome" tickLine={false} axisLine={{ stroke: '#e2e8f0' }} tick={{ fill: '#64748b', fontSize: 10 }} />
+              <YAxis
+                tickLine={false}
+                axisLine={{ stroke: '#e2e8f0' }}
+                tick={{ fill: '#64748b', fontSize: 10 }}
+                tickFormatter={(v) => (v === 0 ? '0' : `${v}`)}
+              />
+              <Tooltip
+                cursor={{ fill: 'transparent' }}
+                contentStyle={{
+                  backgroundColor: '#ffffff',
+                  borderRadius: '12px',
+                  border: '1px solid #e2e8f0',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+                  fontSize: '11px',
+                }}
+                formatter={(val: unknown) => [
+                  `R$ ${Number(val ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                  Number(val) >= 0 ? 'Lucro/Economia' : 'Prejuízo/Excesso',
+                ]}
+              />
+              <Bar dataKey="saldo" radius={[3, 3, 3, 3]} maxBarSize={32}>
+                {dadosBalanco.map((entry, index) => (
+                  <Cell
+                    key={`cell-balanco-${index}`}
+                    fill={entry.saldo >= 0 ? '#10b981' : '#ef4444'}
                   />
                 ))}
               </Bar>
