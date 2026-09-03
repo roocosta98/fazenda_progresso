@@ -208,7 +208,7 @@ export function NovaAuditoria() {
       </main>
 
       {/* Footer Fixo de Navegação */}
-      <footer className="fixed bottom-0 w-full bg-white border-t border-neutral-200 p-4 pb-[env(safe-area-inset-bottom)] z-50">
+      <footer className="fixed bottom-0 left-0 right-0 w-full max-w-[430px] mx-auto bg-white border-t border-neutral-200 p-4 pb-[env(safe-area-inset-bottom)] z-50">
         <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
           <button
             onClick={handleBack}
