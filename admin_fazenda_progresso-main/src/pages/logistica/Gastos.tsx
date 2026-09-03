@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { RefreshCw, Fuel, Wrench, Shield, CircleDollarSign, Users, Filter } from 'lucide-react';
+import { RefreshCw, Fuel, Wrench, Shield, Users } from 'lucide-react';
 import { DataTable } from '../../components/common/DataTable';
 import { DashboardExecutivo } from './DashboardExecutivo';
 

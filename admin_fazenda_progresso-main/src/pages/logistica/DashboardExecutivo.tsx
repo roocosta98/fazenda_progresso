@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { RefreshCw, PieChart as PieChartIcon, Wallet, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { PieChart as PieChartIcon, Wallet, ShieldCheck, AlertTriangle } from 'lucide-react';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 const API_URL = import.meta.env.VITE_API_URL ?? '';
@@ -62,10 +62,7 @@ const ChartCard = ({ title, children }: { title: string; children: React.ReactNo
   </div>
 );
 
-const competenciaAtual = () => {
-  const agora = new Date();
-  return `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}`;
-};
+
 
 export const DashboardExecutivo = ({
   dataInicio,

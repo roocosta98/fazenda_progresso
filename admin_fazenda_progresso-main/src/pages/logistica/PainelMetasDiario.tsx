@@ -66,57 +66,6 @@ const DADOS_USO_MOTOR = [
   { name: 'Motor Ocioso (Parado)', value: 22, color: '#ef4444' },
 ];
 
-const GASTOS_EQUIPAMENTOS_MOCK = [
-  {
-    id: 1,
-    equipamento: 'Volkswagen 32.380 CRC 6X4 (Tiago)',
-    combustivel: 'R$ 18.500',
-    manutencao: 'R$ 4.200',
-    custoTotal: 'R$ 25.200',
-    custoOperacional: 'R$ 22.700',
-    detalhes: {
-      seguro: 'R$ 1.200',
-      pneus: 'R$ 1.300',
-      arla: 'R$ 450',
-      custoDia: 'R$ 1.621,42',
-      consumoMedio: '1,95 km/L',
-      horasTrabalhadas: '11,4 hrs',
-    },
-  },
-  {
-    id: 2,
-    equipamento: 'Mercedes-Benz Atego 2429 (Maurício)',
-    combustivel: 'R$ 14.200',
-    manutencao: 'R$ 2.800',
-    custoTotal: 'R$ 19.500',
-    custoOperacional: 'R$ 17.000',
-    detalhes: {
-      seguro: 'R$ 1.000',
-      pneus: 'R$ 800',
-      arla: 'R$ 350',
-      custoDia: 'R$ 1.214,28',
-      consumoMedio: '2,35 km/L',
-      horasTrabalhadas: '9,8 hrs',
-    },
-  },
-  {
-    id: 3,
-    equipamento: 'Volvo FMX 500 8X4 (Denilson)',
-    combustivel: 'R$ 22.100',
-    manutencao: 'R$ 3.900',
-    custoTotal: 'R$ 28.500',
-    custoOperacional: 'R$ 26.000',
-    detalhes: {
-      seguro: 'R$ 1.500',
-      pneus: 'R$ 1.000',
-      arla: 'R$ 500',
-      custoDia: 'R$ 1.857,14',
-      consumoMedio: '1,80 km/L',
-      horasTrabalhadas: '12,1 hrs',
-    },
-  },
-];
-
 export const PainelMetasDiario: React.FC = () => {
   // Filtros de cabeçalho
   const [dataDe, setDataDe] = useState('2026-08-20');

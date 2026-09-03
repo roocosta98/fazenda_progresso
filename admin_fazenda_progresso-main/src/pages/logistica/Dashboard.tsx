@@ -21,7 +21,6 @@ import {
 } from 'lucide-react';
 import type { SolicitacaoTransporte } from '../../types';
 import { PainelMetasDiario } from './PainelMetasDiario';
-import { DashboardExecutivo } from './DashboardExecutivo';
 import { Gastos } from './Gastos';
 import { InsightsIA } from './InsightsIA';
 
