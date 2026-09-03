@@ -13,10 +13,10 @@ export const CentralNotificacoes: React.FC<CentralNotificacoesProps> = ({ isOpen
 
   const getIcon = (tipo: string) => {
     switch (tipo) {
-      case 'viagem_reagendada': return <Calendar className="w-5 h-5 text-blue-500" />;
-      case 'viagem_cancelada': return <AlertTriangle className="w-5 h-5 text-red-500" />;
-      case 'substituicao_motorista': return <UserX className="w-5 h-5 text-orange-500" />;
-      default: return <Bell className="w-5 h-5 text-green-500" />;
+      case 'viagem_reagendada': return <Calendar className="w-5 h-5 text-blue-600" />;
+      case 'viagem_cancelada': return <AlertTriangle className="w-5 h-5 text-rose-600" />;
+      case 'substituicao_motorista': return <UserX className="w-5 h-5 text-amber-600" />;
+      default: return <Bell className="w-5 h-5 text-primary" />;
     }
   };
 
@@ -59,10 +59,10 @@ export const CentralNotificacoes: React.FC<CentralNotificacoesProps> = ({ isOpen
         {/* Header */}
         <div className="bg-white p-5 flex items-center justify-between border-b border-slate-200">
           <div className="flex items-center space-x-2">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <Bell className="w-5 h-5 text-green-600" />
+            <div className="p-2 bg-slate-100 rounded-lg">
+              <Bell className="w-5 h-5 text-slate-700" />
             </div>
-            <h2 className="text-slate-800 font-bold text-lg">Notificações</h2>
+            <h2 className="text-slate-800 font-bold text-lg tracking-tight">Notificações</h2>
           </div>
           <button 
             onClick={onClose}
@@ -87,7 +87,7 @@ export const CentralNotificacoes: React.FC<CentralNotificacoesProps> = ({ isOpen
                 className={`p-4 rounded-xl border transition-colors cursor-pointer ${
                   notif.lida 
                     ? 'bg-white border-slate-200 opacity-75' 
-                    : 'bg-green-50 border-green-200 shadow-sm'
+                    : 'bg-primary/5 border-primary/20 shadow-sm'
                 }`}
               >
                 <div className="flex items-start space-x-3">
@@ -103,7 +103,7 @@ export const CentralNotificacoes: React.FC<CentralNotificacoesProps> = ({ isOpen
                     </p>
                   </div>
                   {!notif.lida && (
-                    <div className="w-2 h-2 rounded-full bg-green-500 mt-1.5 shrink-0" />
+                    <div className="w-2 h-2 rounded-full bg-primary mt-1.5 shrink-0 shadow-[0_0_8px_rgba(30,58,47,0.4)]" />
                   )}
                 </div>
               </div>

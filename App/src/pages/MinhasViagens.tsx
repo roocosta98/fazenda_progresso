@@ -27,8 +27,8 @@ export const MinhasViagens: React.FC = () => {
   const unreadCount = notificacoes?.filter(n => !n.lida).length || 0;
 
   if (!viagens) return (
-    <div className="flex h-screen items-center justify-center">
-      <div className="animate-spin text-green-500"><Activity size={48} /></div>
+    <div className="flex h-screen items-center justify-center bg-gray-50">
+      <div className="animate-spin text-primary"><Activity size={48} /></div>
     </div>
   );
 
@@ -52,19 +52,19 @@ export const MinhasViagens: React.FC = () => {
       <div className="flex flex-col min-h-screen bg-gray-50 pb-24 w-full overflow-x-hidden relative">
         
         {/* Premium Header */}
-        <div className="bg-gradient-to-br from-green-700 via-green-600 to-green-800 pt-10 pb-5 rounded-b-[32px] shadow-xl shadow-green-900/10 z-10 sticky top-0">
+        <div className="bg-primary pt-10 pb-5 rounded-b-[24px] shadow-lg z-10 sticky top-0 border-b border-primary-dark">
           
           <div className="px-5">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center space-x-3">
                 <button 
                   onClick={() => setIsMenuOpen(true)}
-                  className="p-2 -ml-2 text-white/90 hover:text-white hover:bg-white/10 rounded-full transition-colors"
+                  className="p-2 -ml-2 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-colors"
                 >
                   <Menu className="w-7 h-7" />
                 </button>
                 <div>
-                  <p className="text-green-100 text-xs font-bold uppercase tracking-wider mb-0.5">Bom dia, Motorista</p>
+                  <p className="text-white/70 text-[10px] font-bold uppercase tracking-wider mb-0.5">Portal Operacional</p>
                   <h1 className="text-2xl font-black text-white tracking-tight leading-none">Carlos Silva</h1>
                 </div>
               </div>
@@ -99,20 +99,20 @@ export const MinhasViagens: React.FC = () => {
             <div className="flex items-center justify-between space-x-3 mb-2">
               
               {/* Online/Offline Status Indicator */}
-              <div className="bg-white/10 backdrop-blur-md rounded-2xl py-3 px-4 flex-1 border border-white/20 flex flex-col justify-center">
-                <p className="text-green-100 text-[10px] uppercase font-bold tracking-wider mb-1">Status de Rede</p>
+              <div className="bg-white/5 backdrop-blur-md rounded-xl py-3 px-4 flex-1 border border-white/10 flex flex-col justify-center">
+                <p className="text-white/60 text-[10px] uppercase font-bold tracking-wider mb-1">Status de Rede</p>
                 <div className="flex items-center">
                   {isOnline ? (
-                    <><span className="w-2.5 h-2.5 rounded-full bg-green-400 mr-2 shadow-[0_0_8px_rgba(52,211,153,0.8)]"></span> <span className="text-white font-bold text-sm">Conectado</span></>
+                    <><span className="w-2 h-2 rounded-full bg-emerald-400 mr-2 shadow-[0_0_8px_rgba(52,211,153,0.5)]"></span> <span className="text-white font-bold text-sm">Conectado</span></>
                   ) : (
-                    <><span className="w-2.5 h-2.5 rounded-full bg-yellow-400 mr-2 shadow-[0_0_8px_rgba(250,204,21,0.8)]"></span> <span className="text-white font-bold text-sm">Offline</span></>
+                    <><span className="w-2 h-2 rounded-full bg-amber-400 mr-2 shadow-[0_0_8px_rgba(251,191,36,0.5)]"></span> <span className="text-white font-bold text-sm">Offline</span></>
                   )}
                 </div>
               </div>
 
               {/* Viagens Pendentes */}
-              <div className="bg-white/10 backdrop-blur-md rounded-2xl py-3 px-4 flex-1 border border-white/20 flex flex-col items-center justify-center">
-                <p className="text-green-100 text-[10px] uppercase font-bold tracking-wider mb-0.5">Pendentes</p>
+              <div className="bg-white/5 backdrop-blur-md rounded-xl py-3 px-4 flex-1 border border-white/10 flex flex-col items-center justify-center">
+                <p className="text-white/60 text-[10px] uppercase font-bold tracking-wider mb-0.5">Pendentes</p>
                 <p className="text-white text-2xl font-black">{pendentes}</p>
               </div>
 
@@ -124,30 +124,30 @@ export const MinhasViagens: React.FC = () => {
           <div className="flex space-x-2 mt-4 px-5 overflow-x-auto scrollbar-hide pb-1">
             <button
               onClick={() => setActiveTab('A_EXECUTAR')}
-              className={`shrink-0 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-colors ${
+              className={`shrink-0 px-4 py-2 rounded-full text-[13px] font-bold whitespace-nowrap transition-colors ${
                 activeTab === 'A_EXECUTAR'
-                  ? 'bg-white text-green-800 shadow-sm'
-                  : 'bg-white/10 text-green-50 hover:bg-white/20'
+                  ? 'bg-white text-primary shadow-sm'
+                  : 'bg-white/10 text-white/80 hover:bg-white/20'
               }`}
             >
               A Executar
             </button>
             <button
               onClick={() => setActiveTab('CONCLUIDAS')}
-              className={`shrink-0 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-colors ${
+              className={`shrink-0 px-4 py-2 rounded-full text-[13px] font-bold whitespace-nowrap transition-colors ${
                 activeTab === 'CONCLUIDAS'
-                  ? 'bg-white text-green-800 shadow-sm'
-                  : 'bg-white/10 text-green-50 hover:bg-white/20'
+                  ? 'bg-white text-primary shadow-sm'
+                  : 'bg-white/10 text-white/80 hover:bg-white/20'
               }`}
             >
               Concluídas
             </button>
             <button
               onClick={() => setActiveTab('TODAS')}
-              className={`shrink-0 px-4 py-2 rounded-full text-sm font-bold whitespace-nowrap transition-colors ${
+              className={`shrink-0 px-4 py-2 rounded-full text-[13px] font-bold whitespace-nowrap transition-colors ${
                 activeTab === 'TODAS'
-                  ? 'bg-white text-green-800 shadow-sm'
-                  : 'bg-white/10 text-green-50 hover:bg-white/20'
+                  ? 'bg-white text-primary shadow-sm'
+                  : 'bg-white/10 text-white/80 hover:bg-white/20'
               }`}
             >
               Todas
@@ -181,10 +181,10 @@ export const MinhasViagens: React.FC = () => {
         {/* Floating Action Button (FAB) para Nova Solicitação */}
         <button
           onClick={() => navigate('/nova-solicitacao')}
-          className="fixed bottom-6 right-[max(1.25rem,calc((100vw-430px)/2+1.25rem))] w-14 h-14 min-w-14 min-h-14 max-w-14 max-h-14 aspect-square p-0 bg-green-600 hover:bg-green-700 text-white rounded-[9999px] shadow-xl shadow-green-900/30 border border-white/30 flex shrink-0 items-center justify-center active:scale-90 transition-all z-30"
+          className="fixed bottom-6 right-[max(1.25rem,calc((100vw-430px)/2+1.25rem))] w-14 h-14 min-w-14 min-h-14 max-w-14 max-h-14 aspect-square p-0 bg-primary hover:bg-primary-dark text-white rounded-full shadow-lg border border-primary-dark flex shrink-0 items-center justify-center active:scale-95 transition-all z-30"
           title="Nova Solicitação"
         >
-          <Plus className="w-7 h-7" strokeWidth={3} />
+          <Plus className="w-6 h-6" strokeWidth={2.5} />
         </button>
 
       </div>

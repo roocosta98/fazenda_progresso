@@ -23,9 +23,9 @@ export const ViagemCard: React.FC<ViagemCardProps> = ({ viagem }) => {
         {/* Route */}
         <div className="flex items-start space-x-3">
           <div className="flex flex-col items-center mt-1">
-            <div className="w-2.5 h-2.5 rounded-full bg-green-500"></div>
-            <div className="w-0.5 h-8 bg-gray-200 my-1"></div>
-            <MapPin className="w-4 h-4 text-rose-500" />
+            <div className="w-2.5 h-2.5 rounded-full bg-primary"></div>
+            <div className="w-0.5 h-8 bg-slate-200 my-1"></div>
+            <MapPin className="w-4 h-4 text-rose-600" />
           </div>
           <div className="flex-1 space-y-4">
             <div>
@@ -44,8 +44,8 @@ export const ViagemCard: React.FC<ViagemCardProps> = ({ viagem }) => {
         {/* Info Grid */}
         <div className="grid grid-cols-2 gap-3">
           <div className="flex items-center space-x-2 min-w-0">
-            <div className="p-1.5 bg-green-50 rounded-lg flex-shrink-0">
-              <Truck className="w-4 h-4 text-green-600" />
+            <div className="p-1.5 bg-slate-100 rounded-lg flex-shrink-0">
+              <Truck className="w-4 h-4 text-slate-700" />
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-[10px] text-gray-500 font-semibold uppercase">Veículo</p>
@@ -53,8 +53,8 @@ export const ViagemCard: React.FC<ViagemCardProps> = ({ viagem }) => {
             </div>
           </div>
           <div className="flex items-center space-x-2 min-w-0">
-            <div className="p-1.5 bg-blue-50 rounded-lg flex-shrink-0">
-              <Package className="w-4 h-4 text-blue-600" />
+            <div className="p-1.5 bg-slate-100 rounded-lg flex-shrink-0">
+              <Package className="w-4 h-4 text-slate-700" />
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-[10px] text-gray-500 font-semibold uppercase">Carga</p>
@@ -72,14 +72,14 @@ export const ViagemCard: React.FC<ViagemCardProps> = ({ viagem }) => {
           <div className="flex space-x-2">
             <Link
               to={`/viagem/${viagem.idOS}/mapa`}
-              className="flex-1 flex items-center justify-center space-x-1.5 bg-slate-900 hover:bg-slate-800 text-white py-3 px-3 rounded-xl font-bold text-xs transition-colors shadow-sm"
+              className="flex-1 flex items-center justify-center space-x-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 py-3 px-3 rounded-xl font-bold text-[11px] transition-colors"
             >
-              <Navigation className="w-4 h-4 fill-green-400 text-green-400 rotate-45" />
+              <Navigation className="w-3.5 h-3.5 fill-slate-700 text-slate-700 rotate-45" />
               <span>MAPA GPS</span>
             </Link>
             <Link
               to={`/viagem/${viagem.idOS}/execucao`}
-              className="flex-1 flex items-center justify-center space-x-1.5 bg-green-600 hover:bg-green-700 text-white py-3 px-3 rounded-xl font-bold text-xs transition-colors shadow-sm"
+              className="flex-1 flex items-center justify-center space-x-1.5 bg-primary hover:bg-primary-dark text-white py-3 px-3 rounded-xl font-bold text-[11px] transition-colors shadow-sm"
             >
               <span>FINALIZAR (POD)</span>
               <ChevronRight className="w-4 h-4" />
@@ -88,9 +88,9 @@ export const ViagemCard: React.FC<ViagemCardProps> = ({ viagem }) => {
         ) : viagem.status === 'agendada' ? (
           <Link
             to={`/viagem/${viagem.idOS}/execucao`}
-            className="w-full flex items-center justify-center space-x-2 bg-green-500 hover:bg-green-600 active:bg-green-700 text-white py-3.5 px-4 rounded-xl font-bold transition-colors shadow-sm"
+            className="w-full flex items-center justify-center space-x-2 bg-primary hover:bg-primary-dark active:bg-primary text-white py-3.5 px-4 rounded-xl font-bold transition-colors shadow-sm"
           >
-            <Navigation className="w-5 h-5" />
+            <Navigation className="w-4 h-4" />
             <span>INICIAR VIAGEM</span>
           </Link>
         ) : (

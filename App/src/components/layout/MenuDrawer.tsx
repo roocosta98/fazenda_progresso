@@ -35,19 +35,19 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({ isOpen, onClose, onOpenN
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
-        <div className="bg-green-600 p-6 flex flex-col items-start justify-end h-[160px] relative">
+        <div className="bg-primary p-6 flex flex-col items-start justify-end h-[160px] relative">
           <button 
             onClick={onClose}
-            className="absolute top-4 right-4 p-2 text-white/80 hover:text-white transition-colors"
+            className="absolute top-4 right-4 p-2 text-white/60 hover:text-white transition-colors"
           >
             <X className="w-6 h-6" />
           </button>
           
-          <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-inner mb-3">
-            <User className="w-8 h-8 text-green-600" />
+          <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center border border-white/20 mb-3 backdrop-blur-sm">
+            <User className="w-7 h-7 text-white" />
           </div>
-          <h2 className="text-white font-bold text-lg leading-tight">{motorista ?? 'Motorista'}</h2>
-          <p className="text-green-100 text-sm font-medium">Portal do Motorista</p>
+          <h2 className="text-white font-bold text-lg leading-tight tracking-tight">{motorista ?? 'Motorista'}</h2>
+          <p className="text-white/70 text-xs font-medium uppercase tracking-wider mt-1">Portal Operacional</p>
         </div>
 
         <div className="flex-1 overflow-y-auto py-4">
@@ -67,10 +67,10 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({ isOpen, onClose, onOpenN
                   onClose();
                   navigate('/minha-meta');
                 }}
-                className="w-full flex items-center px-6 py-4 text-green-700 hover:bg-green-50 active:bg-green-100 transition-colors font-bold"
+                className="w-full flex items-center px-6 py-4 text-slate-800 hover:bg-slate-50 active:bg-slate-100 transition-colors font-semibold"
               >
-                <Trophy className="w-5 h-5 mr-4 text-green-600" />
-                Minha Meta
+                <Trophy className="w-5 h-5 mr-4 text-primary" />
+                Minhas Metas
               </button>
             </li>
             {onOpenNovaSolicitacao && (
@@ -80,9 +80,9 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({ isOpen, onClose, onOpenN
                     onClose();
                     onOpenNovaSolicitacao();
                   }} 
-                  className="w-full flex items-center px-6 py-4 text-green-700 hover:bg-green-50 active:bg-green-100 transition-colors font-bold"
+                  className="w-full flex items-center px-6 py-4 text-slate-800 hover:bg-slate-50 active:bg-slate-100 transition-colors font-semibold"
                 >
-                  <PlusCircle className="w-5 h-5 mr-4 text-green-600" />
+                  <PlusCircle className="w-5 h-5 mr-4 text-primary" />
                   Nova Solicitação
                 </button>
               </li>
@@ -93,9 +93,9 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({ isOpen, onClose, onOpenN
                   onClose();
                   navigate('/auditoria/nova');
                 }} 
-                className="w-full flex items-center px-6 py-4 text-green-700 hover:bg-green-50 active:bg-green-100 transition-colors font-bold"
+                className="w-full flex items-center px-6 py-4 text-slate-800 hover:bg-slate-50 active:bg-slate-100 transition-colors font-semibold"
               >
-                <ClipboardCheck className="w-5 h-5 mr-4 text-green-600" />
+                <ClipboardCheck className="w-5 h-5 mr-4 text-primary" />
                 Nova Auditoria
               </button>
             </li>
