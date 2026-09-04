@@ -8,6 +8,8 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  Cell,
+  ReferenceLine,
 } from 'recharts';
 
 import {
@@ -189,6 +191,21 @@ export const PainelMetasDiario: React.FC = () => {
     return Array.from(mapa.values()).sort((a, b) => b.operacional - a.operacional);
   }, [linhasDiarias]);
 
+  // Balanço: saldo assinado por equipamento (esperado − real). Nome completo no eixo, sem cortar
+  // em 2 palavras (era isso que fazia vários caminhões virarem "CAMINHAO MERCEDES" repetido).
+  const balanco = useMemo(
+    () =>
+      porEquipamento
+        .map((e) => ({
+          rotulo: e.codigo !== '—' ? `${e.nome} · ${e.codigo}` : e.nome,
+          saldo: e.esperado - e.operacional,
+        }))
+        .filter((e) => e.saldo !== 0)
+        .sort((a, b) => b.saldo - a.saldo)
+        .slice(0, 12),
+    [porEquipamento]
+  );
+
   const motivosGrafico = useMemo(() => {
     const rotulo = (m: MotivoAgregado) =>
       m.OperacaoDescricao?.trim() || m.Estado?.trim() || 'Não informado';
@@ -321,6 +338,41 @@ export const PainelMetasDiario: React.FC = () => {
               </BarChart>
             </ResponsiveContainer>
           </div>
+        )}
+      </CardViz>
+
+      {/* Balanço por veículo */}
+      <CardViz
+        titulo="Balanço por veículo (economia x excesso de custo)"
+        acessorio={<Legenda itens={[{ cor: COR.bom, rotulo: 'Economia (abaixo da meta)' }, { cor: COR.critico, rotulo: 'Excesso (acima da meta)' }]} />}
+      >
+        {balanco.length === 0 ? (
+          <SemDado mensagem="Sem custo diário lançado no período pra calcular o balanço." />
+        ) : (
+          <>
+            <div style={{ height: Math.max(balanco.length * 34 + 40, 180) }} className="w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={balanco} layout="vertical" margin={{ top: 4, right: 60, left: 8, bottom: 4 }}>
+                  <CartesianGrid horizontal={false} stroke={COR.grid} />
+                  <XAxis type="number" tickLine={false} axisLine={false} tick={{ fill: COR.tintaMuda, fontSize: 10 }}
+                    tickFormatter={(v) => formatMoedaCurta(Number(v))} />
+                  <YAxis type="category" dataKey="rotulo" width={220} tickLine={false} axisLine={false}
+                    tick={{ fill: COR.tintaSecundaria, fontSize: 11 }} />
+                  <ReferenceLine x={0} stroke={COR.eixo} />
+                  <Tooltip contentStyle={estiloTooltip} cursor={{ fill: 'rgba(11,11,11,0.03)' }}
+                    formatter={(valor) => [formatMoeda(Number(valor)), Number(valor) >= 0 ? 'Economia' : 'Excesso de custo']} />
+                  <Bar dataKey="saldo" radius={4} maxBarSize={22}>
+                    {balanco.map((b) => (
+                      <Cell key={b.rotulo} fill={b.saldo >= 0 ? COR.bom : COR.critico} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            {porEquipamento.length > balanco.length && (
+              <p className="text-[11px] text-slate-400 mt-2">Mostrando os {balanco.length} maiores desvios de {porEquipamento.length} veículos com dado.</p>
+            )}
+          </>
         )}
       </CardViz>
 
