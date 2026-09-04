@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ChevronDown, ChevronUp, Sparkles, RefreshCw, Info } from 'lucide-react';
+import { ChevronDown, ChevronUp, Sparkles, RefreshCw } from 'lucide-react';
 import {
   ResponsiveContainer,
   BarChart,
@@ -12,22 +12,13 @@ import {
   ReferenceLine,
 } from 'recharts';
 
-const API_URL = import.meta.env.VITE_API_URL ?? '';
+import {
+  COR, estiloTooltip, formatMoeda, formatMoedaCurta, formatMinutos, formatDiaCurto,
+  hojeISO, diasAtrasISO, somar,
+} from '../../components/common/vizTokens';
+import { CardKpi, CardViz, SemDado, Legenda } from '../../components/common/viz';
 
-// Paleta validada (dataviz): slots categóricos 1 (azul) e 2 (laranja) — ΔE CVD 24.7 / normal 33.6
-// contra fundo branco, todos os checks passando. Status good/critical pra polaridade
-// (economia x excesso), sempre acompanhados de rótulo/legenda — nunca só a cor.
-const COR = {
-  serie1: '#2a78d6',
-  serie2: '#eb6834',
-  bom: '#0ca30c',
-  critico: '#d03b3b',
-  atencao: '#fab219',
-  grid: '#e1e0d9',
-  eixo: '#c3c2b7',
-  tintaMuda: '#898781',
-  tintaSecundaria: '#52514e',
-} as const;
+const API_URL = import.meta.env.VITE_API_URL ?? '';
 
 // Contrato real das views (confirmado no DBeaver, PRD v3 §9.3/§9.5/§9.6).
 interface LinhaDiariaVeiculo {
@@ -79,80 +70,6 @@ interface InsightItem {
   EntidadeReferencia: string | null;
   GeradoEm: string;
 }
-
-const formatMoeda = (valor: number | null | undefined) =>
-  valor === null || valor === undefined ? '—' : valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-
-const formatMoedaCurta = (valor: number) =>
-  valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', notation: 'compact', maximumFractionDigits: 1 });
-
-const formatMinutos = (minutos: number) => {
-  const total = Math.round(minutos);
-  if (total < 60) return `${total} min`;
-  const horas = Math.floor(total / 60);
-  const resto = total % 60;
-  return resto === 0 ? `${horas}h` : `${horas}h ${resto}min`;
-};
-
-const formatDiaCurto = (iso: string) => {
-  const [ano, mes, dia] = iso.split('T')[0].split('-').map(Number);
-  return new Date(ano, mes - 1, dia).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
-};
-
-const hojeISO = () => new Date().toISOString().split('T')[0];
-const diasAtrasISO = (dias: number) => {
-  const d = new Date();
-  d.setDate(d.getDate() - dias);
-  return d.toISOString().split('T')[0];
-};
-
-const somar = <T,>(lista: T[], pegar: (item: T) => number | null | undefined) =>
-  lista.reduce((acc, item) => acc + (pegar(item) ?? 0), 0);
-
-const CardKpi = ({ label, valor, apoio, destaque }: { label: string; valor: string; apoio: string; destaque?: boolean }) => (
-  <div className={`p-3.5 rounded-2xl border flex flex-col justify-between ${destaque ? 'bg-green-50/50 border-2 border-green-600/40' : 'bg-white border-slate-200/80'}`}>
-    <span className={`text-[10px] font-bold uppercase tracking-wider ${destaque ? 'text-green-800' : 'text-slate-400'}`}>{label}</span>
-    <div className="my-1.5">
-      <span className={`text-xl font-black tracking-tight ${destaque ? 'text-green-700' : 'text-slate-900'}`}>{valor}</span>
-    </div>
-    <span className={`text-[10px] font-medium ${destaque ? 'text-green-700' : 'text-slate-500'}`}>{apoio}</span>
-  </div>
-);
-
-const Card = ({ titulo, acessorio, children }: { titulo: string; acessorio?: React.ReactNode; children: React.ReactNode }) => (
-  <div className="bg-white p-5 rounded-2xl border border-slate-200/80">
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-2">
-      <h3 className="text-sm font-bold text-slate-900">{titulo}</h3>
-      {acessorio}
-    </div>
-    <div className="mt-4">{children}</div>
-  </div>
-);
-
-const SemDado = ({ mensagem }: { mensagem: string }) => (
-  <div className="flex items-center justify-center gap-2 py-12 text-xs text-slate-400">
-    <Info size={14} /> {mensagem}
-  </div>
-);
-
-const Legenda = ({ itens }: { itens: { cor: string; rotulo: string }[] }) => (
-  <div className="flex items-center gap-4 text-xs">
-    {itens.map((i) => (
-      <div key={i.rotulo} className="flex items-center gap-1.5">
-        <span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ backgroundColor: i.cor }} />
-        <span className="text-slate-600 text-[11px] font-medium">{i.rotulo}</span>
-      </div>
-    ))}
-  </div>
-);
-
-const estiloTooltip = {
-  backgroundColor: '#ffffff',
-  borderRadius: '12px',
-  border: `1px solid ${COR.grid}`,
-  boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-  fontSize: '11px',
-} as const;
 
 export const PainelMetasDiario: React.FC = () => {
   const [dataDe, setDataDe] = useState(diasAtrasISO(30));
@@ -375,7 +292,7 @@ export const PainelMetasDiario: React.FC = () => {
       </div>
 
       {/* Meta previsto x realizado por dia */}
-      <Card
+      <CardViz
         titulo="Acompanhamento diário: previsto x realizado"
         acessorio={<Legenda itens={[{ cor: COR.serie1, rotulo: 'Custo previsto (meta)' }, { cor: COR.serie2, rotulo: 'Custo realizado' }]} />}
       >
@@ -422,10 +339,10 @@ export const PainelMetasDiario: React.FC = () => {
             </ResponsiveContainer>
           </div>
         )}
-      </Card>
+      </CardViz>
 
       {/* Balanço por veículo */}
-      <Card
+      <CardViz
         titulo="Balanço por veículo (economia x excesso de custo)"
         acessorio={<Legenda itens={[{ cor: COR.bom, rotulo: 'Economia (abaixo da meta)' }, { cor: COR.critico, rotulo: 'Excesso (acima da meta)' }]} />}
       >
@@ -457,11 +374,11 @@ export const PainelMetasDiario: React.FC = () => {
             )}
           </>
         )}
-      </Card>
+      </CardViz>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Motivos de parada — agora com o rótulo real (Estado/Operação), não "Outros" */}
-        <Card titulo="Principais motivos de parada e operação">
+        <CardViz titulo="Principais motivos de parada e operação">
           {motivosGrafico.length === 0 ? (
             <SemDado mensagem="Nenhum registro de estado/operação no período." />
           ) : (
@@ -485,10 +402,10 @@ export const PainelMetasDiario: React.FC = () => {
               </p>
             </div>
           )}
-        </Card>
+        </CardViz>
 
         {/* Motor: produtivo x ocioso — barra 100%, não rosca de 2 fatias */}
-        <Card titulo="Uso do motor: produtivo x ocioso">
+        <CardViz titulo="Uso do motor: produtivo x ocioso">
           {minutosLigado === 0 ? (
             <SemDado mensagem="Sem leitura de motor no período." />
           ) : (
@@ -522,11 +439,11 @@ export const PainelMetasDiario: React.FC = () => {
               </p>
             </div>
           )}
-        </Card>
+        </CardViz>
       </div>
 
       {/* Gastos por equipamento — mesmo payload dos KPIs, então os números fecham */}
-      <Card titulo="Gastos por equipamento (no período filtrado)">
+      <CardViz titulo="Gastos por equipamento (no período filtrado)">
         {porEquipamento.length === 0 ? (
           <SemDado mensagem="Nenhum equipamento com custo diário lançado no período." />
         ) : (
@@ -606,10 +523,10 @@ export const PainelMetasDiario: React.FC = () => {
             </table>
           </div>
         )}
-      </Card>
+      </CardViz>
 
       {/* Insights reais da tabela InsightIA (os cards de exemplo hardcoded saíram) */}
-      <Card titulo="Insights da IA (gerados sobre o dado real)" acessorio={
+      <CardViz titulo="Insights da IA (gerados sobre o dado real)" acessorio={
         <span className="text-[11px] text-slate-400">Gere novos na aba Insights (IA)</span>
       }>
         {insights.length === 0 ? (
@@ -647,7 +564,7 @@ export const PainelMetasDiario: React.FC = () => {
             ))}
           </div>
         )}
-      </Card>
+      </CardViz>
     </div>
   );
 };
