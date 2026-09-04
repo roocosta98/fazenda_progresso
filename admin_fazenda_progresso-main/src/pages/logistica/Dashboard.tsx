@@ -26,12 +26,13 @@ import { InsightsIA } from './InsightsIA';
 
 const API_URL = import.meta.env.VITE_API_URL ?? '';
 
-import { Award } from 'lucide-react';
+import { Award, Scale } from 'lucide-react';
 import { DashboardDriveAval } from './DashboardDriveAval';
+import { LucroPrejuizo } from './LucroPrejuizo';
 
 // Dashboard unificado: junta Dashboard DriveAval (Avaliação & Desenvolvimento de Condutores) +
 // Visão geral de solicitações + Metas/Diário + Dashboard Executivo + Gastos&Custos + Insights IA numa tela só.
-type Aba = 'metas' | 'driveaval' | 'visao-geral' | 'gastos' | 'insights';
+type Aba = 'metas' | 'lucro-prejuizo' | 'driveaval' | 'visao-geral' | 'gastos' | 'insights';
 
 interface KpiExecutivo {
   tendenciaMensal: { CustoOperacionalTotalMes: number }[];
@@ -113,6 +114,7 @@ export const Dashboard = () => {
 
   const abas: { id: Aba; label: string; icon: React.ReactNode }[] = [
     { id: 'metas', label: 'Painel Operacional (Metas & Diário)', icon: <Trophy size={15} /> },
+    { id: 'lucro-prejuizo', label: 'Lucro x Prejuízo', icon: <Scale size={15} /> },
     { id: 'driveaval', label: 'DriveAval (Condutores)', icon: <Award size={15} /> },
     { id: 'visao-geral', label: 'Solicitações & Frota', icon: <LayoutGrid size={15} /> },
     { id: 'gastos', label: 'Gastos & Custos', icon: <CircleDollarSign size={15} /> },
@@ -134,6 +136,8 @@ export const Dashboard = () => {
           </button>
         ))}
       </div>
+
+      {aba === 'lucro-prejuizo' && <LucroPrejuizo />}
 
       {aba === 'driveaval' && <DashboardDriveAval />}
 
