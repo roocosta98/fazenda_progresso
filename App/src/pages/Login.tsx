@@ -54,7 +54,7 @@ export const Login: React.FC = () => {
         </div>
 
         <div className="bg-white/95 backdrop-blur-2xl rounded-[32px] p-7 shadow-2xl border border-white/50 translate-y-0 opacity-100 transition-all duration-700">
-          <h2 className="text-xl font-extrabold text-gray-800 mb-2 text-center">Quem é você?</h2>
+          <h2 className="text-xl font-extrabold text-gray-800 mb-2 text-center">Acesse</h2>
           <p className="text-xs text-gray-500 text-center mb-6">Selecione seu nome na lista de motoristas cadastrados</p>
 
           {erro && (
