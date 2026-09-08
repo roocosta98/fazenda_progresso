@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { RefreshCw, Truck, User, TrendingUp, TrendingDown } from 'lucide-react';
+import { ChevronDown, ChevronUp, CircleHelp, RefreshCw, Truck, User, TrendingUp, TrendingDown } from 'lucide-react';
 import {
   ResponsiveContainer,
   BarChart,
@@ -15,6 +15,8 @@ import {
   COR, estiloTooltip, formatMoeda, formatMoedaCurta, hojeISO, diasAtrasISO, somar,
 } from '../../components/common/vizTokens';
 import { CardKpi, CardViz, SemDado, Legenda } from '../../components/common/viz';
+import { useAuth } from '../../context/AuthContext';
+import { cabecalhoPerfil } from '../../utils/apiAuth';
 
 const API_URL = import.meta.env.VITE_API_URL ?? '';
 
@@ -32,6 +34,11 @@ interface LinhaVeiculo {
   CustoOperacionalRealDia: number | null;
   CustoEsperadoDia: number | null;
   ResultadoDia: number | null;
+  CustoCombustivelDia: number | null;
+  CustoPneusDia: number | null;
+  CustoManutencaoDia: number | null;
+  CustoOutrosDia: number | null;
+  CustoMotoristaRateadoDia: number | null;
 }
 
 interface LinhaMotorista {
@@ -54,9 +61,15 @@ interface Agregado {
   km: number;
   dias: number;
   diasPositivos: number;
+  combustivel: number;
+  pneusManutencao: number;
+  outros: number;
+  motorista: number;
+  diasComMeta: number;
 }
 
 export const LucroPrejuizo: React.FC = () => {
+  const { usuario } = useAuth();
   const [dataDe, setDataDe] = useState(diasAtrasISO(30));
   const [dataAte, setDataAte] = useState(hojeISO());
   const [visao, setVisao] = useState<'veiculo' | 'motorista'>('veiculo');
@@ -65,12 +78,13 @@ export const LucroPrejuizo: React.FC = () => {
   const [porMotorista, setPorMotorista] = useState<LinhaMotorista[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+  const [expandidos, setExpandidos] = useState<Record<string, boolean>>({});
 
   const carregar = useCallback(async () => {
     setCarregando(true);
     try {
       const qs = new URLSearchParams({ dataInicio: dataDe, dataFim: dataAte, modo: 'diario' });
-      const resp = await fetch(`${API_URL}/api/metas/diario?${qs}`);
+      const resp = await fetch(`${API_URL}/api/metas/diario?${qs}`, { headers: cabecalhoPerfil(usuario?.perfil) });
       if (!resp.ok) throw new Error(`API respondeu ${resp.status}`);
       const json = await resp.json();
       setPorVeiculo(json.porVeiculo ?? []);
@@ -82,7 +96,7 @@ export const LucroPrejuizo: React.FC = () => {
     } finally {
       setCarregando(false);
     }
-  }, [dataDe, dataAte]);
+  }, [dataDe, dataAte, usuario?.perfil]);
 
   useEffect(() => {
     carregar();
@@ -97,13 +111,23 @@ export const LucroPrejuizo: React.FC = () => {
       ResultadoDia: number | null;
       KmRodadoDia: number | null;
     }) => {
-      const atual = mapa.get(chave) ?? { chave, rotulo, detalhe, esperado: 0, real: 0, saldo: 0, km: 0, dias: 0, diasPositivos: 0 };
+      const atual = mapa.get(chave) ?? { chave, rotulo, detalhe, esperado: 0, real: 0, saldo: 0, km: 0, dias: 0, diasComMeta: 0, diasPositivos: 0, combustivel: 0, pneusManutencao: 0, outros: 0, motorista: 0 };
       atual.esperado += linha.CustoEsperadoDia ?? 0;
       atual.real += linha.CustoOperacionalRealDia ?? 0;
-      atual.saldo += linha.ResultadoDia ?? ((linha.CustoEsperadoDia ?? 0) - (linha.CustoOperacionalRealDia ?? 0));
+      if (linha.CustoEsperadoDia !== null) {
+        atual.saldo += linha.ResultadoDia ?? (linha.CustoEsperadoDia - (linha.CustoOperacionalRealDia ?? 0));
+        atual.diasComMeta += 1;
+        if ((linha.ResultadoDia ?? 0) >= 0) atual.diasPositivos += 1;
+      }
       atual.km += linha.KmRodadoDia ?? 0;
       atual.dias += 1;
-      if ((linha.ResultadoDia ?? 0) >= 0) atual.diasPositivos += 1;
+      if ('CustoCombustivelDia' in linha) {
+        const veiculo = linha as LinhaVeiculo;
+        atual.combustivel += veiculo.CustoCombustivelDia ?? 0;
+        atual.pneusManutencao += (veiculo.CustoPneusDia ?? 0) + (veiculo.CustoManutencaoDia ?? 0);
+        atual.outros += veiculo.CustoOutrosDia ?? 0;
+        atual.motorista += veiculo.CustoMotoristaRateadoDia ?? 0;
+      }
       atual.detalhe = detalhe;
       mapa.set(chave, atual);
     };
@@ -133,7 +157,7 @@ export const LucroPrejuizo: React.FC = () => {
   }, [visao, porVeiculo, porMotorista]);
 
   const dadosGrafico = useMemo(
-    () => agregados.filter((a) => a.saldo !== 0).slice(0, 15),
+    () => agregados.filter((a) => a.diasComMeta > 0 && a.saldo !== 0).slice(0, 15),
     [agregados]
   );
 
@@ -242,31 +266,80 @@ export const LucroPrejuizo: React.FC = () => {
                   <th className="pb-3 text-right">Custo esperado (meta)</th>
                   <th className="pb-3 text-right">Custo real</th>
                   <th className="pb-3 text-right">Km rodado</th>
-                  <th className="pb-3 text-right">Dias na meta</th>
+                  <th className="pb-3 text-right">
+                    <span className="inline-flex items-center justify-end gap-1">
+                      Dias na meta
+                      <span className="group relative inline-flex" tabIndex={0}>
+                        <CircleHelp size={13} className="text-slate-400" aria-label="O que significa Dias na meta?" />
+                        <span role="tooltip" className="pointer-events-none absolute bottom-full right-0 z-10 mb-2 hidden w-64 rounded-lg bg-slate-900 p-2 text-left text-[10px] font-normal leading-relaxed text-white shadow-lg group-hover:block group-focus-within:block">
+                          Quantidade de dias em que o custo operacional real foi menor ou igual ao custo esperado (Meta CPK × km rodado), sobre o total de dias com dados no período.
+                        </span>
+                      </span>
+                    </span>
+                  </th>
                   <th className="pb-3 text-right">Resultado</th>
+                  <th className="pb-3" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {agregados.map((a) => (
-                  <tr key={a.chave} className="hover:bg-slate-50">
+                {agregados.map((a) => {
+                  const aberto = expandidos[a.chave];
+                  const desvio = a.real - a.esperado;
+                  return <React.Fragment key={a.chave}>
+                  <tr className="hover:bg-slate-50">
                     <td className="py-3">
                       <p className="font-semibold text-slate-800">{a.rotulo}</p>
                       <p className="text-[11px] text-slate-500">{a.detalhe}</p>
                     </td>
-                    <td className="py-3 text-right text-slate-600 tabular-nums">{formatMoeda(a.esperado)}</td>
+                    <td className="py-3 text-right text-slate-600 tabular-nums">{a.diasComMeta ? formatMoeda(a.esperado) : 'Meta não cadastrada'}</td>
                     <td className="py-3 text-right text-slate-600 tabular-nums">{formatMoeda(a.real)}</td>
                     <td className="py-3 text-right text-slate-600 tabular-nums">
                       {a.km.toLocaleString('pt-BR', { maximumFractionDigits: 0 })} km
                     </td>
-                    <td className="py-3 text-right text-slate-600 tabular-nums">{a.diasPositivos} / {a.dias}</td>
+                    <td className="py-3 text-right text-slate-600 tabular-nums">{a.diasComMeta ? `${a.diasPositivos} / ${a.diasComMeta}` : 'Não comparável'}</td>
                     <td className="py-3 text-right font-bold tabular-nums">
-                      <span className="inline-flex items-center gap-1" style={{ color: a.saldo >= 0 ? COR.bom : COR.critico }}>
+                      {a.diasComMeta ? <span className="inline-flex items-center gap-1" style={{ color: a.saldo >= 0 ? COR.bom : COR.critico }}>
                         {a.saldo >= 0 ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
                         {formatMoeda(a.saldo)}
-                      </span>
+                      </span> : <span className="text-slate-400">Não comparável</span>}
+                    </td>
+                    <td className="py-3 text-right">
+                      <button onClick={() => setExpandidos((estado) => ({ ...estado, [a.chave]: !estado[a.chave] }))}
+                        className="p-1 rounded-lg hover:bg-slate-200/70 text-slate-500" aria-label={`${aberto ? 'Fechar' : 'Abrir'} detalhamento de ${a.rotulo}`}>
+                        {aberto ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
+                      </button>
                     </td>
                   </tr>
-                ))}
+                  {aberto && <tr>
+                    <td colSpan={7} className="bg-slate-50/70 p-4 border-y border-slate-100">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="rounded-xl border border-slate-200 bg-white p-3">
+                          <p className="font-bold text-slate-800">Como o resultado foi calculado</p>
+                          <p className="mt-2 text-slate-600">Meta esperada: {a.diasComMeta ? formatMoeda(a.esperado) : 'Meta não cadastrada'}</p>
+                          <p className="text-slate-600">Realizado: {formatMoeda(a.real)}</p>
+                          <p className="mt-1 font-bold" style={{ color: a.saldo >= 0 ? COR.bom : COR.critico }}>{a.saldo >= 0 ? 'Economia' : 'Excesso'}: {formatMoeda(Math.abs(a.saldo))}</p>
+                        </div>
+                        <div className="rounded-xl border border-slate-200 bg-white p-3">
+                          <p className="font-bold text-slate-800">Indicadores do período</p>
+                          <p className="mt-2 text-slate-600">Km rodado: {a.km.toLocaleString('pt-BR', { maximumFractionDigits: 0 })} km</p>
+                          <p className="text-slate-600">Custo por km: {a.km > 0 ? formatMoeda(a.real / a.km) : '—'}</p>
+                          <p className="text-slate-600">Dias dentro da meta: {a.diasComMeta ? `${a.diasPositivos} de ${a.diasComMeta} dias com meta` : 'Não comparável — sem meta'}</p>
+                        </div>
+                        <div className="rounded-xl border border-slate-200 bg-white p-3">
+                          <p className="font-bold text-slate-800">Motivos do custo</p>
+                          {visao === 'veiculo' ? <>
+                            <p className="mt-2 text-slate-600">Combustível: {formatMoeda(a.combustivel)}</p>
+                            <p className="text-slate-600">Pneus + manutenção: {formatMoeda(a.pneusManutencao)}</p>
+                            <p className="text-slate-600">Motorista: {formatMoeda(a.motorista)}</p>
+                            <p className="text-slate-600">Outros: {formatMoeda(a.outros)}</p>
+                          </> : <p className="mt-2 text-slate-600">O detalhamento por natureza está disponível na visão por caminhão.</p>}
+                          <p className="mt-2 font-semibold" style={{ color: desvio <= 0 ? COR.bom : COR.critico }}>{desvio <= 0 ? 'O realizado ficou abaixo do esperado.' : 'O realizado ultrapassou o esperado.'}</p>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>}
+                  </React.Fragment>;
+                })}
               </tbody>
             </table>
             <p className="text-[11px] text-slate-400 mt-3">

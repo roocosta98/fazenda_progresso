@@ -17,6 +17,8 @@ import {
   hojeISO, diasAtrasISO, somar,
 } from '../../components/common/vizTokens';
 import { CardKpi, CardViz, SemDado, Legenda } from '../../components/common/viz';
+import { useAuth } from '../../context/AuthContext';
+import { cabecalhoPerfil } from '../../utils/apiAuth';
 
 const API_URL = import.meta.env.VITE_API_URL ?? '';
 
@@ -39,6 +41,7 @@ interface LinhaDiariaVeiculo {
   CustoOperacionalRealDia: number | null;
   CustoEsperadoDia: number | null;
   ResultadoDia: number | null;
+  LitrosConsumidosDia: number | null;
 }
 
 interface MotivoAgregado {
@@ -46,6 +49,10 @@ interface MotivoAgregado {
   OperacaoDescricao: string | null;
   MinutosAproximados: number;
   QtdLeituras: number;
+  CustoMotorista: number;
+  CustoCombustivel: number;
+  CustoMaquina: number;
+  Homologado: boolean;
 }
 
 interface MotorAgregado {
@@ -68,10 +75,14 @@ interface InsightItem {
   Titulo: string;
   Descricao: string;
   EntidadeReferencia: string | null;
+  EquipamentoId: number | null;
+  FatoCalculado: string | null;
+  RecomendacaoIA: string | null;
   GeradoEm: string;
 }
 
 export const PainelMetasDiario: React.FC = () => {
+  const { usuario } = useAuth();
   const [dataDe, setDataDe] = useState(diasAtrasISO(30));
   const [dataAte, setDataAte] = useState(hojeISO());
   const [veiculoSelecionado, setVeiculoSelecionado] = useState('todos');
@@ -99,7 +110,7 @@ export const PainelMetasDiario: React.FC = () => {
 
     const buscar = async <T,>(url: string, fallback: T): Promise<T> => {
       try {
-        const resp = await fetch(url);
+        const resp = await fetch(url, { headers: cabecalhoPerfil(usuario?.perfil) });
         if (!resp.ok) throw new Error(`API respondeu ${resp.status}`);
         return (await resp.json()) as T;
       } catch (e) {
@@ -124,10 +135,12 @@ export const PainelMetasDiario: React.FC = () => {
     setMotivos(motivosResp);
     setMotor(motorResp);
     setAlarmes24h(exec.alarmes24h ?? 0);
-    setInsights(insightsResp.slice(0, 4));
+    // Mantém todos em memória para localizar os vinculados a cada equipamento; o resumo geral
+    // abaixo continua limitado aos quatro mais recentes para não alongar a página.
+    setInsights(insightsResp);
     setErro(diario.porVeiculo ? null : 'Não foi possível carregar os dados do painel diário.');
     setCarregando(false);
-  }, [dataDe, dataAte, veiculoSelecionado, motoristaSelecionado]);
+  }, [dataDe, dataAte, veiculoSelecionado, motoristaSelecionado, usuario?.perfil]);
 
   useEffect(() => {
     carregar();
@@ -138,18 +151,19 @@ export const PainelMetasDiario: React.FC = () => {
   // /api/gastos/resumo, que filtra por CompetenciaMeta = dia 1º do mês: um intervalo dentro de um
   // único mês zerava todos os cards.)
   const porDia = useMemo(() => {
-    const mapa = new Map<string, { dia: string; previsto: number; realizado: number }>();
+    const mapa = new Map<string, { dia: string; previsto: number; realizado: number; temMeta: boolean }>();
     linhasDiarias.forEach((l) => {
       if (!l.Dia) return;
       const chave = l.Dia.split('T')[0];
-      const atual = mapa.get(chave) ?? { dia: chave, previsto: 0, realizado: 0 };
+      const atual = mapa.get(chave) ?? { dia: chave, previsto: 0, realizado: 0, temMeta: false };
       atual.previsto += l.CustoEsperadoDia ?? 0;
+      atual.temMeta ||= l.CustoEsperadoDia !== null;
       atual.realizado += l.CustoOperacionalRealDia ?? 0;
       mapa.set(chave, atual);
     });
     return Array.from(mapa.values())
       .sort((a, b) => a.dia.localeCompare(b.dia))
-      .map((d) => ({ ...d, rotulo: formatDiaCurto(d.dia), dentroDaMeta: d.realizado <= d.previsto }));
+      .map((d) => ({ ...d, rotulo: formatDiaCurto(d.dia), dentroDaMeta: d.temMeta && d.realizado <= d.previsto }));
   }, [linhasDiarias]);
 
   const porEquipamento = useMemo(() => {
@@ -166,7 +180,9 @@ export const PainelMetasDiario: React.FC = () => {
       operacional: number;
       esperado: number;
       km: number;
+      litros: number;
       dias: number;
+      diasComMeta: number;
     }>();
     linhasDiarias.forEach((l) => {
       const atual = mapa.get(l.EquipamentoId) ?? {
@@ -175,7 +191,7 @@ export const PainelMetasDiario: React.FC = () => {
         codigo: l.CodigoEquipamento ?? '—',
         motorista: l.MotoristaNomeFicha ?? l.MotoristaNomeFolha ?? 'Sem motorista vinculado',
         combustivel: 0, manutencao: 0, outros: 0, logistico: 0, motoristaRateado: 0,
-        operacional: 0, esperado: 0, km: 0, dias: 0,
+        operacional: 0, esperado: 0, km: 0, litros: 0, dias: 0, diasComMeta: 0,
       };
       atual.combustivel += l.CustoCombustivelDia ?? 0;
       atual.manutencao += (l.CustoManutencaoDia ?? 0) + (l.CustoPneusDia ?? 0);
@@ -184,7 +200,9 @@ export const PainelMetasDiario: React.FC = () => {
       atual.motoristaRateado += l.CustoMotoristaRateadoDia ?? 0;
       atual.operacional += l.CustoOperacionalRealDia ?? 0;
       atual.esperado += l.CustoEsperadoDia ?? 0;
+      if (l.CustoEsperadoDia !== null) atual.diasComMeta += 1;
       atual.km += l.KmRodadoDia ?? 0;
+      atual.litros += l.LitrosConsumidosDia ?? 0;
       atual.dias += 1;
       mapa.set(l.EquipamentoId, atual);
     });
@@ -196,6 +214,7 @@ export const PainelMetasDiario: React.FC = () => {
   const balanco = useMemo(
     () =>
       porEquipamento
+        .filter((e) => e.diasComMeta > 0)
         .map((e) => ({
           rotulo: e.codigo !== '—' ? `${e.nome} · ${e.codigo}` : e.nome,
           saldo: e.esperado - e.operacional,
@@ -226,7 +245,8 @@ export const PainelMetasDiario: React.FC = () => {
   const totalOperacional = somar(porEquipamento, (e) => e.operacional);
   const totalKm = somar(porEquipamento, (e) => e.km);
   const diasDentro = porDia.filter((d) => d.dentroDaMeta).length;
-  const percentualDentro = porDia.length > 0 ? ((diasDentro / porDia.length) * 100).toFixed(0) : '0';
+  const diasComMeta = porDia.filter((d) => d.temMeta).length;
+  const percentualDentro = diasComMeta > 0 ? ((diasDentro / diasComMeta) * 100).toFixed(0) : '0';
 
   const minutosLigado = motor?.minutosMotorLigado ?? 0;
   const minutosOcioso = motor?.minutosMotorOcioso ?? 0;
@@ -287,7 +307,7 @@ export const PainelMetasDiario: React.FC = () => {
         <CardKpi label="Pneus + Manutenção" valor={formatMoeda(totalManutencao)} apoio="Somado no período filtrado" />
         <CardKpi label="Custo Logístico" valor={formatMoeda(totalLogistico)} apoio="Combustível + pneus + manut. + outros" />
         <CardKpi label="Custo Operacional" valor={formatMoeda(totalOperacional)} apoio="Logístico + motorista rateado" destaque />
-        <CardKpi label="Dias Dentro da Meta" valor={`${diasDentro} / ${porDia.length}`} apoio={`${percentualDentro}% dos dias com dado`} />
+        <CardKpi label="Dias Dentro da Meta" valor={diasComMeta ? `${diasDentro} / ${diasComMeta}` : 'Sem meta'} apoio={`${percentualDentro}% dos dias com meta cadastrada`} />
         <CardKpi label="Alarmes (24h)" valor={alarmes24h === null ? '—' : String(alarmes24h)} apoio="Eventos de risco da frota hoje" />
       </div>
 
@@ -398,8 +418,20 @@ export const PainelMetasDiario: React.FC = () => {
                 ));
               })()}
               <p className="text-[11px] text-slate-400 pt-1">
-                Tempo estimado pela frequência das leituras (~5 min), limitado a 60 min por leitura — é aproximação, não cronômetro.
+                Somente dentro da jornada cadastrada; “Final de turno” é excluído. Motor desligado: hora-homem. Motor ligado e parado: hora-homem + máquina + diesel.
               </p>
+              <div className="overflow-x-auto border-t border-slate-100 pt-2">
+                <table className="w-full text-[11px]">
+                  <thead><tr className="text-slate-400"><th className="text-left">Motivo</th><th className="text-right">Motorista</th><th className="text-right">Máquina</th><th className="text-right">Diesel</th><th className="text-right">Total</th></tr></thead>
+                  <tbody>{motivos.map((m, i) => {
+                    const total = (m.CustoMotorista ?? 0) + (m.CustoMaquina ?? 0) + (m.CustoCombustivel ?? 0);
+                    return <tr key={`${m.Estado}-${m.OperacaoDescricao}-${i}`} className="border-t border-slate-50">
+                      <td className="py-1 text-slate-600">{m.OperacaoDescricao || m.Estado || 'Não informado'}{!m.Homologado && <span className="ml-1 text-amber-600">(homologação)</span>}</td>
+                      <td className="text-right">{formatMoeda(m.CustoMotorista)}</td><td className="text-right">{formatMoeda(m.CustoMaquina)}</td><td className="text-right">{formatMoeda(m.CustoCombustivel)}</td><td className="text-right font-bold">{formatMoeda(total)}</td>
+                    </tr>;
+                  })}</tbody>
+                </table>
+              </div>
             </div>
           )}
         </CardViz>
@@ -455,6 +487,7 @@ export const PainelMetasDiario: React.FC = () => {
                   <th className="pb-3 text-right">Combustível</th>
                   <th className="pb-3 text-right">Pneus + Manut.</th>
                   <th className="pb-3 text-right">Logístico</th>
+                  <th className="pb-3 text-right">Motorista</th>
                   <th className="pb-3 text-right text-green-700">Operacional</th>
                   <th className="pb-3 text-right">Meta (esperado)</th>
                   <th className="pb-3 text-right">Saldo</th>
@@ -475,6 +508,7 @@ export const PainelMetasDiario: React.FC = () => {
                         <td className="py-3 text-right text-slate-600 tabular-nums">{formatMoeda(e.combustivel)}</td>
                         <td className="py-3 text-right text-slate-600 tabular-nums">{formatMoeda(e.manutencao)}</td>
                         <td className="py-3 text-right text-slate-600 tabular-nums">{formatMoeda(e.logistico)}</td>
+                        <td className="py-3 text-right text-slate-600 tabular-nums">{formatMoeda(e.motoristaRateado)}</td>
                         <td className="py-3 text-right font-bold text-green-700 tabular-nums">{formatMoeda(e.operacional)}</td>
                         <td className="py-3 text-right text-slate-600 tabular-nums">{formatMoeda(e.esperado)}</td>
                         <td className="py-3 text-right font-bold tabular-nums" style={{ color: saldo >= 0 ? COR.bom : COR.critico }}>
@@ -489,14 +523,16 @@ export const PainelMetasDiario: React.FC = () => {
                       </tr>
                       {aberto && (
                         <tr>
-                          <td colSpan={8} className="bg-slate-50/70 p-4 border-y border-slate-100">
+                          <td colSpan={9} className="bg-slate-50/70 p-4 border-y border-slate-100">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
                               <div className="bg-white p-3 rounded-xl border border-slate-200/60 space-y-1">
                                 <p className="font-bold text-slate-800 text-[11px] mb-1">Composição do custo</p>
-                                <p className="text-slate-600">• Combustível: {formatMoeda(e.combustivel)}</p>
+                                <p className="text-slate-600">• Combustível: {formatMoeda(e.combustivel)} · {e.litros.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} L</p>
+                                <p className="text-[10px] text-slate-400">Preço médio efetivo: {e.litros > 0 ? `${formatMoeda(e.combustivel / e.litros)}/L` : 'indisponível'}</p>
                                 <p className="text-slate-600">• Pneus + manutenção: {formatMoeda(e.manutencao)}</p>
                                 <p className="text-slate-600">• Outros: {formatMoeda(e.outros)}</p>
-                                <p className="text-slate-600">• Motorista rateado: {formatMoeda(e.motoristaRateado)}</p>
+                                <p className="text-slate-600">• Custo proporcional do motorista: {formatMoeda(e.motoristaRateado)}</p>
+                                <p className="text-[10px] text-slate-400">Rateio proporcional ao tempo atribuído ao equipamento no período.</p>
                               </div>
                               <div className="bg-white p-3 rounded-xl border border-slate-200/60 space-y-1">
                                 <p className="font-bold text-slate-800 text-[11px] mb-1">Operação no período</p>
@@ -506,12 +542,29 @@ export const PainelMetasDiario: React.FC = () => {
                               </div>
                               <div className="bg-white p-3 rounded-xl border border-slate-200/60 space-y-1">
                                 <p className="font-bold text-slate-800 text-[11px] mb-1">Meta x realizado</p>
-                                <p className="text-slate-600">• Custo esperado: {formatMoeda(e.esperado)}</p>
+                                <p className="text-slate-600">• Custo esperado: {e.diasComMeta > 0 ? formatMoeda(e.esperado) : 'Meta não cadastrada'}</p>
                                 <p className="text-slate-600">• Custo real: {formatMoeda(e.operacional)}</p>
                                 <p className="font-bold" style={{ color: saldo >= 0 ? COR.bom : COR.critico }}>
                                   • {saldo >= 0 ? 'Economia' : 'Excesso'}: {formatMoeda(Math.abs(saldo))}
                                 </p>
                               </div>
+                            </div>
+                            <div className="mt-4 bg-white p-4 rounded-xl border border-amber-200/80 text-xs">
+                              <p className="font-bold text-slate-800 text-[11px] mb-2 flex items-center gap-1.5">
+                                <Sparkles size={13} className="text-amber-500" /> Insights da IA
+                              </p>
+                              {(() => {
+                                const relacionados = insights.filter((insight) => insight.EquipamentoId === e.EquipamentoId);
+                                return relacionados.length > 0 ? relacionados.map((insight) => (
+                                  <div key={insight.InsightId} className="mt-2 first:mt-0">
+                                    <p className="font-semibold text-slate-800">{insight.Titulo}</p>
+                                    <p className="text-slate-600 mt-0.5 leading-relaxed"><strong>Fato calculado:</strong> {insight.FatoCalculado ?? insight.Descricao}</p>
+                                    {insight.RecomendacaoIA && <p className="text-slate-600 mt-1 leading-relaxed"><strong>Recomendação da IA:</strong> {insight.RecomendacaoIA}</p>}
+                                  </div>
+                                )) : (
+                                  <p className="text-slate-500">Nenhum insight específico foi gerado para este equipamento no período.</p>
+                                );
+                              })()}
                             </div>
                           </td>
                         </tr>
@@ -533,7 +586,7 @@ export const PainelMetasDiario: React.FC = () => {
           <SemDado mensagem="Nenhum insight em aberto. Gere na aba Insights (IA)." />
         ) : (
           <div className="space-y-3">
-            {insights.map((i) => (
+            {insights.slice(0, 4).map((i) => (
               <div key={i.InsightId} className="border border-slate-200/80 rounded-2xl p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3">
