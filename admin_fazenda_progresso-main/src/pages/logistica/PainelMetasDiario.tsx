@@ -33,6 +33,14 @@ const normalizarModelo = (nome: string) => nome
   .replace(/\s+/g, ' ')
   .trim();
 
+// O primeiro número técnico do nome é o identificador do modelo. Assim 2429,
+// 31.330 e 32.380 agrupam seus veículos mesmo se marca ou descrição vierem erradas.
+const indicadorModelo = (nome: string) => {
+  const modelo = normalizarModelo(nome);
+  const encontrado = modelo.match(/\b\d{2}\.\d{3}\b|\b\d{4}\b/);
+  return encontrado ? encontrado[0].replace(/\D/g, '') : modelo;
+};
+
 // Contrato real das views (confirmado no DBeaver, PRD v3 §9.3/§9.5/§9.6).
 interface LinhaDiariaVeiculo {
   Dia: string;
@@ -187,6 +195,7 @@ export const PainelMetasDiario: React.FC = () => {
     const mapa = new Map<number, {
       EquipamentoId: number;
       nome: string;
+      indicador: string;
       codigo: string;
       motorista: string;
       combustivel: number;
@@ -205,6 +214,7 @@ export const PainelMetasDiario: React.FC = () => {
       const atual = mapa.get(l.EquipamentoId) ?? {
         EquipamentoId: l.EquipamentoId,
         nome: normalizarModelo(l.NomeEquipamento ?? `Equipamento ${l.EquipamentoId}`),
+        indicador: indicadorModelo(l.NomeEquipamento ?? `Equipamento ${l.EquipamentoId}`),
         codigo: l.CodigoEquipamento ?? '—',
         motorista: l.MotoristaNomeFicha ?? l.MotoristaNomeFolha ?? 'Sem motorista vinculado',
         combustivel: 0, manutencao: 0, outros: 0, logistico: 0, motoristaRateado: 0,
@@ -223,10 +233,10 @@ export const PainelMetasDiario: React.FC = () => {
       atual.dias += 1;
       mapa.set(l.EquipamentoId, atual);
     });
-    // Mantém patrimônios distintos em linhas próprias, mas junta modelos iguais
-    // mesmo quando o cadastro possui grafias diferentes ou outro motorista.
+    // Mantém patrimônios distintos em linhas próprias e usa só o número técnico
+    // do modelo para agrupar veículos, ignorando erros de texto no cadastro.
     return Array.from(mapa.values()).sort((a, b) =>
-      a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' }) || a.codigo.localeCompare(b.codigo, 'pt-BR', { numeric: true }),
+      a.indicador.localeCompare(b.indicador, 'pt-BR', { numeric: true }) || a.codigo.localeCompare(b.codigo, 'pt-BR', { numeric: true }),
     );
   }, [linhasDiarias]);
 
