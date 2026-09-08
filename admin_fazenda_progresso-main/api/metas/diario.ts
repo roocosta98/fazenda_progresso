@@ -70,12 +70,24 @@ async function modoDiario(req: VercelRequest, res: VercelResponse) {
     .input('motorista', sql.NVarChar, motorista)
     .input('tipoCaminhao', sql.NVarChar, FILTRO_TIPO_CAMINHAO_LIKE)
     .query(`
-      SELECT * FROM vw_ResultadoDiarioVeiculo
-      WHERE Dia >= @dataInicio AND Dia < @dataFim
-        AND (@equipamentoId IS NULL OR EquipamentoId = @equipamentoId)
-        AND (@motorista IS NULL OR MotoristaNomeFicha = @motorista)
-        AND ${EXISTS_CAMINHAO('EquipamentoId')}
-      ORDER BY Dia
+      WITH ConsumoDiario AS (
+        SELECT
+          EquipamentoId,
+          CAST(ColetadoEmUtc AS date) AS Dia,
+          SUM(CAST(ISNULL(ConsumoMedioLitros, 0) AS float)) AS LitrosConsumidosDia
+        FROM LeiturasOperacao
+        WHERE ColetadoEmUtc >= @dataInicio AND ColetadoEmUtc < @dataFim
+        GROUP BY EquipamentoId, CAST(ColetadoEmUtc AS date)
+      )
+      SELECT r.*, c.LitrosConsumidosDia
+      FROM vw_ResultadoDiarioVeiculo r
+      LEFT JOIN ConsumoDiario c
+        ON c.EquipamentoId = r.EquipamentoId AND c.Dia = CAST(r.Dia AS date)
+      WHERE r.Dia >= @dataInicio AND r.Dia < @dataFim
+        AND (@equipamentoId IS NULL OR r.EquipamentoId = @equipamentoId)
+        AND (@motorista IS NULL OR r.MotoristaNomeFicha = @motorista)
+        AND ${EXISTS_CAMINHAO('r.EquipamentoId')}
+      ORDER BY r.Dia
     `);
 
   const porMotorista = await pool.request()
