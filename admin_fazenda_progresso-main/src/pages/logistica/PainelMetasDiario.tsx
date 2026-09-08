@@ -234,15 +234,20 @@ export const PainelMetasDiario: React.FC = () => {
   const motivosGrafico = useMemo(() => {
     const rotulo = (m: MotivoAgregado) =>
       m.OperacaoDescricao?.trim() || m.Estado?.trim() || 'Não informado';
-    const somados = new Map<string, number>();
-    motivos.forEach((m) => somados.set(rotulo(m), (somados.get(rotulo(m)) ?? 0) + (m.MinutosAproximados ?? 0)));
+    const somados = new Map<string, { minutos: number; custo: number }>();
+    motivos.forEach((m) => {
+      const atual = somados.get(rotulo(m)) ?? { minutos: 0, custo: 0 };
+      atual.minutos += m.MinutosAproximados ?? 0;
+      atual.custo += (m.CustoMotorista ?? 0) + (m.CustoMaquina ?? 0) + (m.CustoCombustivel ?? 0);
+      somados.set(rotulo(m), atual);
+    });
     const ordenados = Array.from(somados.entries())
-      .map(([nome, minutos]) => ({ nome, minutos }))
+      .map(([nome, valores]) => ({ nome, ...valores }))
       .sort((a, b) => b.minutos - a.minutos);
     if (ordenados.length <= 8) return ordenados;
     const principais = ordenados.slice(0, 7);
-    const resto = ordenados.slice(7).reduce((acc, m) => acc + m.minutos, 0);
-    return [...principais, { nome: `Outros (${ordenados.length - 7})`, minutos: resto }];
+    const resto = ordenados.slice(7).reduce((acc, m) => ({ minutos: acc.minutos + m.minutos, custo: acc.custo + m.custo }), { minutos: 0, custo: 0 });
+    return [...principais, { nome: `Outros (${ordenados.length - 7})`, ...resto }];
   }, [motivos]);
 
   const totalCombustivel = somar(porEquipamento, (e) => e.combustivel);
@@ -415,7 +420,7 @@ export const PainelMetasDiario: React.FC = () => {
                   <div key={m.nome} className="space-y-1">
                     <div className="flex justify-between items-baseline gap-3 text-xs">
                       <span className="text-slate-700 font-medium truncate" title={m.nome}>{m.nome}</span>
-                      <span className="font-bold text-slate-900 tabular-nums shrink-0">{formatMinutos(m.minutos)}</span>
+                      <span className="font-bold text-slate-900 tabular-nums shrink-0 text-right">{formatMinutos(m.minutos)} · {formatMoeda(m.custo)}</span>
                     </div>
                     <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
                       <div className="h-2.5 rounded-full" style={{ width: `${(m.minutos / maximo) * 100}%`, backgroundColor: COR.serie1 }} />
