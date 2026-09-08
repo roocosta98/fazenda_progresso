@@ -22,6 +22,17 @@ import { cabecalhoPerfil } from '../../utils/apiAuth';
 
 const API_URL = import.meta.env.VITE_API_URL ?? '';
 
+// O cadastro legado possui variações de grafia para o mesmo modelo (ex.: BENS/BENZ
+// e ATEGO/ATEGOO). A normalização é apenas visual: patrimônio e motorista seguem
+// em linhas separadas, mas os modelos iguais ficam juntos na listagem.
+const normalizarModelo = (nome: string) => nome
+  .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+  .toUpperCase()
+  .replace(/\bBENS\b/g, 'BENZ')
+  .replace(/\bATEGO+\b/g, 'ATEGO')
+  .replace(/\s+/g, ' ')
+  .trim();
+
 // Contrato real das views (confirmado no DBeaver, PRD v3 §9.3/§9.5/§9.6).
 interface LinhaDiariaVeiculo {
   Dia: string;
@@ -193,7 +204,7 @@ export const PainelMetasDiario: React.FC = () => {
     linhasDiarias.forEach((l) => {
       const atual = mapa.get(l.EquipamentoId) ?? {
         EquipamentoId: l.EquipamentoId,
-        nome: l.NomeEquipamento ?? `Equipamento ${l.EquipamentoId}`,
+        nome: normalizarModelo(l.NomeEquipamento ?? `Equipamento ${l.EquipamentoId}`),
         codigo: l.CodigoEquipamento ?? '—',
         motorista: l.MotoristaNomeFicha ?? l.MotoristaNomeFolha ?? 'Sem motorista vinculado',
         combustivel: 0, manutencao: 0, outros: 0, logistico: 0, motoristaRateado: 0,
@@ -212,8 +223,8 @@ export const PainelMetasDiario: React.FC = () => {
       atual.dias += 1;
       mapa.set(l.EquipamentoId, atual);
     });
-    // Mantém patrimônios distintos em linhas próprias, mas junta caminhões do mesmo
-    // modelo mesmo quando estão vinculados a motoristas diferentes.
+    // Mantém patrimônios distintos em linhas próprias, mas junta modelos iguais
+    // mesmo quando o cadastro possui grafias diferentes ou outro motorista.
     return Array.from(mapa.values()).sort((a, b) =>
       a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' }) || a.codigo.localeCompare(b.codigo, 'pt-BR', { numeric: true }),
     );
