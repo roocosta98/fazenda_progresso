@@ -212,7 +212,11 @@ export const PainelMetasDiario: React.FC = () => {
       atual.dias += 1;
       mapa.set(l.EquipamentoId, atual);
     });
-    return Array.from(mapa.values()).sort((a, b) => b.operacional - a.operacional);
+    // Mantém patrimônios distintos em linhas próprias, mas junta caminhões do mesmo
+    // modelo mesmo quando estão vinculados a motoristas diferentes.
+    return Array.from(mapa.values()).sort((a, b) =>
+      a.nome.localeCompare(b.nome, 'pt-BR', { sensitivity: 'base' }) || a.codigo.localeCompare(b.codigo, 'pt-BR', { numeric: true }),
+    );
   }, [linhasDiarias]);
 
   // Balanço: saldo assinado por equipamento (esperado − real). Nome completo no eixo, sem cortar
