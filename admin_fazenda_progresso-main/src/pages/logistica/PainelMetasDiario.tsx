@@ -529,6 +529,7 @@ export const PainelMetasDiario: React.FC = () => {
                                 <p className="font-bold text-slate-800 text-[11px] mb-1">Composição do custo</p>
                                 <p className="text-slate-600">• Combustível: {formatMoeda(e.combustivel)} · {e.litros.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} L</p>
                                 <p className="text-[10px] text-slate-400">Preço médio efetivo: {e.litros > 0 ? `${formatMoeda(e.combustivel / e.litros)}/L` : 'indisponível'}</p>
+                                <p className="text-[10px] text-slate-400">Equivalente em diesel: {e.litros > 0 ? `${e.litros.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} L para ${formatMoeda(e.combustivel)}` : 'indisponível'}</p>
                                 <p className="text-slate-600">• Pneus + manutenção: {formatMoeda(e.manutencao)}</p>
                                 <p className="text-slate-600">• Outros: {formatMoeda(e.outros)}</p>
                                 <p className="text-slate-600">• Custo proporcional do motorista: {formatMoeda(e.motoristaRateado)}</p>

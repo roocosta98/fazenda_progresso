@@ -125,24 +125,34 @@ async function modoMotivos(req: VercelRequest, res: VercelResponse) {
     .input('dataInicio', sql.DateTime2, dataInicio)
     .input('dataFim', sql.DateTime2, dataFim)
     .query(`
-      WITH MotivosValidos AS (
-      SELECT
+      WITH JornadaDiaria AS (
+        -- Um motorista pode ter mais de um turno no mesmo dia. Agregar antes do join
+        -- evita duplicar os motivos/valores do veículo quando isso acontecer.
+        SELECT MotoristaNomeFicha, Dia,
+          SUM(DATEDIFF(MINUTE, Entrada, Saida)) AS MinutosJornada,
+          MIN(CASE WHEN Homologada = 1 THEN 1 ELSE 0 END) AS Homologada
+        FROM JornadaMotorista
+        GROUP BY MotoristaNomeFicha, Dia
+      ), MotivosValidos AS (
+       SELECT
         m.EquipamentoId, m.Dia, m.Estado, m.OperacaoDescricao, m.QtdLeituras,
-        CASE WHEN j.Entrada IS NULL THEN 0
-             ELSE IIF(m.MinutosAproximados > DATEDIFF(MINUTE, j.Entrada, j.Saida),
-                      DATEDIFF(MINUTE, j.Entrada, j.Saida), m.MinutosAproximados) END AS MinutosValidos,
+        CASE WHEN ISNULL(j.MinutosJornada, 0) <= 0 THEN 0
+             ELSE IIF(ISNULL(m.MinutosAproximados, 0) > j.MinutosJornada,
+                      j.MinutosJornada, ISNULL(m.MinutosAproximados, 0)) END AS MinutosValidos,
         r.CustoMotoristaRateadoDia,
         r.CustoCombustivelDia,
-        DATEDIFF(MINUTE, j.Entrada, j.Saida) AS MinutosJornada,
+        j.MinutosJornada,
         j.Homologada,
         ch.ValorHora AS CustoHoraMaquina,
         ch.Homologado AS MaquinaHomologada
       FROM vw_MotivosOperacaoEquipamento m
       LEFT JOIN vw_ResultadoDiarioVeiculo r ON r.EquipamentoId=m.EquipamentoId AND CAST(r.Dia AS date)=CAST(m.Dia AS date)
-      LEFT JOIN JornadaMotorista j ON j.MotoristaNomeFicha=r.MotoristaNomeFicha AND j.Dia=CAST(m.Dia AS date)
+      LEFT JOIN JornadaDiaria j ON j.MotoristaNomeFicha=r.MotoristaNomeFicha AND j.Dia=CAST(m.Dia AS date)
       OUTER APPLY (SELECT TOP 1 ValorHora, Homologado FROM CustoHoraMaquina c WHERE c.EquipamentoId=m.EquipamentoId AND c.VigenciaInicio<=CAST(m.Dia AS date) AND (c.VigenciaFim IS NULL OR c.VigenciaFim>=CAST(m.Dia AS date)) ORDER BY c.VigenciaInicio DESC) ch
       WHERE m.Dia >= @dataInicio AND m.Dia < @dataFim
-        AND LOWER(LTRIM(RTRIM(COALESCE(m.OperacaoDescricao, m.Estado, '')))) NOT LIKE '%final de turno%'
+        -- A Solinftec pode preencher Estado e OperacaoDescricao ao mesmo tempo;
+        -- excluir se "Final de turno" vier em qualquer uma das duas colunas.
+        AND LOWER(CONCAT(ISNULL(m.OperacaoDescricao, ''), ' ', ISNULL(m.Estado, ''))) NOT LIKE '%final de turno%'
       )
       SELECT
         m.Estado,
@@ -150,8 +160,14 @@ async function modoMotivos(req: VercelRequest, res: VercelResponse) {
         SUM(ISNULL(m.MinutosValidos, 0)) AS MinutosAproximados,
         SUM(ISNULL(m.QtdLeituras, 0)) AS QtdLeituras,
         SUM(CASE WHEN m.MinutosJornada > 0 THEN ISNULL(m.CustoMotoristaRateadoDia,0)*m.MinutosValidos/m.MinutosJornada ELSE 0 END) AS CustoMotorista,
-        SUM(CASE WHEN LOWER(ISNULL(m.Estado,'')) LIKE '%ligado%' THEN ISNULL(m.CustoCombustivelDia,0)*m.MinutosValidos/NULLIF(m.MinutosJornada,0) ELSE 0 END) AS CustoCombustivel,
-        SUM(CASE WHEN LOWER(ISNULL(m.Estado,'')) LIKE '%ligado%' THEN ISNULL(m.CustoHoraMaquina,0)*m.MinutosValidos/60.0 ELSE 0 END) AS CustoMaquina,
+        -- "desligado" contém a palavra "ligado"; por isso ele precisa ser
+        -- explicitamente excluído antes de cobrar máquina e diesel.
+        SUM(CASE WHEN LOWER(ISNULL(m.Estado,'')) LIKE '%ligado%'
+                       AND LOWER(ISNULL(m.Estado,'')) NOT LIKE '%desligado%'
+                 THEN ISNULL(m.CustoCombustivelDia,0)*m.MinutosValidos/NULLIF(m.MinutosJornada,0) ELSE 0 END) AS CustoCombustivel,
+        SUM(CASE WHEN LOWER(ISNULL(m.Estado,'')) LIKE '%ligado%'
+                       AND LOWER(ISNULL(m.Estado,'')) NOT LIKE '%desligado%'
+                 THEN ISNULL(m.CustoHoraMaquina,0)*m.MinutosValidos/60.0 ELSE 0 END) AS CustoMaquina,
         MIN(CASE WHEN ISNULL(m.Homologada,0)=1 AND (m.CustoHoraMaquina IS NULL OR ISNULL(m.MaquinaHomologada,0)=1) THEN 1 ELSE 0 END) AS Homologado
       FROM MotivosValidos m
       WHERE m.Dia >= @dataInicio AND m.Dia < @dataFim
@@ -196,13 +212,18 @@ async function modoMotor(req: VercelRequest, res: VercelResponse) {
     .input('dataInicio', sql.DateTime2, dataInicio)
     .input('dataFim', sql.DateTime2, dataFim)
     .query(`
+      WITH JornadaDiaria AS (
+        SELECT MotoristaNomeFicha, Dia, SUM(DATEDIFF(MINUTE, Entrada, Saida)) AS MinutosJornada
+        FROM JornadaMotorista
+        GROUP BY MotoristaNomeFicha, Dia
+      )
       SELECT
-        SUM(CASE WHEN j.Entrada IS NULL THEN 0 ELSE IIF(ISNULL(t.MinutosMotorLigado,0)>DATEDIFF(MINUTE,j.Entrada,j.Saida),DATEDIFF(MINUTE,j.Entrada,j.Saida),ISNULL(t.MinutosMotorLigado,0)) END) AS MinutosMotorLigado,
-        SUM(CASE WHEN j.Entrada IS NULL THEN 0 ELSE IIF(ISNULL(t.MinutosMotorOcioso,0)>DATEDIFF(MINUTE,j.Entrada,j.Saida),DATEDIFF(MINUTE,j.Entrada,j.Saida),ISNULL(t.MinutosMotorOcioso,0)) END) AS MinutosMotorOcioso,
+        SUM(CASE WHEN ISNULL(j.MinutosJornada,0) <= 0 THEN 0 ELSE IIF(ISNULL(t.MinutosMotorLigado,0)>j.MinutosJornada,j.MinutosJornada,ISNULL(t.MinutosMotorLigado,0)) END) AS MinutosMotorLigado,
+        SUM(CASE WHEN ISNULL(j.MinutosJornada,0) <= 0 THEN 0 ELSE IIF(ISNULL(t.MinutosMotorOcioso,0)>j.MinutosJornada,j.MinutosJornada,ISNULL(t.MinutosMotorOcioso,0)) END) AS MinutosMotorOcioso,
         COUNT(DISTINCT t.Dia) AS DiasComDado
       FROM vw_TempoMotorEquipamento t
       LEFT JOIN vw_ResultadoDiarioVeiculo rj ON rj.EquipamentoId=t.EquipamentoId AND CAST(rj.Dia AS date)=CAST(t.Dia AS date)
-      LEFT JOIN JornadaMotorista j ON j.MotoristaNomeFicha=rj.MotoristaNomeFicha AND j.Dia=CAST(t.Dia AS date)
+      LEFT JOIN JornadaDiaria j ON j.MotoristaNomeFicha=rj.MotoristaNomeFicha AND j.Dia=CAST(t.Dia AS date)
       WHERE t.Dia >= @dataInicio AND t.Dia < @dataFim
         AND (@equipamentoId IS NULL OR t.EquipamentoId = @equipamentoId)
         ${filtroMotorista}
@@ -214,13 +235,18 @@ async function modoMotor(req: VercelRequest, res: VercelResponse) {
     .input('dataInicio', sql.DateTime2, dataInicio)
     .input('dataFim', sql.DateTime2, dataFim)
     .query(`
+      WITH JornadaDiaria AS (
+        SELECT MotoristaNomeFicha, Dia, SUM(DATEDIFF(MINUTE, Entrada, Saida)) AS MinutosJornada
+        FROM JornadaMotorista
+        GROUP BY MotoristaNomeFicha, Dia
+      )
       SELECT
         t.Dia,
-        SUM(CASE WHEN j.Entrada IS NULL THEN 0 ELSE IIF(ISNULL(t.MinutosMotorLigado,0)>DATEDIFF(MINUTE,j.Entrada,j.Saida),DATEDIFF(MINUTE,j.Entrada,j.Saida),ISNULL(t.MinutosMotorLigado,0)) END) AS MinutosMotorLigado,
-        SUM(CASE WHEN j.Entrada IS NULL THEN 0 ELSE IIF(ISNULL(t.MinutosMotorOcioso,0)>DATEDIFF(MINUTE,j.Entrada,j.Saida),DATEDIFF(MINUTE,j.Entrada,j.Saida),ISNULL(t.MinutosMotorOcioso,0)) END) AS MinutosMotorOcioso
+        SUM(CASE WHEN ISNULL(j.MinutosJornada,0) <= 0 THEN 0 ELSE IIF(ISNULL(t.MinutosMotorLigado,0)>j.MinutosJornada,j.MinutosJornada,ISNULL(t.MinutosMotorLigado,0)) END) AS MinutosMotorLigado,
+        SUM(CASE WHEN ISNULL(j.MinutosJornada,0) <= 0 THEN 0 ELSE IIF(ISNULL(t.MinutosMotorOcioso,0)>j.MinutosJornada,j.MinutosJornada,ISNULL(t.MinutosMotorOcioso,0)) END) AS MinutosMotorOcioso
       FROM vw_TempoMotorEquipamento t
       LEFT JOIN vw_ResultadoDiarioVeiculo rj ON rj.EquipamentoId=t.EquipamentoId AND CAST(rj.Dia AS date)=CAST(t.Dia AS date)
-      LEFT JOIN JornadaMotorista j ON j.MotoristaNomeFicha=rj.MotoristaNomeFicha AND j.Dia=CAST(t.Dia AS date)
+      LEFT JOIN JornadaDiaria j ON j.MotoristaNomeFicha=rj.MotoristaNomeFicha AND j.Dia=CAST(t.Dia AS date)
       WHERE t.Dia >= @dataInicio AND t.Dia < @dataFim
         AND (@equipamentoId IS NULL OR t.EquipamentoId = @equipamentoId)
         ${filtroMotorista}
