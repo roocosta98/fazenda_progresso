@@ -39,6 +39,7 @@ interface LinhaDiariaVeiculo {
   CustoOperacionalRealDia: number | null;
   CustoEsperadoDia: number | null;
   ResultadoDia: number | null;
+  LitrosConsumidosDia: number | null;
 }
 
 interface MotivoAgregado {
@@ -124,7 +125,9 @@ export const PainelMetasDiario: React.FC = () => {
     setMotivos(motivosResp);
     setMotor(motorResp);
     setAlarmes24h(exec.alarmes24h ?? 0);
-    setInsights(insightsResp.slice(0, 4));
+    // Mantém todos em memória para localizar os vinculados a cada equipamento; o resumo geral
+    // abaixo continua limitado aos quatro mais recentes para não alongar a página.
+    setInsights(insightsResp);
     setErro(diario.porVeiculo ? null : 'Não foi possível carregar os dados do painel diário.');
     setCarregando(false);
   }, [dataDe, dataAte, veiculoSelecionado, motoristaSelecionado]);
@@ -166,6 +169,7 @@ export const PainelMetasDiario: React.FC = () => {
       operacional: number;
       esperado: number;
       km: number;
+      litros: number;
       dias: number;
     }>();
     linhasDiarias.forEach((l) => {
@@ -175,7 +179,7 @@ export const PainelMetasDiario: React.FC = () => {
         codigo: l.CodigoEquipamento ?? '—',
         motorista: l.MotoristaNomeFicha ?? l.MotoristaNomeFolha ?? 'Sem motorista vinculado',
         combustivel: 0, manutencao: 0, outros: 0, logistico: 0, motoristaRateado: 0,
-        operacional: 0, esperado: 0, km: 0, dias: 0,
+        operacional: 0, esperado: 0, km: 0, litros: 0, dias: 0,
       };
       atual.combustivel += l.CustoCombustivelDia ?? 0;
       atual.manutencao += (l.CustoManutencaoDia ?? 0) + (l.CustoPneusDia ?? 0);
@@ -185,6 +189,7 @@ export const PainelMetasDiario: React.FC = () => {
       atual.operacional += l.CustoOperacionalRealDia ?? 0;
       atual.esperado += l.CustoEsperadoDia ?? 0;
       atual.km += l.KmRodadoDia ?? 0;
+      atual.litros += l.LitrosConsumidosDia ?? 0;
       atual.dias += 1;
       mapa.set(l.EquipamentoId, atual);
     });
@@ -455,6 +460,7 @@ export const PainelMetasDiario: React.FC = () => {
                   <th className="pb-3 text-right">Combustível</th>
                   <th className="pb-3 text-right">Pneus + Manut.</th>
                   <th className="pb-3 text-right">Logístico</th>
+                  <th className="pb-3 text-right">Motorista</th>
                   <th className="pb-3 text-right text-green-700">Operacional</th>
                   <th className="pb-3 text-right">Meta (esperado)</th>
                   <th className="pb-3 text-right">Saldo</th>
@@ -475,6 +481,7 @@ export const PainelMetasDiario: React.FC = () => {
                         <td className="py-3 text-right text-slate-600 tabular-nums">{formatMoeda(e.combustivel)}</td>
                         <td className="py-3 text-right text-slate-600 tabular-nums">{formatMoeda(e.manutencao)}</td>
                         <td className="py-3 text-right text-slate-600 tabular-nums">{formatMoeda(e.logistico)}</td>
+                        <td className="py-3 text-right text-slate-600 tabular-nums">{formatMoeda(e.motoristaRateado)}</td>
                         <td className="py-3 text-right font-bold text-green-700 tabular-nums">{formatMoeda(e.operacional)}</td>
                         <td className="py-3 text-right text-slate-600 tabular-nums">{formatMoeda(e.esperado)}</td>
                         <td className="py-3 text-right font-bold tabular-nums" style={{ color: saldo >= 0 ? COR.bom : COR.critico }}>
@@ -489,11 +496,11 @@ export const PainelMetasDiario: React.FC = () => {
                       </tr>
                       {aberto && (
                         <tr>
-                          <td colSpan={8} className="bg-slate-50/70 p-4 border-y border-slate-100">
+                          <td colSpan={9} className="bg-slate-50/70 p-4 border-y border-slate-100">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
                               <div className="bg-white p-3 rounded-xl border border-slate-200/60 space-y-1">
                                 <p className="font-bold text-slate-800 text-[11px] mb-1">Composição do custo</p>
-                                <p className="text-slate-600">• Combustível: {formatMoeda(e.combustivel)}</p>
+                                <p className="text-slate-600">• Combustível: {formatMoeda(e.combustivel)} · {e.litros.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} L</p>
                                 <p className="text-slate-600">• Pneus + manutenção: {formatMoeda(e.manutencao)}</p>
                                 <p className="text-slate-600">• Outros: {formatMoeda(e.outros)}</p>
                                 <p className="text-slate-600">• Motorista rateado: {formatMoeda(e.motoristaRateado)}</p>
@@ -512,6 +519,26 @@ export const PainelMetasDiario: React.FC = () => {
                                   • {saldo >= 0 ? 'Economia' : 'Excesso'}: {formatMoeda(Math.abs(saldo))}
                                 </p>
                               </div>
+                            </div>
+                            <div className="mt-4 bg-white p-4 rounded-xl border border-amber-200/80 text-xs">
+                              <p className="font-bold text-slate-800 text-[11px] mb-2 flex items-center gap-1.5">
+                                <Sparkles size={13} className="text-amber-500" /> Insights da IA
+                              </p>
+                              {(() => {
+                                const referencias = [e.nome, e.codigo].map((valor) => valor.toLocaleLowerCase('pt-BR'));
+                                const relacionados = insights.filter((insight) => {
+                                  const referencia = insight.EntidadeReferencia?.toLocaleLowerCase('pt-BR') ?? '';
+                                  return referencia && referencias.some((valor) => valor !== '—' && referencia.includes(valor));
+                                });
+                                return relacionados.length > 0 ? relacionados.map((insight) => (
+                                  <div key={insight.InsightId} className="mt-2 first:mt-0">
+                                    <p className="font-semibold text-slate-800">{insight.Titulo}</p>
+                                    <p className="text-slate-600 mt-0.5 leading-relaxed">{insight.Descricao}</p>
+                                  </div>
+                                )) : (
+                                  <p className="text-slate-500">Nenhum insight específico foi gerado para este equipamento no período.</p>
+                                );
+                              })()}
                             </div>
                           </td>
                         </tr>
@@ -533,7 +560,7 @@ export const PainelMetasDiario: React.FC = () => {
           <SemDado mensagem="Nenhum insight em aberto. Gere na aba Insights (IA)." />
         ) : (
           <div className="space-y-3">
-            {insights.map((i) => (
+            {insights.slice(0, 4).map((i) => (
               <div key={i.InsightId} className="border border-slate-200/80 rounded-2xl p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-start gap-3">
