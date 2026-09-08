@@ -15,6 +15,8 @@ import {
   COR, estiloTooltip, formatMoeda, formatMoedaCurta, hojeISO, diasAtrasISO, somar,
 } from '../../components/common/vizTokens';
 import { CardKpi, CardViz, SemDado, Legenda } from '../../components/common/viz';
+import { useAuth } from '../../context/AuthContext';
+import { cabecalhoPerfil } from '../../utils/apiAuth';
 
 const API_URL = import.meta.env.VITE_API_URL ?? '';
 
@@ -63,9 +65,11 @@ interface Agregado {
   pneusManutencao: number;
   outros: number;
   motorista: number;
+  diasComMeta: number;
 }
 
 export const LucroPrejuizo: React.FC = () => {
+  const { usuario } = useAuth();
   const [dataDe, setDataDe] = useState(diasAtrasISO(30));
   const [dataAte, setDataAte] = useState(hojeISO());
   const [visao, setVisao] = useState<'veiculo' | 'motorista'>('veiculo');
@@ -80,7 +84,7 @@ export const LucroPrejuizo: React.FC = () => {
     setCarregando(true);
     try {
       const qs = new URLSearchParams({ dataInicio: dataDe, dataFim: dataAte, modo: 'diario' });
-      const resp = await fetch(`${API_URL}/api/metas/diario?${qs}`);
+      const resp = await fetch(`${API_URL}/api/metas/diario?${qs}`, { headers: cabecalhoPerfil(usuario?.perfil) });
       if (!resp.ok) throw new Error(`API respondeu ${resp.status}`);
       const json = await resp.json();
       setPorVeiculo(json.porVeiculo ?? []);
@@ -92,7 +96,7 @@ export const LucroPrejuizo: React.FC = () => {
     } finally {
       setCarregando(false);
     }
-  }, [dataDe, dataAte]);
+  }, [dataDe, dataAte, usuario?.perfil]);
 
   useEffect(() => {
     carregar();
@@ -107,13 +111,16 @@ export const LucroPrejuizo: React.FC = () => {
       ResultadoDia: number | null;
       KmRodadoDia: number | null;
     }) => {
-      const atual = mapa.get(chave) ?? { chave, rotulo, detalhe, esperado: 0, real: 0, saldo: 0, km: 0, dias: 0, diasPositivos: 0, combustivel: 0, pneusManutencao: 0, outros: 0, motorista: 0 };
+      const atual = mapa.get(chave) ?? { chave, rotulo, detalhe, esperado: 0, real: 0, saldo: 0, km: 0, dias: 0, diasComMeta: 0, diasPositivos: 0, combustivel: 0, pneusManutencao: 0, outros: 0, motorista: 0 };
       atual.esperado += linha.CustoEsperadoDia ?? 0;
       atual.real += linha.CustoOperacionalRealDia ?? 0;
-      atual.saldo += linha.ResultadoDia ?? ((linha.CustoEsperadoDia ?? 0) - (linha.CustoOperacionalRealDia ?? 0));
+      if (linha.CustoEsperadoDia !== null) {
+        atual.saldo += linha.ResultadoDia ?? (linha.CustoEsperadoDia - (linha.CustoOperacionalRealDia ?? 0));
+        atual.diasComMeta += 1;
+        if ((linha.ResultadoDia ?? 0) >= 0) atual.diasPositivos += 1;
+      }
       atual.km += linha.KmRodadoDia ?? 0;
       atual.dias += 1;
-      if ((linha.ResultadoDia ?? 0) >= 0) atual.diasPositivos += 1;
       if ('CustoCombustivelDia' in linha) {
         const veiculo = linha as LinhaVeiculo;
         atual.combustivel += veiculo.CustoCombustivelDia ?? 0;
@@ -150,7 +157,7 @@ export const LucroPrejuizo: React.FC = () => {
   }, [visao, porVeiculo, porMotorista]);
 
   const dadosGrafico = useMemo(
-    () => agregados.filter((a) => a.saldo !== 0).slice(0, 15),
+    () => agregados.filter((a) => a.diasComMeta > 0 && a.saldo !== 0).slice(0, 15),
     [agregados]
   );
 
@@ -284,17 +291,17 @@ export const LucroPrejuizo: React.FC = () => {
                       <p className="font-semibold text-slate-800">{a.rotulo}</p>
                       <p className="text-[11px] text-slate-500">{a.detalhe}</p>
                     </td>
-                    <td className="py-3 text-right text-slate-600 tabular-nums">{formatMoeda(a.esperado)}</td>
+                    <td className="py-3 text-right text-slate-600 tabular-nums">{a.diasComMeta ? formatMoeda(a.esperado) : 'Meta não cadastrada'}</td>
                     <td className="py-3 text-right text-slate-600 tabular-nums">{formatMoeda(a.real)}</td>
                     <td className="py-3 text-right text-slate-600 tabular-nums">
                       {a.km.toLocaleString('pt-BR', { maximumFractionDigits: 0 })} km
                     </td>
-                    <td className="py-3 text-right text-slate-600 tabular-nums">{a.diasPositivos} / {a.dias}</td>
+                    <td className="py-3 text-right text-slate-600 tabular-nums">{a.diasComMeta ? `${a.diasPositivos} / ${a.diasComMeta}` : 'Não comparável'}</td>
                     <td className="py-3 text-right font-bold tabular-nums">
-                      <span className="inline-flex items-center gap-1" style={{ color: a.saldo >= 0 ? COR.bom : COR.critico }}>
+                      {a.diasComMeta ? <span className="inline-flex items-center gap-1" style={{ color: a.saldo >= 0 ? COR.bom : COR.critico }}>
                         {a.saldo >= 0 ? <TrendingUp size={13} /> : <TrendingDown size={13} />}
                         {formatMoeda(a.saldo)}
-                      </span>
+                      </span> : <span className="text-slate-400">Não comparável</span>}
                     </td>
                     <td className="py-3 text-right">
                       <button onClick={() => setExpandidos((estado) => ({ ...estado, [a.chave]: !estado[a.chave] }))}
@@ -308,7 +315,7 @@ export const LucroPrejuizo: React.FC = () => {
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="rounded-xl border border-slate-200 bg-white p-3">
                           <p className="font-bold text-slate-800">Como o resultado foi calculado</p>
-                          <p className="mt-2 text-slate-600">Meta esperada: {formatMoeda(a.esperado)}</p>
+                          <p className="mt-2 text-slate-600">Meta esperada: {a.diasComMeta ? formatMoeda(a.esperado) : 'Meta não cadastrada'}</p>
                           <p className="text-slate-600">Realizado: {formatMoeda(a.real)}</p>
                           <p className="mt-1 font-bold" style={{ color: a.saldo >= 0 ? COR.bom : COR.critico }}>{a.saldo >= 0 ? 'Economia' : 'Excesso'}: {formatMoeda(Math.abs(a.saldo))}</p>
                         </div>
@@ -316,7 +323,7 @@ export const LucroPrejuizo: React.FC = () => {
                           <p className="font-bold text-slate-800">Indicadores do período</p>
                           <p className="mt-2 text-slate-600">Km rodado: {a.km.toLocaleString('pt-BR', { maximumFractionDigits: 0 })} km</p>
                           <p className="text-slate-600">Custo por km: {a.km > 0 ? formatMoeda(a.real / a.km) : '—'}</p>
-                          <p className="text-slate-600">Dias dentro da meta: {a.diasPositivos} de {a.dias}</p>
+                          <p className="text-slate-600">Dias dentro da meta: {a.diasComMeta ? `${a.diasPositivos} de ${a.diasComMeta} dias com meta` : 'Não comparável — sem meta'}</p>
                         </div>
                         <div className="rounded-xl border border-slate-200 bg-white p-3">
                           <p className="font-bold text-slate-800">Motivos do custo</p>

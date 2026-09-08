@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import { cabecalhoPerfil } from '../../utils/apiAuth';
 import { PieChart as PieChartIcon, Wallet, ShieldCheck, AlertTriangle } from 'lucide-react';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -75,6 +77,7 @@ export const DashboardExecutivo = ({
   tipoEquipamento: string;
   trigger: number;
 }) => {
+  const { usuario } = useAuth();
   const [dados, setDados] = useState<DashboardExecutivoResposta | null>(null);
   const [loading, setLoading] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
@@ -82,7 +85,7 @@ export const DashboardExecutivo = ({
   const carregar = async () => {
     setLoading(true);
     try {
-      const resp = await fetch(`${API_URL}/api/metas/diario?modo=executivo&dataInicio=${dataInicio}&dataFim=${dataFim}&tipoEquipamento=${tipoEquipamento}`);
+      const resp = await fetch(`${API_URL}/api/metas/diario?modo=executivo&dataInicio=${dataInicio}&dataFim=${dataFim}&tipoEquipamento=${tipoEquipamento}`, { headers: cabecalhoPerfil(usuario?.perfil) });
       if (!resp.ok) throw new Error('Falha ao consultar a API');
       setDados(await resp.json());
       setErro(null);
@@ -97,7 +100,7 @@ export const DashboardExecutivo = ({
   useEffect(() => {
     carregar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dataInicio, dataFim, tipoEquipamento, trigger]);
+  }, [dataInicio, dataFim, tipoEquipamento, trigger, usuario?.perfil]);
 
   const custoMesAtual = dados?.tendenciaMensal[dados.tendenciaMensal.length - 1];
   const custoMesAnterior = dados?.tendenciaMensal[dados.tendenciaMensal.length - 2];

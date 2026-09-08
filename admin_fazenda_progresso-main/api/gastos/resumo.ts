@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { getMssqlPool } from '../_lib/mssql.js';
 import sql from 'mssql';
 import { FILTRO_TIPO_CAMINHAO_LIKE } from '../_lib/tipoEquipamento.js';
+import { exigirAcessoCustos } from '../_lib/custosAuth.js';
 
 // Módulo Gastos do PRD (seção 6): CustosFixosEquipamento + Motoristas, com
 // CustoOperacionalTotalMes = custo motorista + custo fixo.
@@ -42,6 +43,7 @@ function competenciaAtualYYYYMM(): string {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (!exigirAcessoCustos(req, res)) return;
   try {
     const dataInicioStr = typeof req.query.dataInicio === 'string' ? req.query.dataInicio : null;
     const dataFimStr = typeof req.query.dataFim === 'string' ? req.query.dataFim : null;

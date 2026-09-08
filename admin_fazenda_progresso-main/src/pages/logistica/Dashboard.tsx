@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
+import { cabecalhoPerfil } from '../../utils/apiAuth';
 import { useAppContext } from '../../context/AppContext';
 import { StatusBadge } from '../../components/common/StatusBadge';
 import { StatCard } from '../../components/common/StatCard';
@@ -44,6 +46,7 @@ const formatMoeda = (valor: number | null | undefined) =>
   valor === null || valor === undefined ? '—' : valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
 export const Dashboard = () => {
+  const { usuario } = useAuth();
   const { solicitacoes, projetos, veiculos } = useAppContext();
 
   const [aba, setAba] = useState<Aba>('metas');
@@ -54,11 +57,11 @@ export const Dashboard = () => {
   const [projetoFiltro, setProjetoFiltro] = useState<string>('todos');
 
   useEffect(() => {
-    fetch(`${API_URL}/api/metas/diario?modo=executivo`)
+    fetch(`${API_URL}/api/metas/diario?modo=executivo`, { headers: cabecalhoPerfil(usuario?.perfil) })
       .then((r) => r.json())
       .then(setKpi)
       .catch(() => setKpi(null));
-  }, []);
+  }, [usuario?.perfil]);
 
   const dataHojeStr = new Date().toISOString().split('T')[0];
   const agendamentosHoje = solicitacoes.filter(s => s.status === 'agendada' && s.dataProgramada === dataHojeStr).length;

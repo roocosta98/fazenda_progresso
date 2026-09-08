@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Fuel, Wrench, Shield, Users } from 'lucide-react';
 import { DataTable } from '../../components/common/DataTable';
 import { DashboardExecutivo } from './DashboardExecutivo';
+import { useAuth } from '../../context/AuthContext';
+import { cabecalhoPerfil } from '../../utils/apiAuth';
 
 const API_URL = import.meta.env.VITE_API_URL ?? '';
 
@@ -43,6 +45,7 @@ const CardTotal = ({ icon, label, valor }: { icon: React.ReactNode; label: strin
 );
 
 export const Gastos = () => {
+  const { usuario } = useAuth();
   const [dataInicio, setDataInicio] = useState(new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0]);
   const [dataFim, setDataFim] = useState(new Date().toISOString().split('T')[0]);
   const [tipoEquipamento, setTipoEquipamento] = useState('todos');
@@ -55,7 +58,7 @@ export const Gastos = () => {
     setLoading(true);
     setTrigger(prev => prev + 1);
     try {
-      const resp = await fetch(`${API_URL}/api/gastos/resumo?dataInicio=${dataInicio}&dataFim=${dataFim}&tipoEquipamento=${tipoEquipamento}`);
+      const resp = await fetch(`${API_URL}/api/gastos/resumo?dataInicio=${dataInicio}&dataFim=${dataFim}&tipoEquipamento=${tipoEquipamento}`, { headers: cabecalhoPerfil(usuario?.perfil) });
       if (!resp.ok) throw new Error('Falha ao consultar a API');
       setLinhas(await resp.json());
       setErro(null);
@@ -70,7 +73,7 @@ export const Gastos = () => {
   useEffect(() => {
     carregar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dataInicio, dataFim, tipoEquipamento]);
+  }, [dataInicio, dataFim, tipoEquipamento, usuario?.perfil]);
 
   const tiposEquipamento = useMemo(
     () => Array.from(new Set(linhas.map((l) => l.TipoEquipamento).filter(Boolean))) as string[],
@@ -115,7 +118,7 @@ export const Gastos = () => {
       render: (l: LinhaGasto) => <span className="font-mono">{formatMoeda((l.CustoSeguroMes ?? 0) + (l.CustoOutrosMes ?? 0))}</span>,
     },
     {
-      header: 'Custo Fixo Total',
+      header: 'Custo Logístico',
       align: 'right' as const,
       render: (l: LinhaGasto) => <span className="font-mono font-bold">{formatMoeda(l.CustoFixoTotalMes)}</span>,
     },

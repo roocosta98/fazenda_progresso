@@ -81,6 +81,8 @@ interface InsightGerado {
   titulo: string;
   descricao: string;
   entidadeReferencia?: string | null;
+  fatoCalculado?: string | null;
+  recomendacao?: string | null;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -175,7 +177,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             'vazio, não gere nenhum insight de manutenção. ' +
             'Responda em português do Brasil, tom direto e prático, como um relatório gerencial. ' +
             'Responda em JSON: {"insights": [{"categoria": "Metas"|"Gastos"|"Alarmes"|"Manutencao", "severidade": "baixa"|"media"|"alta", ' +
-            '"titulo": string curto, "descricao": string com 1-2 frases explicando o achado e uma sugestão de ação, ' +
+            '"titulo": string curto, "descricao": string resumida, "fatoCalculado": string contendo apenas números/fatos presentes no payload, "recomendacao": string contendo apenas a ação sugerida, ' +
             '"entidadeReferencia": nome do motorista ou equipamento citado, ou null}]}. ' +
             'Gere no máximo 8 insights, só os que tiverem sinal real nos dados — não invente insight só pra preencher.',
         },
@@ -201,16 +203,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const severidade = SEVERIDADES.includes(insight.severidade as (typeof SEVERIDADES)[number]) ? insight.severidade : 'baixa';
       if (!insight.titulo || !insight.descricao) continue;
 
+      const equipamento = insight.entidadeReferencia
+        ? await pool.request().input('referencia', sql.NVarChar, insight.entidadeReferencia).query(`
+            SELECT TOP 1 EquipamentoId FROM Equipamentos
+            WHERE Nome = @referencia OR CodigoEquipamento = @referencia
+          `).then((r) => r.recordset[0]?.EquipamentoId ?? null)
+        : null;
+
       const result = await pool.request()
         .input('categoria', sql.NVarChar, categoria)
         .input('severidade', sql.NVarChar, severidade)
         .input('titulo', sql.NVarChar, insight.titulo.slice(0, 200))
         .input('descricao', sql.NVarChar, insight.descricao.slice(0, 1000))
         .input('entidadeReferencia', sql.NVarChar, insight.entidadeReferencia?.slice(0, 200) ?? null)
+        .input('equipamentoId', sql.Int, equipamento)
+        .input('periodoInicio', sql.Date, inicioCompetencia)
+        .input('periodoFim', sql.Date, new Date(fimCompetencia.getTime() - 86400000))
+        .input('fatoCalculado', sql.NVarChar, insight.fatoCalculado?.slice(0, 1000) ?? insight.descricao.slice(0, 1000))
+        .input('recomendacaoIA', sql.NVarChar, insight.recomendacao?.slice(0, 1000) ?? null)
         .query(`
-          INSERT INTO InsightIA (Categoria, Severidade, Titulo, Descricao, EntidadeReferencia)
+          INSERT INTO InsightIA (Categoria, Severidade, Titulo, Descricao, EntidadeReferencia, EquipamentoId, PeriodoInicio, PeriodoFim, FatoCalculado, RecomendacaoIA)
           OUTPUT INSERTED.*
-          VALUES (@categoria, @severidade, @titulo, @descricao, @entidadeReferencia)
+          VALUES (@categoria, @severidade, @titulo, @descricao, @entidadeReferencia, @equipamentoId, @periodoInicio, @periodoFim, @fatoCalculado, @recomendacaoIA)
         `);
       inseridos.push(result.recordset[0]);
     }
