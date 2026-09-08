@@ -78,6 +78,12 @@ interface InsightItem {
   EquipamentoId: number | null;
   FatoCalculado: string | null;
   RecomendacaoIA: string | null;
+  ValorBaseDiaria: number | null;
+  CustoRealDiario: number | null;
+  DiferencaPercentual: number | null;
+  FonteReferenciaTitulo: string | null;
+  FonteReferenciaUrl: string | null;
+  EscopoReferencia: string | null;
   GeradoEm: string;
 }
 
@@ -560,6 +566,9 @@ export const PainelMetasDiario: React.FC = () => {
                                   <div key={insight.InsightId} className="mt-2 first:mt-0">
                                     <p className="font-semibold text-slate-800">{insight.Titulo}</p>
                                     <p className="text-slate-600 mt-0.5 leading-relaxed"><strong>Fato calculado:</strong> {insight.FatoCalculado ?? insight.Descricao}</p>
+                                    {insight.ValorBaseDiaria !== null && <p className="text-slate-600 mt-1"><strong>Base externa:</strong> {formatMoeda(insight.ValorBaseDiaria)}/dia · real: {formatMoeda(insight.CustoRealDiario ?? 0)}/dia ({Number(insight.DiferencaPercentual ?? 0).toFixed(1).replace('.', ',')}%)</p>}
+                                    {insight.FonteReferenciaUrl && <a className="text-blue-700 underline mt-1 inline-block" href={insight.FonteReferenciaUrl} target="_blank" rel="noreferrer">Fonte: {insight.FonteReferenciaTitulo ?? 'documento público'}</a>}
+                                    {insight.EscopoReferencia && <p className="text-[10px] text-slate-400 mt-1">{insight.EscopoReferencia}</p>}
                                     {insight.RecomendacaoIA && <p className="text-slate-600 mt-1 leading-relaxed"><strong>Recomendação da IA:</strong> {insight.RecomendacaoIA}</p>}
                                   </div>
                                 )) : (

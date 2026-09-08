@@ -7,7 +7,7 @@ const API_URL = import.meta.env.VITE_API_URL ?? '';
 interface Insight {
   InsightId: number;
   GeradoEm: string;
-  Categoria: 'Metas' | 'Gastos' | 'Alarmes' | 'Manutencao';
+  Categoria: 'Metas' | 'Gastos' | 'Alarmes' | 'Manutencao' | 'Benchmark';
   Severidade: 'baixa' | 'media' | 'alta';
   Titulo: string;
   Descricao: string;
@@ -16,6 +16,12 @@ interface Insight {
   Resolvido: boolean;
   ResolvidoPor: string | null;
   ResolvidoEm: string | null;
+  ValorBaseDiaria: number | null;
+  CustoRealDiario: number | null;
+  DiferencaPercentual: number | null;
+  FonteReferenciaTitulo: string | null;
+  FonteReferenciaUrl: string | null;
+  EscopoReferencia: string | null;
 }
 
 const formatData = (iso: string) => {
@@ -30,6 +36,7 @@ const categoriaIcon = (categoria: Insight['Categoria']) => {
   if (categoria === 'Metas') return <Truck size={14} />;
   if (categoria === 'Gastos') return <Wallet size={14} />;
   if (categoria === 'Manutencao') return <Wrench size={14} />;
+  if (categoria === 'Benchmark') return <Wallet size={14} />;
   return <AlertTriangle size={14} />;
 };
 
@@ -108,7 +115,7 @@ export const InsightsIA = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <p className="text-sm text-slate-500 max-w-xl">A IA lê Metas, Gastos e Alarmes agregados e sugere o que vale a pena olhar — nunca envia remuneração de motorista pra fora.</p>
+        <p className="text-sm text-slate-500 max-w-xl">Compara o custo diário real com uma referência pública cadastrada para o modelo, sempre mostrando valor, escopo e fonte.</p>
         <div className="flex items-center gap-2">
           <button
             onClick={carregar}
@@ -173,6 +180,9 @@ export const InsightsIA = () => {
                 </div>
                 <h3 className="font-bold text-slate-800">{insight.Titulo}</h3>
                 <p className="text-sm text-slate-600 mt-1">{insight.Descricao}</p>
+                {insight.ValorBaseDiaria !== null && <p className="text-sm text-slate-700 mt-2"><b>Referência:</b> R$ {Number(insight.ValorBaseDiaria).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/dia · <b>Fazenda:</b> R$ {Number(insight.CustoRealDiario ?? 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/dia · {Number(insight.DiferencaPercentual ?? 0).toFixed(1).replace('.', ',')}%</p>}
+                {insight.FonteReferenciaUrl && <a href={insight.FonteReferenciaUrl} target="_blank" rel="noreferrer" className="text-xs text-blue-700 underline inline-block mt-1">Fonte: {insight.FonteReferenciaTitulo ?? 'documento público'}</a>}
+                {insight.EscopoReferencia && <p className="text-[11px] text-slate-400 mt-1">{insight.EscopoReferencia}</p>}
                 <p className="text-[11px] text-slate-400 mt-2">
                   Gerado em {formatData(insight.GeradoEm)}
                   {insight.Resolvido && insight.ResolvidoPor && ` · Resolvido por ${insight.ResolvidoPor}`}
