@@ -58,6 +58,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.status(200).json(inseridos);
   } catch (error) {
     console.error('Erro ao gerar benchmark de custo:', error);
+    const detalhe = error instanceof Error ? error.message : '';
+    // Erros de schema são acionáveis pelo administrador e não expõem credenciais.
+    if (/invalid object name|invalid column name/i.test(detalhe)) {
+      return res.status(503).json({
+        error: 'Configuração do benchmark pendente no SQL Server. Execute o script de ajustes de custo operacional no banco conectado à Vercel.',
+        detalhe,
+      });
+    }
     res.status(502).json({ error: 'Falha ao comparar custo diário com a referência cadastrada.' });
   }
 }
