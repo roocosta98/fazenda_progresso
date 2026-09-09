@@ -144,27 +144,32 @@ export const PainelMetasDiario: React.FC = () => {
       }
     };
 
-    const [eqs, mots, diario, motivosResp, motorResp, exec, insightsResp] = await Promise.all([
+    // Dados centrais primeiro: a consulta de motor pode ser lenta e não deve
+    // bloquear KPIs, gráfico diário e a tabela de caminhões.
+    const [eqs, mots, diario, exec] = await Promise.all([
       buscar<EquipamentoItem[]>(`${API_URL}/api/frota/equipamentos`, []),
       buscar<string[]>(`${API_URL}/api/metas/diario?modo=motoristas&${qs}`, []),
       buscar<{ porVeiculo: LinhaDiariaVeiculo[] }>(`${API_URL}/api/metas/diario?modo=diario&${qs}`, { porVeiculo: [] }),
-      buscar<MotivoAgregado[]>(`${API_URL}/api/metas/diario?modo=motivos&${qs}`, []),
-      buscar<MotorAgregado>(`${API_URL}/api/metas/diario?modo=motor&${qs}`, { minutosMotorLigado: 0, minutosMotorOcioso: 0, diasComDado: 0, porDia: [] }),
       buscar<{ alarmes24h: number }>(`${API_URL}/api/metas/diario?modo=executivo`, { alarmes24h: 0 }),
-      buscar<InsightItem[]>(`${API_URL}/api/insights/listar?resolvido=false`, []),
     ]);
 
     setVeiculos(eqs);
     setMotoristas(mots);
     setLinhasDiarias(diario.porVeiculo ?? []);
-    setMotivos(motivosResp);
-    setMotor(motorResp);
     setAlarmes24h(exec.alarmes24h ?? 0);
-    // Mantém todos em memória para localizar os vinculados a cada equipamento; o resumo geral
-    // abaixo continua limitado aos quatro mais recentes para não alongar a página.
-    setInsights(insightsResp);
     setErro(diario.porVeiculo ? null : 'Não foi possível carregar os dados do painel diário.');
     setCarregando(false);
+
+    void Promise.all([
+      buscar<MotivoAgregado[]>(`${API_URL}/api/metas/diario?modo=motivos&${qs}`, []),
+      buscar<MotorAgregado>(`${API_URL}/api/metas/diario?modo=motor&${qs}`, { minutosMotorLigado: 0, minutosMotorOcioso: 0, diasComDado: 0, porDia: [] }),
+      buscar<InsightItem[]>(`${API_URL}/api/insights/listar?resolvido=false`, []),
+    ]).then(([motivosResp, motorResp, insightsResp]) => {
+      setMotivos(motivosResp);
+      setMotor(motorResp);
+      // Mantém todos em memória para localizar os vinculados a cada equipamento.
+      setInsights(insightsResp);
+    });
   }, [dataDe, dataAte, veiculoSelecionado, motoristaSelecionado, usuario?.perfil]);
 
   useEffect(() => {
