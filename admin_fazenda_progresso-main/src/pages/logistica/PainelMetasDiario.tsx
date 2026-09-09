@@ -41,6 +41,11 @@ const indicadorModelo = (nome: string) => {
   return encontrado ? encontrado[0].replace(/\D/g, '') : modelo;
 };
 
+const tituloGrupoModelo = (nome: string, indicador: string) => {
+  const semIdentificacaoPatrimonial = nome.replace(/\s+N[ºO]?\s*\d+\b.*$/i, '').trim();
+  return semIdentificacaoPatrimonial || `Modelo ${indicador}`;
+};
+
 // Contrato real das views (confirmado no DBeaver, PRD v3 §9.3/§9.5/§9.6).
 interface LinhaDiariaVeiculo {
   Dia: string;
@@ -262,6 +267,19 @@ export const PainelMetasDiario: React.FC = () => {
         .slice(0, 12),
     [porEquipamento]
   );
+
+  const equipamentosAgrupados = useMemo(() => {
+    let grupoAnterior = '';
+    return porEquipamento.map((equipamento) => {
+      const iniciarGrupo = equipamento.indicador !== grupoAnterior;
+      grupoAnterior = equipamento.indicador;
+      return {
+        equipamento,
+        iniciarGrupo,
+        tituloGrupo: tituloGrupoModelo(equipamento.nome, equipamento.indicador),
+      };
+    });
+  }, [porEquipamento]);
 
   const motivosGrafico = useMemo(() => {
     const rotulo = (m: MotivoAgregado) =>
@@ -526,11 +544,18 @@ export const PainelMetasDiario: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {porEquipamento.map((e) => {
+                {equipamentosAgrupados.map(({ equipamento: e, iniciarGrupo, tituloGrupo }) => {
                   const saldo = e.esperado - e.operacional;
                   const aberto = expandidos[e.EquipamentoId];
                   return (
                     <React.Fragment key={e.EquipamentoId}>
+                      {iniciarGrupo && (
+                        <tr className="bg-slate-100/80">
+                          <td colSpan={9} className="px-3 py-2 text-[11px] font-bold uppercase tracking-wide text-slate-600">
+                            Grupo: {tituloGrupo}
+                          </td>
+                        </tr>
+                      )}
                       <tr className="hover:bg-slate-50">
                         <td className="py-3">
                           <p className="font-semibold text-slate-800">{e.nome}</p>
@@ -589,16 +614,13 @@ export const PainelMetasDiario: React.FC = () => {
                               {(() => {
                                 const relacionados = insights.filter((insight) => insight.EquipamentoId === e.EquipamentoId);
                                 return relacionados.length > 0 ? relacionados.map((insight) => (
-                                  <div key={insight.InsightId} className="mt-2 first:mt-0">
-                                    <p className="font-semibold text-slate-800">{insight.Titulo}</p>
-                                    <p className="text-slate-600 mt-0.5 leading-relaxed"><strong>Fato calculado:</strong> {insight.FatoCalculado ?? insight.Descricao}</p>
-                                    {insight.ValorBaseDiaria !== null && <p className="text-slate-600 mt-1"><strong>Base externa:</strong> {formatMoeda(insight.ValorBaseDiaria)}/dia · real: {formatMoeda(insight.CustoRealDiario ?? 0)}/dia ({Number(insight.DiferencaPercentual ?? 0).toFixed(1).replace('.', ',')}%)</p>}
-                                    {insight.FonteReferenciaUrl && <a className="text-blue-700 underline mt-1 inline-block" href={insight.FonteReferenciaUrl} target="_blank" rel="noreferrer">Fonte: {insight.FonteReferenciaTitulo ?? 'documento público'}</a>}
-                                    {insight.EscopoReferencia && <p className="text-[10px] text-slate-400 mt-1">{insight.EscopoReferencia}</p>}
-                                    {insight.RecomendacaoIA && <p className="text-slate-600 mt-1 leading-relaxed"><strong>Recomendação da IA:</strong> {insight.RecomendacaoIA}</p>}
+                                  <div key={insight.InsightId} className="mt-1 first:mt-0 text-slate-700 leading-relaxed line-clamp-2">
+                                    {insight.ValorBaseDiaria != null
+                                      ? <>Referência {formatMoeda(insight.ValorBaseDiaria)}/dia · custo real {formatMoeda(insight.CustoRealDiario ?? 0)}/dia ({Number(insight.DiferencaPercentual ?? 0).toFixed(1).replace('.', ',')}%).</>
+                                      : (insight.FatoCalculado ?? insight.Descricao)}
                                   </div>
                                 )) : (
-                                  <p className="text-slate-500">Nenhum insight específico foi gerado para este equipamento no período.</p>
+                                  <p className="text-slate-500">Custo operacional: {formatMoeda(e.operacional)} no período ({formatMoeda(e.dias > 0 ? e.operacional / e.dias : 0)}/dia). Sem referência externa cadastrada para este modelo.</p>
                                 );
                               })()}
                             </div>
