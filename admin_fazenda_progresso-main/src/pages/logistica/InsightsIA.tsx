@@ -87,7 +87,7 @@ export const InsightsIA = () => {
       const resp = await fetch(`${API_URL}/api/insights/gerar`, { method: 'POST' });
       if (!resp.ok) {
         const body = await resp.json().catch(() => ({}));
-        throw new Error(body.error ?? 'Falha ao gerar insights');
+        throw new Error([body.error, body.detalhe].filter(Boolean).join(' Detalhe: ') || 'Falha ao gerar insights');
       }
       await carregar();
     } catch (error) {
