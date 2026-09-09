@@ -20,6 +20,11 @@ interface Referencia {
 
 const moeda = (valor: number) => valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
+const COLUNAS_BENCHMARK = [
+  'ValorBaseDiaria', 'CustoRealDiario', 'DiferencaPercentual',
+  'FonteReferenciaTitulo', 'FonteReferenciaUrl', 'FonteReferenciaData', 'EscopoReferencia',
+] as const;
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Método não permitido' });
   try {
@@ -27,10 +32,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const inicio = new Date(Date.UTC(hoje.getUTCFullYear(), hoje.getUTCMonth(), 1));
     const fim = new Date(Date.UTC(hoje.getUTCFullYear(), hoje.getUTCMonth() + 1, 1));
     const pool = await getMssqlPool();
-    const [custos, referencias] = await Promise.all([
+    const [custos, referencias, schema] = await Promise.all([
       pool.request().input('inicio', sql.DateTime2, inicio).input('fim', sql.DateTime2, fim).query(QUERY_CUSTO_DIARIO).then((r) => r.recordset),
       pool.request().query(`SELECT ChaveModelo, Regiao, Segmento, DiariaBase, FonteTitulo, FonteUrl, FonteData, Homologada FROM CustoReferenciaOperacional WHERE Ativa=1`).then((r) => r.recordset as Referencia[]),
+      pool.request().query(`SELECT name FROM sys.columns WHERE object_id = OBJECT_ID(N'dbo.InsightIA')`).then((r) => new Set(r.recordset.map((row) => String(row.name)))),
     ]);
+    const colunasBenchmarkDisponiveis = COLUNAS_BENCHMARK.filter((coluna) => schema.has(coluna));
 
     const inseridos = [];
     for (const custo of custos) {
@@ -43,15 +50,24 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const acima = diferenca > 0;
       const fato = `Custo diário real: ${moeda(diarioReal)} em ${Number(custo.DiasComDado)} dia(s) com dado. Referência: ${moeda(diariaBase)}/dia. Diferença: ${acima ? '+' : ''}${diferenca.toFixed(1).replace('.', ',')}%.`;
       const escopo = `${referencia.Regiao}; ${referencia.Segmento}; referência pública ${referencia.Homologada ? 'homologada' : 'não homologada'}`;
-      const result = await pool.request()
+      const descricao = `${fato} Fonte: ${referencia.FonteTitulo} (${referencia.FonteUrl}). Não é cotação específica de fazenda de batata; serve apenas como balizador externo.`;
+      const request = pool.request()
         .input('categoria', sql.NVarChar, 'Benchmark').input('severidade', sql.NVarChar, acima && diferenca > 20 ? 'alta' : acima ? 'media' : 'baixa')
-        .input('titulo', sql.NVarChar, `Custo diário: ${nome}`).input('descricao', sql.NVarChar, `${fato} Não é cotação específica de fazenda de batata; serve apenas como balizador externo.`)
+        .input('titulo', sql.NVarChar, `Custo diário: ${nome}`).input('descricao', sql.NVarChar, descricao)
         .input('entidade', sql.NVarChar, nome).input('equipamentoId', sql.Int, custo.EquipamentoId).input('inicio', sql.Date, inicio).input('fim', sql.Date, new Date(fim.getTime() - 86400000))
-        .input('fato', sql.NVarChar, fato).input('recomendacao', sql.NVarChar, acima ? 'Validar combustível, manutenção e jornada antes de concluir que existe desvio operacional.' : 'Manter o acompanhamento: o custo está igual ou abaixo desta referência externa.')
-        .input('valorBase', sql.Decimal(18, 2), diariaBase).input('valorReal', sql.Decimal(18, 2), diarioReal).input('diferenca', sql.Decimal(9, 2), diferenca)
-        .input('fonteTitulo', sql.NVarChar, referencia.FonteTitulo).input('fonteUrl', sql.NVarChar, referencia.FonteUrl).input('fonteData', sql.Date, referencia.FonteData ? new Date(referencia.FonteData) : null).input('escopo', sql.NVarChar, escopo)
-        .query(`INSERT INTO InsightIA (Categoria, Severidade, Titulo, Descricao, EntidadeReferencia, EquipamentoId, PeriodoInicio, PeriodoFim, FatoCalculado, RecomendacaoIA, ValorBaseDiaria, CustoRealDiario, DiferencaPercentual, FonteReferenciaTitulo, FonteReferenciaUrl, FonteReferenciaData, EscopoReferencia)
-          OUTPUT INSERTED.* VALUES (@categoria, @severidade, @titulo, @descricao, @entidade, @equipamentoId, @inicio, @fim, @fato, @recomendacao, @valorBase, @valorReal, @diferenca, @fonteTitulo, @fonteUrl, @fonteData, @escopo)`);
+        .input('fato', sql.NVarChar, fato).input('recomendacao', sql.NVarChar, acima ? 'Validar combustível, manutenção e jornada antes de concluir que existe desvio operacional.' : 'Manter o acompanhamento: o custo está igual ou abaixo desta referência externa.');
+
+      const valoresBenchmark: Record<typeof COLUNAS_BENCHMARK[number], string> = {
+        ValorBaseDiaria: '@valorBase', CustoRealDiario: '@valorReal', DiferencaPercentual: '@diferenca',
+        FonteReferenciaTitulo: '@fonteTitulo', FonteReferenciaUrl: '@fonteUrl', FonteReferenciaData: '@fonteData', EscopoReferencia: '@escopo',
+      };
+      request.input('valorBase', sql.Decimal(18, 2), diariaBase).input('valorReal', sql.Decimal(18, 2), diarioReal).input('diferenca', sql.Decimal(9, 2), diferenca)
+        .input('fonteTitulo', sql.NVarChar, referencia.FonteTitulo).input('fonteUrl', sql.NVarChar, referencia.FonteUrl).input('fonteData', sql.Date, referencia.FonteData ? new Date(referencia.FonteData) : null).input('escopo', sql.NVarChar, escopo);
+
+      const colunasBase = ['Categoria', 'Severidade', 'Titulo', 'Descricao', 'EntidadeReferencia', 'EquipamentoId', 'PeriodoInicio', 'PeriodoFim', 'FatoCalculado', 'RecomendacaoIA'];
+      const valoresBase = ['@categoria', '@severidade', '@titulo', '@descricao', '@entidade', '@equipamentoId', '@inicio', '@fim', '@fato', '@recomendacao'];
+      const result = await request.query(`INSERT INTO dbo.InsightIA (${[...colunasBase, ...colunasBenchmarkDisponiveis].join(', ')})
+        OUTPUT INSERTED.* VALUES (${[...valoresBase, ...colunasBenchmarkDisponiveis.map((coluna) => valoresBenchmark[coluna])].join(', ')})`);
       inseridos.push(result.recordset[0]);
     }
     if (!inseridos.length) return res.status(422).json({ error: 'Não há custo diário no mês ou referência cadastrada para o modelo dos veículos.' });
