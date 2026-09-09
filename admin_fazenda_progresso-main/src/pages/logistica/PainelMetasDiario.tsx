@@ -458,18 +458,6 @@ export const PainelMetasDiario: React.FC = () => {
               <p className="text-[11px] text-slate-400 pt-1">
                 Somente dentro da jornada cadastrada; “Final de turno” é excluído. Motor desligado: hora-homem. Motor ligado e parado: hora-homem + máquina + diesel.
               </p>
-              <div className="overflow-x-auto border-t border-slate-100 pt-2">
-                <table className="w-full text-[11px]">
-                  <thead><tr className="text-slate-400"><th className="text-left">Motivo</th><th className="text-right">Motorista</th><th className="text-right">Máquina</th><th className="text-right">Diesel</th><th className="text-right">Total</th></tr></thead>
-                  <tbody>{motivos.map((m, i) => {
-                    const total = (m.CustoMotorista ?? 0) + (m.CustoMaquina ?? 0) + (m.CustoCombustivel ?? 0);
-                    return <tr key={`${m.Estado}-${m.OperacaoDescricao}-${i}`} className="border-t border-slate-50">
-                      <td className="py-1 text-slate-600">{m.OperacaoDescricao || m.Estado || 'Não informado'}{!m.Homologado && <span className="ml-1 text-amber-600">(homologação)</span>}</td>
-                      <td className="text-right">{formatMoeda(m.CustoMotorista)}</td><td className="text-right">{formatMoeda(m.CustoMaquina)}</td><td className="text-right">{formatMoeda(m.CustoCombustivel)}</td><td className="text-right font-bold">{formatMoeda(total)}</td>
-                    </tr>;
-                  })}</tbody>
-                </table>
-              </div>
             </div>
           )}
         </CardViz>
