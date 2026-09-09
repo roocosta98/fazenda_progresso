@@ -199,6 +199,7 @@ export const PainelMetasDiario: React.FC = () => {
       codigo: string;
       motorista: string;
       combustivel: number;
+      pneus: number;
       manutencao: number;
       outros: number;
       logistico: number;
@@ -217,11 +218,12 @@ export const PainelMetasDiario: React.FC = () => {
         indicador: indicadorModelo(l.NomeEquipamento ?? `Equipamento ${l.EquipamentoId}`),
         codigo: l.CodigoEquipamento ?? '—',
         motorista: l.MotoristaNomeFicha ?? l.MotoristaNomeFolha ?? 'Sem motorista vinculado',
-        combustivel: 0, manutencao: 0, outros: 0, logistico: 0, motoristaRateado: 0,
+        combustivel: 0, pneus: 0, manutencao: 0, outros: 0, logistico: 0, motoristaRateado: 0,
         operacional: 0, esperado: 0, km: 0, litros: 0, dias: 0, diasComMeta: 0,
       };
       atual.combustivel += l.CustoCombustivelDia ?? 0;
-      atual.manutencao += (l.CustoManutencaoDia ?? 0) + (l.CustoPneusDia ?? 0);
+      atual.pneus += l.CustoPneusDia ?? 0;
+      atual.manutencao += l.CustoManutencaoDia ?? 0;
       atual.outros += l.CustoOutrosDia ?? 0;
       atual.logistico += l.CustoLogisticoRealDia ?? 0;
       atual.motoristaRateado += l.CustoMotoristaRateadoDia ?? 0;
@@ -276,7 +278,7 @@ export const PainelMetasDiario: React.FC = () => {
   }, [motivos]);
 
   const totalCombustivel = somar(porEquipamento, (e) => e.combustivel);
-  const totalManutencao = somar(porEquipamento, (e) => e.manutencao);
+  const totalManutencao = somar(porEquipamento, (e) => e.pneus + e.manutencao);
   const totalLogistico = somar(porEquipamento, (e) => e.logistico);
   const totalOperacional = somar(porEquipamento, (e) => e.operacional);
   const totalKm = somar(porEquipamento, (e) => e.km);
@@ -542,7 +544,7 @@ export const PainelMetasDiario: React.FC = () => {
                           <p className="text-[11px] text-slate-500">{e.codigo} · {e.motorista} · {e.dias} dia(s)</p>
                         </td>
                         <td className="py-3 text-right text-slate-600 tabular-nums">{formatMoeda(e.combustivel)}</td>
-                        <td className="py-3 text-right text-slate-600 tabular-nums">{formatMoeda(e.manutencao)}</td>
+                        <td className="py-3 text-right text-slate-600 tabular-nums">{formatMoeda(e.pneus + e.manutencao)}</td>
                         <td className="py-3 text-right text-slate-600 tabular-nums">{formatMoeda(e.logistico)}</td>
                         <td className="py-3 text-right text-slate-600 tabular-nums">{formatMoeda(e.motoristaRateado)}</td>
                         <td className="py-3 text-right font-bold text-green-700 tabular-nums">{formatMoeda(e.operacional)}</td>
@@ -566,7 +568,8 @@ export const PainelMetasDiario: React.FC = () => {
                                 <p className="text-slate-600">• Combustível: {formatMoeda(e.combustivel)} · {e.litros.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} L</p>
                                 <p className="text-[10px] text-slate-400">Preço médio efetivo: {e.litros > 0 ? `${formatMoeda(e.combustivel / e.litros)}/L` : 'indisponível'}</p>
                                 <p className="text-[10px] text-slate-400">Equivalente em diesel: {e.litros > 0 ? `${e.litros.toLocaleString('pt-BR', { maximumFractionDigits: 1 })} L para ${formatMoeda(e.combustivel)}` : 'indisponível'}</p>
-                                <p className="text-slate-600">• Pneus + manutenção: {formatMoeda(e.manutencao)}</p>
+                                <p className="text-slate-600">• Pneus: {formatMoeda(e.pneus)}</p>
+                                <p className="text-slate-600">• Manutenção: {formatMoeda(e.manutencao)}</p>
                                 <p className="text-slate-600">• Outros: {formatMoeda(e.outros)}</p>
                                 <p className="text-slate-600">• Custo proporcional do motorista: {formatMoeda(e.motoristaRateado)}</p>
                                 <p className="text-[10px] text-slate-400">Rateio proporcional ao tempo atribuído ao equipamento no período.</p>
