@@ -83,7 +83,7 @@ export function ProducaoBatata({ tela = "painel" }: { tela?: TelaProducao }) {
       setErro(null);
     } catch (e) {
       setErro(
-        e instanceof Error ? e.message : "Falha ao carregar Produção/Batata.",
+        e instanceof Error ? e.message : "Falha ao carregar Produção.",
       );
     } finally {
       setCarregando(false);
@@ -178,7 +178,7 @@ export function ProducaoBatata({ tela = "painel" }: { tela?: TelaProducao }) {
       "Painel de Produção",
       "Resumo operacional de toneladas e custo por tonelada.",
     ],
-    safras: ["Safras", "Cadastre e acompanhe os ciclos de produção de batata."],
+    safras: ["Safras", "Cadastre e acompanhe os ciclos de produção."],
     lancamentos: [
       "Colheita e Transporte",
       "Registre a produção diária e o custo operacional.",
@@ -193,7 +193,7 @@ export function ProducaoBatata({ tela = "painel" }: { tela?: TelaProducao }) {
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="text-xs font-bold uppercase tracking-wider text-emerald-700">
-            Produção / Batata
+            Produção
           </p>
           <h1 className="text-2xl font-bold text-slate-800">
             {cabecalhos[tela][0]}
@@ -215,7 +215,7 @@ export function ProducaoBatata({ tela = "painel" }: { tela?: TelaProducao }) {
       )}
       {carregando && !dados ? (
         <div className="rounded-2xl border bg-white p-12 text-center text-slate-400">
-          Carregando dados de Produção/Batata…
+          Carregando dados de Produção…
         </div>
       ) : (
         <>
@@ -347,7 +347,7 @@ function Safras({
             required
             value={form.nome}
             onChange={(e) => setForm({ ...form, nome: e.target.value })}
-            placeholder="Ex.: Safra Batata 2026"
+            placeholder="Ex.: Safra 2026"
             className="w-full rounded-xl border px-3 py-2.5 text-sm"
           />
           <label className="block text-xs font-medium text-slate-600">

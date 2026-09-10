@@ -12,7 +12,7 @@ export const Login = () => {
   const [erro, setErro] = useState<string | null>(null);
 
   if (usuario) {
-    return <Navigate to={usuario.perfil === 'solicitante' ? '/solicitante/minhas' : '/logistica/dashboard'} replace />;
+    return <Navigate to={usuario.perfil === 'solicitante' ? '/solicitante/minhas' : '/inicio'} replace />;
   }
 
   const handleFakeSubmit = async (e: React.FormEvent) => {

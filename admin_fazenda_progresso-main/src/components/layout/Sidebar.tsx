@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
   List,
@@ -18,9 +18,20 @@ import {
   Boxes,
   Factory,
   Wrench,
+  ShoppingCart,
+  Home,
 } from 'lucide-react';
 import logoFp from '../../assets/logo.png';
 import type { ModuloSistema } from '../../types';
+
+const moduloFromPath = (pathname: string): ModuloSistema | null => {
+  if (pathname.startsWith('/logistica/estoque')) return 'estoque';
+  if (pathname.startsWith('/logistica')) return 'logistica_frota';
+  if (pathname.startsWith('/producao')) return 'producao_batata';
+  if (pathname.startsWith('/manutencao')) return 'manutencao';
+  if (pathname.startsWith('/compras')) return 'compras';
+  return null;
+};
 
 interface LinkItem {
   to: string;
@@ -40,12 +51,21 @@ const isGrupo = (item: LinkItem | GrupoItem): item is GrupoItem => 'children' in
 
 export const Sidebar = () => {
   const { usuario, logout } = useAuth();
+  const location = useLocation();
   const [grupoAberto, setGrupoAberto] = useState(true);
   const [seletorAberto, setSeletorAberto] = useState(false);
-  const modulosDisponiveis = usuario?.tipoUsuario === 'admin'
-    ? ['logistica_frota', 'estoque', 'producao_batata', 'manutencao'] as const
-    : (usuario?.modulos?.length ? usuario.modulos : ['logistica_frota'] as const);
-  const [moduloAtual, setModuloAtual] = useState<typeof modulosDisponiveis[number]>(modulosDisponiveis[0]);
+  const modulosDisponiveis: ModuloSistema[] = usuario?.tipoUsuario === 'admin'
+    ? ['logistica_frota', 'estoque', 'producao_batata', 'manutencao', 'compras']
+    : (usuario?.modulos?.length ? usuario.modulos : ['logistica_frota']);
+  const [moduloAtual, setModuloAtual] = useState<ModuloSistema>(
+    moduloFromPath(location.pathname) ?? modulosDisponiveis[0],
+  );
+
+  useEffect(() => {
+    const moduloDaRota = moduloFromPath(location.pathname);
+    if (moduloDaRota && modulosDisponiveis.includes(moduloDaRota)) setModuloAtual(moduloDaRota);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
 
   if (!usuario) return null;
 
@@ -79,6 +99,9 @@ export const Sidebar = () => {
       { to: '#', icon: <Clock size={18} />, label: 'Preventivas', pendente: true },
       { to: '#', icon: <List size={18} />, label: 'Histórico por Equipamento', pendente: true },
     ],
+    compras: [
+      { to: '/compras', icon: <ShoppingCart size={18} />, label: 'Painel de Compras' },
+    ],
   };
   const itensAdministracao: GrupoItem[] = usuario.tipoUsuario === 'admin' ? [{
     label: 'Administração', icon: <Settings size={18} />,
@@ -88,8 +111,9 @@ export const Sidebar = () => {
   const nomesModulos: Record<ModuloSistema, { nome: string; icone: React.ReactNode }> = {
     logistica_frota: { nome: 'Logística / Frota', icone: <Truck size={16} /> },
     estoque: { nome: 'Estoque', icone: <Boxes size={16} /> },
-    producao_batata: { nome: 'Produção / Batata', icone: <Factory size={16} /> },
+    producao_batata: { nome: 'Produção', icone: <Factory size={16} /> },
     manutencao: { nome: 'Manutenção', icone: <Wrench size={16} /> },
+    compras: { nome: 'Compras', icone: <ShoppingCart size={16} /> },
   };
 
   const linkClasses = (isActive: boolean) =>
@@ -120,6 +144,15 @@ export const Sidebar = () => {
 
       {/* 2. Menu Navigation */}
       <nav className="p-3 flex-1 space-y-1 overflow-y-auto">
+        {usuario.perfil !== 'solicitante' && (
+          <NavLink
+            to="/inicio"
+            className="flex items-center gap-2.5 px-3 py-2 mb-3 rounded-md text-xs font-semibold text-slate-300 border border-[#233d30] hover:bg-[#15271f] hover:text-white transition-colors"
+          >
+            <Home size={16} className="text-emerald-400" />
+            Início
+          </NavLink>
+        )}
         <div className="mb-4 relative">
           <p className="px-3 text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Módulo atual</p>
           <button onClick={() => setSeletorAberto((atual) => !atual)} className="w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-md bg-[#162920] border border-[#294535] text-white text-xs font-semibold">
