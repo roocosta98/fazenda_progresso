@@ -12,7 +12,7 @@ import {
   ReferenceLine,
 } from 'recharts';
 import {
-  COR, estiloTooltip, formatMoeda, formatMoedaCurta, hojeISO, diasAtrasISO, somar,
+  COR, estiloTooltip, formatMoeda, formatMoedaCurta, hojeISO, primeiroDiaMesISO, somar,
 } from '../../components/common/vizTokens';
 import { CardKpi, CardViz, SemDado, Legenda } from '../../components/common/viz';
 import { useAuth } from '../../context/AuthContext';
@@ -70,7 +70,7 @@ interface Agregado {
 
 export const LucroPrejuizo: React.FC = () => {
   const { usuario } = useAuth();
-  const [dataDe, setDataDe] = useState(diasAtrasISO(30));
+  const [dataDe, setDataDe] = useState(primeiroDiaMesISO());
   const [dataAte, setDataAte] = useState(hojeISO());
   const [visao, setVisao] = useState<'veiculo' | 'motorista'>('veiculo');
 

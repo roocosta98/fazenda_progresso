@@ -14,7 +14,7 @@ import {
 
 import {
   COR, estiloTooltip, formatMoeda, formatMoedaCurta, formatMinutos, formatDiaCurto,
-  hojeISO, diasAtrasISO, somar,
+  hojeISO, primeiroDiaMesISO, somar,
 } from '../../components/common/vizTokens';
 import { CardKpi, CardViz, SemDado, Legenda } from '../../components/common/viz';
 import { useAuth } from '../../context/AuthContext';
@@ -113,7 +113,7 @@ interface InsightItem {
 
 export const PainelMetasDiario: React.FC = () => {
   const { usuario } = useAuth();
-  const [dataDe, setDataDe] = useState(diasAtrasISO(30));
+  const [dataDe, setDataDe] = useState(primeiroDiaMesISO());
   const [dataAte, setDataAte] = useState(hojeISO());
   const [veiculoSelecionado, setVeiculoSelecionado] = useState('todos');
   const [motoristaSelecionado, setMotoristaSelecionado] = useState('todos');

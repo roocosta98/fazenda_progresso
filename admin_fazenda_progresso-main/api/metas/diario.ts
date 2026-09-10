@@ -190,6 +190,12 @@ async function modoMotivos(req: VercelRequest, res: VercelResponse) {
 // MinutosMotorLigado, MinutosMotorOcioso. O front antes lia MinutosProdutivos/MinutosOciosos/
 // MinutosAproximados (nomes que não existem aqui), então o total dava 0 e a rosca ficava vazia.
 // Devolvo o total do período já somado + a série por dia, pra tela não ter que somar nada.
+//
+// Não capar pelos minutos de JornadaMotorista aqui: esse cap depende de casar
+// EquipamentoId -> MotoristaNomeFicha (via vw_ResultadoDiarioVeiculo) -> jornada do dia, e
+// qualquer um desses joins falhando (sem custo lançado no dia, motorista sem jornada
+// cadastrada etc.) zera o total inteiro — foi o que deixou "Uso do motor" sempre em branco.
+// Motor ligado/ocioso é medido pela telemetria do equipamento, não pela jornada do motorista.
 async function modoMotor(req: VercelRequest, res: VercelResponse) {
   const equipamentoId = equipamentoIdNumerico(req);
   const motorista = typeof req.query.motorista === 'string' ? req.query.motorista : null;
@@ -212,18 +218,11 @@ async function modoMotor(req: VercelRequest, res: VercelResponse) {
     .input('dataInicio', sql.DateTime2, dataInicio)
     .input('dataFim', sql.DateTime2, dataFim)
     .query(`
-      WITH JornadaDiaria AS (
-        SELECT MotoristaNomeFicha, Dia, SUM(DATEDIFF(MINUTE, Entrada, Saida)) AS MinutosJornada
-        FROM JornadaMotorista
-        GROUP BY MotoristaNomeFicha, Dia
-      )
       SELECT
-        SUM(CASE WHEN ISNULL(j.MinutosJornada,0) <= 0 THEN 0 ELSE IIF(ISNULL(t.MinutosMotorLigado,0)>j.MinutosJornada,j.MinutosJornada,ISNULL(t.MinutosMotorLigado,0)) END) AS MinutosMotorLigado,
-        SUM(CASE WHEN ISNULL(j.MinutosJornada,0) <= 0 THEN 0 ELSE IIF(ISNULL(t.MinutosMotorOcioso,0)>j.MinutosJornada,j.MinutosJornada,ISNULL(t.MinutosMotorOcioso,0)) END) AS MinutosMotorOcioso,
+        SUM(ISNULL(t.MinutosMotorLigado,0)) AS MinutosMotorLigado,
+        SUM(ISNULL(t.MinutosMotorOcioso,0)) AS MinutosMotorOcioso,
         COUNT(DISTINCT t.Dia) AS DiasComDado
       FROM vw_TempoMotorEquipamento t
-      LEFT JOIN vw_ResultadoDiarioVeiculo rj ON rj.EquipamentoId=t.EquipamentoId AND CAST(rj.Dia AS date)=CAST(t.Dia AS date)
-      LEFT JOIN JornadaDiaria j ON j.MotoristaNomeFicha=rj.MotoristaNomeFicha AND j.Dia=CAST(t.Dia AS date)
       WHERE t.Dia >= @dataInicio AND t.Dia < @dataFim
         AND (@equipamentoId IS NULL OR t.EquipamentoId = @equipamentoId)
         ${filtroMotorista}
@@ -235,18 +234,11 @@ async function modoMotor(req: VercelRequest, res: VercelResponse) {
     .input('dataInicio', sql.DateTime2, dataInicio)
     .input('dataFim', sql.DateTime2, dataFim)
     .query(`
-      WITH JornadaDiaria AS (
-        SELECT MotoristaNomeFicha, Dia, SUM(DATEDIFF(MINUTE, Entrada, Saida)) AS MinutosJornada
-        FROM JornadaMotorista
-        GROUP BY MotoristaNomeFicha, Dia
-      )
       SELECT
         t.Dia,
-        SUM(CASE WHEN ISNULL(j.MinutosJornada,0) <= 0 THEN 0 ELSE IIF(ISNULL(t.MinutosMotorLigado,0)>j.MinutosJornada,j.MinutosJornada,ISNULL(t.MinutosMotorLigado,0)) END) AS MinutosMotorLigado,
-        SUM(CASE WHEN ISNULL(j.MinutosJornada,0) <= 0 THEN 0 ELSE IIF(ISNULL(t.MinutosMotorOcioso,0)>j.MinutosJornada,j.MinutosJornada,ISNULL(t.MinutosMotorOcioso,0)) END) AS MinutosMotorOcioso
+        SUM(ISNULL(t.MinutosMotorLigado,0)) AS MinutosMotorLigado,
+        SUM(ISNULL(t.MinutosMotorOcioso,0)) AS MinutosMotorOcioso
       FROM vw_TempoMotorEquipamento t
-      LEFT JOIN vw_ResultadoDiarioVeiculo rj ON rj.EquipamentoId=t.EquipamentoId AND CAST(rj.Dia AS date)=CAST(t.Dia AS date)
-      LEFT JOIN JornadaDiaria j ON j.MotoristaNomeFicha=rj.MotoristaNomeFicha AND j.Dia=CAST(t.Dia AS date)
       WHERE t.Dia >= @dataInicio AND t.Dia < @dataFim
         AND (@equipamentoId IS NULL OR t.EquipamentoId = @equipamentoId)
         ${filtroMotorista}
