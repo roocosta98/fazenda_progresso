@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Fuel, Wrench, Shield, Users } from 'lucide-react';
 import { DataTable } from '../../components/common/DataTable';
+import { Carregando } from '../../components/common/viz';
 import { DashboardExecutivo } from './DashboardExecutivo';
 import { useAuth } from '../../context/AuthContext';
 import { cabecalhoPerfil } from '../../utils/apiAuth';
@@ -185,7 +186,7 @@ export const Gastos = ({ dataDe: dataInicio, dataAte: dataFim }: GastosProps) =>
 
 
       {loading ? (
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-12 text-center text-slate-400">Carregando...</div>
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-12"><Carregando /></div>
       ) : (
         <DataTable columns={columns} data={filtradas} keyExtractor={(l) => `${l.EquipamentoId}-${l.CompetenciaMeta}`} />
       )}

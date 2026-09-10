@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Sparkles, RefreshCw, CheckCircle2, Eye, Truck, Wallet, AlertTriangle, Wrench } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { Carregando } from '../../components/common/viz';
 
 const API_URL = import.meta.env.VITE_API_URL ?? '';
 
@@ -153,7 +154,7 @@ export const InsightsIA = () => {
       </div>
 
       {loading ? (
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-12 text-center text-slate-400">Carregando...</div>
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-12"><Carregando /></div>
       ) : insights.length === 0 ? (
         <div className="bg-white rounded-2xl border border-slate-200/80 p-12 text-center text-slate-400">
           {mostrarResolvidos ? 'Nenhum insight resolvido ainda.' : 'Nenhum insight em aberto — clique em "Gerar novos insights".'}

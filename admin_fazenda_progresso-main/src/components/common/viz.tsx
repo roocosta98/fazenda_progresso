@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertTriangle, Info } from 'lucide-react';
+import { AlertTriangle, Info, LoaderCircle } from 'lucide-react';
 
 // Componentes de apresentação compartilhados pelos painéis (tokens e formatadores em vizTokens.ts).
 
@@ -30,6 +30,15 @@ export const CardViz = ({ titulo, acessorio, children }: {
       {acessorio}
     </div>
     <div className="mt-4">{children}</div>
+  </div>
+);
+
+// Indicador padrão de carregamento — usar em todo painel que busca dado assíncrono,
+// no lugar de um "Carregando..." simples, para manter a experiência consistente.
+export const Carregando = ({ mensagem = 'Carregando...' }: { mensagem?: string }) => (
+  <div className="flex flex-col items-center justify-center gap-3 py-12 text-slate-400">
+    <LoaderCircle size={26} className="animate-spin text-emerald-600" />
+    <span className="text-xs font-semibold">{mensagem}</span>
   </div>
 );
 

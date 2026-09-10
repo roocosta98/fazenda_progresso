@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { Bar, BarChart, CartesianGrid, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { BarChart3 } from 'lucide-react';
 import { FiltroDataEstoque, KpiCardsEstoque, useEstoquePainel } from './estoqueShared';
+import { Carregando } from '../../components/common/viz';
 
 export function DashboardEstoque() {
   const { dados, erro, carregando, carregar, dataDe, setDataDe, dataAte, setDataAte } = useEstoquePainel();
@@ -18,7 +19,7 @@ export function DashboardEstoque() {
     <FiltroDataEstoque dataDe={dataDe} setDataDe={setDataDe} dataAte={dataAte} setDataAte={setDataAte} carregando={carregando} carregar={carregar} />
     {erro && <div className="p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-sm">{erro}</div>}
     <KpiCardsEstoque kpis={dados?.kpis ?? {}} />
-    {carregando && !dados ? <div className="p-12 bg-white border rounded-2xl text-center text-slate-400">Carregando dados do Sankhya…</div> : <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+    {carregando && !dados ? <div className="p-12 bg-white border rounded-2xl"><Carregando mensagem="Carregando dados do Sankhya…" /></div> : <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
       <Grafico titulo="Valor por Curva ABC"><ResponsiveContainer width="100%" height={260}><PieChart><Pie data={curvaAbc} dataKey="valor" nameKey="classe" fill="#10b981"/><Tooltip/><Legend/></PieChart></ResponsiveContainer></Grafico>
       <Grafico titulo="Itens mais críticos"><ResponsiveContainer width="100%" height={260}><BarChart data={ruptura}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="produto" hide/><YAxis/><Tooltip/><Legend/><Bar dataKey="estoque" fill="#ef4444" name="Estoque"/><Bar dataKey="minimo" fill="#f59e0b" name="Mínimo"/></BarChart></ResponsiveContainer></Grafico>
       <Grafico titulo="Maior consumo por requisição (período filtrado)"><ResponsiveContainer width="100%" height={260}><BarChart data={giro} layout="vertical"><CartesianGrid strokeDasharray="3 3"/><XAxis type="number"/><YAxis dataKey="produto" type="category" width={150}/><Tooltip/><Bar dataKey="consumo" fill="#2563eb" name="Consumo"/></BarChart></ResponsiveContainer></Grafico>

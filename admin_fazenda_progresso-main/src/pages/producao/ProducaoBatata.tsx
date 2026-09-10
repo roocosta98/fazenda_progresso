@@ -20,6 +20,7 @@ import {
 } from "recharts";
 import { useAuth } from "../../context/AuthContext";
 import { cabecalhoPerfil } from "../../utils/apiAuth";
+import { Carregando } from "../../components/common/viz";
 
 const API_URL = import.meta.env.VITE_API_URL ?? "";
 type Safra = {
@@ -214,8 +215,8 @@ export function ProducaoBatata({ tela = "painel" }: { tela?: TelaProducao }) {
         </div>
       )}
       {carregando && !dados ? (
-        <div className="rounded-2xl border bg-white p-12 text-center text-slate-400">
-          Carregando dados de Produção…
+        <div className="rounded-2xl border bg-white p-12">
+          <Carregando mensagem="Carregando dados de Produção…" />
         </div>
       ) : (
         <>

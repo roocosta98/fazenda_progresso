@@ -3,6 +3,7 @@ import { ChevronDown, ChevronUp, Search } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { cabecalhoPerfil } from '../../utils/apiAuth';
 import { FiltroDataEstoque, KpiCardsEstoque, rotuloColuna, useEstoquePainel, valorCelula, type Linha } from './estoqueShared';
+import { Carregando } from '../../components/common/viz';
 
 const API_URL = import.meta.env.VITE_API_URL ?? '';
 
@@ -56,7 +57,7 @@ export function Estoque() {
       <div className="flex flex-wrap gap-2 mt-3">{['Produtos com estoque abaixo do mínimo', 'Quais fornecedores têm melhor prazo de entrega?', 'Cotações em aberto com prazo nesta semana', 'Produtos com vinho, café ou batata em estoque'].map((sugestao) => <button key={sugestao} onClick={() => setPergunta(sugestao)} className="text-xs px-3 py-1.5 rounded-full border border-emerald-700 text-emerald-100 hover:bg-emerald-900">{sugestao}</button>)}</div>
       {resultadoPesquisa && <div className="mt-4 bg-white/10 border border-emerald-800 rounded-xl p-4"><p className="text-sm leading-relaxed">{resultadoPesquisa.resumo ?? 'Consulta executada sem resumo.'}</p><details className="mt-3 text-xs text-emerald-100"><summary className="cursor-pointer">Ver consulta utilizada</summary><code className="block whitespace-pre-wrap mt-2 p-2 rounded bg-black/20">{resultadoPesquisa.sql}</code></details>{resultadoPesquisa.linhas.length > 0 && <div className="mt-3 max-h-64 overflow-auto rounded bg-white text-slate-800"><table className="w-full text-xs"><thead className="sticky top-0 bg-slate-100"><tr>{Object.keys(resultadoPesquisa.linhas[0]).map((coluna) => <th key={coluna} className="p-2 text-left">{rotuloColuna(coluna)}</th>)}</tr></thead><tbody>{resultadoPesquisa.linhas.map((linha, indice) => <tr key={indice} className="border-t">{Object.entries(linha).map(([coluna, valor]) => <td key={coluna} className="p-2 whitespace-nowrap">{valorCelula(coluna, valor)}</td>)}</tr>)}</tbody></table></div>}</div>}
     </section>
-    {carregando && !dados ? <div className="bg-white border rounded-2xl p-12 text-center text-slate-400">Carregando dados do estoque…</div> : dados && <div className="space-y-4">
+    {carregando && !dados ? <div className="bg-white border rounded-2xl p-12"><Carregando mensagem="Carregando dados do estoque…" /></div> : dados && <div className="space-y-4">
       <Secao titulo="Ruptura e estoque mínimo/máximo" subtitulo="Itens sinalizados para reposição ou abaixo do mínimo configurado." linhas={dados.ruptura} erro={dados.erros.ruptura}/>
       <Secao titulo="Itens sem movimentação" subtitulo="Produtos sem venda por 90 dias ou mais." linhas={dados.semMovimentacao} erro={dados.erros.semMovimentacao}/>
       <Secao titulo="Maior valor em estoque · Curva ABC" subtitulo="Valor calculado por estoque × custo gerencial mais recente." linhas={dados.valor} erro={dados.erros.valor}/>

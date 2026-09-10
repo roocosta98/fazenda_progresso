@@ -2,11 +2,13 @@ import { useCallback, useEffect, useState } from "react";
 import { RefreshCw, Wrench } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { cabecalhoPerfil } from "../../utils/apiAuth";
+import { Carregando } from "../../components/common/viz";
 const API = import.meta.env.VITE_API_URL ?? "";
 export function Manutencao() {
   const { usuario } = useAuth();
   const [d, setD] = useState<any>(null);
   const [e, setE] = useState("");
+  const [carregando, setCarregando] = useState(true);
   const [modalAtivo, setModalAtivo] = useState(false);
   const [f, setF] = useState({
     nome: "",
@@ -15,6 +17,7 @@ export function Manutencao() {
     localizacao: "",
   });
   const load = useCallback(async () => {
+    setCarregando(true);
     try {
       const r = await fetch(`${API}/api/manutencao`, {
         headers: cabecalhoPerfil(usuario?.perfil),
@@ -25,6 +28,8 @@ export function Manutencao() {
       setE("");
     } catch (x) {
       setE(x instanceof Error ? x.message : "Falha ao carregar manutenção.");
+    } finally {
+      setCarregando(false);
     }
   }, [usuario?.perfil]);
   useEffect(() => {
@@ -64,6 +69,12 @@ export function Manutencao() {
         </button>
       </div>
       {e && <p className="p-3 bg-rose-50 text-rose-700 rounded-xl">{e}</p>}
+      {carregando && !d ? (
+        <div className="bg-white border-slate-200 border rounded-2xl p-12">
+          <Carregando mensagem="Carregando manutenção…" />
+        </div>
+      ) : (
+      <>
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           ["OS abertas", k.OSABERTAS],
@@ -81,6 +92,8 @@ export function Manutencao() {
         ))}
       </div>
       <section className="bg-white border-slate-200 border rounded-2xl overflow-hidden"><div className="p-5 flex items-center justify-between"><h2 className="font-bold flex gap-2"><Wrench/>Ativos e equipamentos</h2><button onClick={()=>setModalAtivo(true)} className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-sm font-bold">Adicionar ativo</button></div><div className="overflow-auto"><table className="w-full text-sm"><thead className="bg-slate-50 text-slate-500"><tr><th className="p-3 text-left">Código</th><th className="p-3 text-left">Ativo</th><th className="p-3 text-left">Tipo</th><th className="p-3 text-left">Localização</th></tr></thead><tbody>{(d?.ativos??[]).map((a:any)=><tr className="border-t"><td className="p-3">{a.CodigoEquipamento||'—'}</td><td className="p-3 font-medium">{a.Nome}</td><td className="p-3">{a.Tipo}</td><td className="p-3">{a.Localizacao||'—'}</td></tr>)}{!d?.ativos?.length&&<tr><td colSpan={4} className="p-8 text-center text-slate-400">Nenhum ativo cadastrado.</td></tr>}</tbody></table></div></section>
+      </>
+      )}
       {modalAtivo && <div className="fixed inset-0 z-[100] bg-slate-950/40 flex items-center justify-center p-4"><form
           onSubmit={salvar}
           className="bg-white w-full max-w-md rounded-2xl p-5 space-y-3 shadow-xl"

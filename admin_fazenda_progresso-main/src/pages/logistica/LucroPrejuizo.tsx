@@ -14,7 +14,7 @@ import {
 import {
   COR, estiloTooltip, formatMoeda, formatMoedaCurta, somar,
 } from '../../components/common/vizTokens';
-import { CardKpi, CardViz, SemDado, Legenda } from '../../components/common/viz';
+import { CardKpi, CardViz, SemDado, Legenda, Carregando } from '../../components/common/viz';
 import { useAuth } from '../../context/AuthContext';
 import { cabecalhoPerfil } from '../../utils/apiAuth';
 
@@ -173,6 +173,14 @@ export const LucroPrejuizo: React.FC<LucroPrejuizoProps> = ({ dataDe, dataAte })
 
   const substantivo = visao === 'veiculo' ? 'caminhão' : 'motorista';
   const substantivoPlural = visao === 'veiculo' ? 'caminhões' : 'motoristas';
+
+  if (carregando && porVeiculo.length === 0 && porMotorista.length === 0) {
+    return (
+      <div className="bg-white rounded-2xl border border-slate-200/80 p-12">
+        <Carregando mensagem="Carregando lucro e prejuízo…" />
+      </div>
+    );
+  }
 
   return (
     <div className={`space-y-5 transition-opacity ${carregando ? 'opacity-60' : 'opacity-100'}`}>

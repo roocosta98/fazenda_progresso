@@ -34,6 +34,7 @@ import {
   Play
 } from 'lucide-react';
 import { SlideOverDrawer } from '../../components/common/SlideOverDrawer';
+import { Carregando } from '../../components/common/viz';
 
 const GOOGLE_MAPS_API_KEY = 'AIzaSyAeQIKfNplzSj3wnUdIVBSnhzDb0OuFPwM';
 // Sem VITE_API_URL, usa caminho relativo (mesma origem) — funciona tanto no Vercel
@@ -785,9 +786,7 @@ export const MapaMonitoramento = () => {
           </div>
 
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {loading && (
-              <p className="text-xs text-slate-400 text-center py-8">Carregando posições...</p>
-            )}
+            {loading && <Carregando mensagem="Carregando posições..." />}
 
             {!loading && posicoesFiltradas.length === 0 && !erro && (
               <p className="text-xs text-slate-400 text-center py-8">Nenhum equipamento encontrado.</p>
@@ -862,7 +861,7 @@ export const MapaMonitoramento = () => {
         title={selectedEquipamento ? `Histórico — ${selectedEquipamento.Nome}` : 'Histórico do Equipamento'}
         width="max-w-2xl"
       >
-        {trajetoLoading && <p className="text-sm text-slate-400 text-center py-12">Carregando histórico...</p>}
+        {trajetoLoading && <Carregando mensagem="Carregando histórico..." />}
 
         {!trajetoLoading && trajeto.length === 0 && (
           <p className="text-sm text-slate-400 text-center py-12">Sem leituras de GPS nas últimas 24h pra esse equipamento.</p>

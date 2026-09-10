@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { RefreshCw, Trophy, Fuel, Gauge, Medal, FileSpreadsheet } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { DataTable } from '../../components/common/DataTable';
+import { Carregando } from '../../components/common/viz';
 
 const API_URL = import.meta.env.VITE_API_URL ?? '';
 
@@ -282,7 +283,7 @@ export const PainelMetas = () => {
       </div>
 
       {loading ? (
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-12 text-center text-slate-400">Carregando...</div>
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-12"><Carregando /></div>
       ) : activeTab === 'painel' ? (
         <DataTable columns={columns} data={filtradas} keyExtractor={(l) => `${l.EquipamentoId}-${l.CompetenciaMeta}`} />
       ) : (
