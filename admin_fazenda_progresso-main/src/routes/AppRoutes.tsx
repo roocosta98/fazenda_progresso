@@ -13,6 +13,7 @@ import { MetasOrfas } from '../pages/logistica/MetasOrfas';
 import { AvaliacaoConducao } from '../pages/logistica/AvaliacaoConducao';
 import { MapaMonitoramento } from '../pages/logistica/MapaMonitoramento';
 import { TelaTVMonitor } from '../pages/logistica/TelaTVMonitor';
+import { Estoque } from '../pages/estoque/Estoque';
 
 const ProtectedRoute = ({ children, allowedRoles }: { children: ReactNode, allowedRoles?: string[] }) => {
   const { usuario } = useAuth();
@@ -34,7 +35,7 @@ export const AppRoutes = () => {
       <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
         {/* Solicitante Routes */}
 
-        <Route 
+        <Route
           path="/solicitante/minhas" 
           element={<ProtectedRoute allowedRoles={['solicitante']}><MinhasSolicitacoes /></ProtectedRoute>} 
         />
@@ -68,9 +69,13 @@ export const AppRoutes = () => {
           path="/logistica/avaliacao-conducao"
           element={<ProtectedRoute allowedRoles={['logistica']}><AvaliacaoConducao /></ProtectedRoute>}
         />
-        <Route
+        <Route 
           path="/logistica/monitoramento" 
           element={<ProtectedRoute allowedRoles={['logistica']}><MapaMonitoramento /></ProtectedRoute>} 
+        />
+        <Route
+          path="/logistica/estoque"
+          element={<ProtectedRoute allowedRoles={['logistica']}><Estoque /></ProtectedRoute>}
         />
       </Route>
       

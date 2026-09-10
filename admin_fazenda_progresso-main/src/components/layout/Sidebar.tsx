@@ -15,6 +15,7 @@ import {
   ChevronDown,
   LogOut,
   BarChart3,
+  Boxes,
 } from 'lucide-react';
 import logoFp from '../../assets/logo.png';
 
@@ -49,6 +50,7 @@ export const Sidebar = () => {
           { to: '/logistica/metas', icon: <Trophy size={18} />, label: 'Metas & Ranking' },
           { to: '/logistica/avaliacao-conducao', icon: <ClipboardCheck size={18} />, label: 'Avaliação de Condução' },
           { to: '/logistica/monitoramento', icon: <MapIcon size={18} />, label: 'Telemetria & Mapa' },
+          { to: '/logistica/estoque', icon: <Boxes size={18} />, label: 'Estoque' },
           { to: '/logistica/monitor-tv', icon: <MonitorPlay size={18} />, label: 'Monitor TV' },
           {
             label: 'Administração',
