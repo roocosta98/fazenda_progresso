@@ -20,6 +20,7 @@ import { GestaoUsuarios } from '../pages/administracao/GestaoUsuarios';
 import { Manutencao } from '../pages/manutencao/Manutencao';
 import { Inicio } from '../pages/inicio/Inicio';
 import { Compras } from '../pages/compras/Compras';
+import { EmConstrucao } from '../pages/em-construcao/EmConstrucao';
 
 const ProtectedRoute = ({ children, allowedRoles }: { children: ReactNode, allowedRoles?: string[] }) => {
   const { usuario } = useAuth();
@@ -99,6 +100,12 @@ export const AppRoutes = () => {
         <Route path="/manutencao/preventivas" element={<ProtectedRoute allowedRoles={['logistica']}><Manutencao /></ProtectedRoute>} />
         <Route path="/manutencao/historico" element={<ProtectedRoute allowedRoles={['logistica']}><Manutencao /></ProtectedRoute>} />
         <Route path="/compras" element={<ProtectedRoute allowedRoles={['logistica']}><Compras /></ProtectedRoute>} />
+        <Route path="/financeiro" element={<ProtectedRoute allowedRoles={['logistica']}><EmConstrucao titulo="Financeiro" /></ProtectedRoute>} />
+        <Route path="/comercial" element={<ProtectedRoute allowedRoles={['logistica']}><EmConstrucao titulo="Comercial" /></ProtectedRoute>} />
+        <Route path="/custos" element={<ProtectedRoute allowedRoles={['logistica']}><EmConstrucao titulo="Custos" /></ProtectedRoute>} />
+        <Route path="/rh" element={<ProtectedRoute allowedRoles={['logistica']}><EmConstrucao titulo="DP / RH" /></ProtectedRoute>} />
+        <Route path="/seguranca-trabalho" element={<ProtectedRoute allowedRoles={['logistica']}><EmConstrucao titulo="Segurança do Trabalho" /></ProtectedRoute>} />
+        <Route path="/controladoria" element={<ProtectedRoute allowedRoles={['logistica']}><EmConstrucao titulo="Controladoria" /></ProtectedRoute>} />
         <Route path="/administracao/usuarios" element={<ProtectedRoute allowedRoles={['logistica']}><GestaoUsuarios /></ProtectedRoute>} />
       </Route>
       

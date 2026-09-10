@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
   List,
@@ -20,6 +20,12 @@ import {
   Wrench,
   ShoppingCart,
   Home,
+  Wallet,
+  Handshake,
+  Calculator,
+  Users,
+  HardHat,
+  ClipboardList,
 } from 'lucide-react';
 import logoFp from '../../assets/logo.png';
 import type { ModuloSistema } from '../../types';
@@ -41,16 +47,42 @@ interface GrupoItem {
 const isGrupo = (item: LinkItem | GrupoItem): item is GrupoItem => 'children' in item;
 type SelecaoModulo = 'todos' | ModuloSistema;
 
+// Ao entrar por um link direto (ex.: card da tela Início), o menu foca só naquele
+// módulo — os demais somem da sidebar até o usuário escolher "Todos os módulos" de novo.
+const moduloFromPath = (pathname: string): ModuloSistema | null => {
+  if (pathname.startsWith('/logistica/estoque')) return 'estoque';
+  if (pathname.startsWith('/logistica')) return 'logistica_frota';
+  if (pathname.startsWith('/producao')) return 'producao_batata';
+  if (pathname.startsWith('/manutencao')) return 'manutencao';
+  if (pathname.startsWith('/compras')) return 'compras';
+  if (pathname.startsWith('/financeiro')) return 'financeiro';
+  if (pathname.startsWith('/comercial')) return 'comercial';
+  if (pathname.startsWith('/custos')) return 'custos';
+  if (pathname.startsWith('/rh')) return 'rh';
+  if (pathname.startsWith('/seguranca-trabalho')) return 'seguranca_trabalho';
+  if (pathname.startsWith('/controladoria')) return 'controladoria';
+  return null;
+};
+
 export const Sidebar = () => {
   const { usuario, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [grupoAberto, setGrupoAberto] = useState(true);
   const [seletorAberto, setSeletorAberto] = useState(false);
-  const modulosPermitidos = usuario?.tipoUsuario === 'admin'
-    ? ['logistica_frota', 'estoque', 'producao_batata', 'manutencao', 'compras'] as const
-    : (usuario?.modulos?.length ? usuario.modulos : ['logistica_frota'] as const);
-  const modulosDisponiveis: SelecaoModulo[] = ['todos', ...modulosPermitidos as ModuloSistema[]];
-  const [moduloAtual, setModuloAtual] = useState<SelecaoModulo>('todos');
+  const modulosPermitidos: ModuloSistema[] = usuario?.tipoUsuario === 'admin'
+    ? ['logistica_frota', 'estoque', 'producao_batata', 'manutencao', 'compras', 'financeiro', 'comercial', 'custos', 'rh', 'seguranca_trabalho', 'controladoria']
+    : (usuario?.modulos?.length ? usuario.modulos : ['logistica_frota']);
+  const modulosDisponiveis: SelecaoModulo[] = ['todos', ...modulosPermitidos];
+  const [moduloAtual, setModuloAtual] = useState<SelecaoModulo>(() => moduloFromPath(location.pathname) ?? 'todos');
+  const [focoManual, setFocoManual] = useState(false);
+
+  useEffect(() => {
+    if (focoManual) return;
+    const moduloDaRota = moduloFromPath(location.pathname);
+    if (moduloDaRota && modulosPermitidos.includes(moduloDaRota)) setModuloAtual(moduloDaRota);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
 
   if (!usuario) return null;
 
@@ -85,6 +117,12 @@ export const Sidebar = () => {
     compras: [
       { to: '/compras', icon: <ShoppingCart size={18} />, label: 'Painel de Compras' },
     ],
+    financeiro: [{ to: '/financeiro', icon: <Wallet size={18} />, label: 'Painel Financeiro' }],
+    comercial: [{ to: '/comercial', icon: <Handshake size={18} />, label: 'Painel Comercial' }],
+    custos: [{ to: '/custos', icon: <Calculator size={18} />, label: 'Painel de Custos' }],
+    rh: [{ to: '/rh', icon: <Users size={18} />, label: 'Painel de DP / RH' }],
+    seguranca_trabalho: [{ to: '/seguranca-trabalho', icon: <HardHat size={18} />, label: 'Painel de Segurança' }],
+    controladoria: [{ to: '/controladoria', icon: <ClipboardList size={18} />, label: 'Painel de Controladoria' }],
   };
   const itensAdministracao: GrupoItem[] = usuario.tipoUsuario === 'admin' ? [{
     label: 'Administração', icon: <Settings size={18} />,
@@ -101,6 +139,12 @@ export const Sidebar = () => {
     producao_batata: { nome: 'Produção', icone: <Factory size={16} /> },
     manutencao: { nome: 'Manutenção', icone: <Wrench size={16} /> },
     compras: { nome: 'Compras', icone: <ShoppingCart size={16} /> },
+    financeiro: { nome: 'Financeiro', icone: <Wallet size={16} /> },
+    comercial: { nome: 'Comercial', icone: <Handshake size={16} /> },
+    custos: { nome: 'Custos', icone: <Calculator size={16} /> },
+    rh: { nome: 'DP / RH', icone: <Users size={16} /> },
+    seguranca_trabalho: { nome: 'Segurança do Trabalho', icone: <HardHat size={16} /> },
+    controladoria: { nome: 'Controladoria', icone: <ClipboardList size={16} /> },
   };
   const items: (LinkItem | GrupoItem)[] = [
     ...(moduloAtual === 'todos'
@@ -115,6 +159,12 @@ export const Sidebar = () => {
     producao_batata: '/producao/batata',
     manutencao: '/manutencao',
     compras: '/compras',
+    financeiro: '/financeiro',
+    comercial: '/comercial',
+    custos: '/custos',
+    rh: '/rh',
+    seguranca_trabalho: '/seguranca-trabalho',
+    controladoria: '/controladoria',
   };
 
   const linkClasses = (isActive: boolean) =>
@@ -159,7 +209,7 @@ export const Sidebar = () => {
           <button onClick={() => setSeletorAberto((atual) => !atual)} className="w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-md bg-[#162920] border border-[#294535] text-white text-xs font-semibold">
             <span className="flex items-center gap-2 min-w-0"><span className="text-emerald-400">{nomesModulos[moduloAtual].icone}</span><span className="truncate">{nomesModulos[moduloAtual].nome}</span></span><ChevronDown size={14} className={seletorAberto ? 'rotate-180 transition-transform' : 'transition-transform'} />
           </button>
-          {seletorAberto && <div className="absolute z-50 mt-1 w-full bg-[#162920] border border-[#294535] rounded-md p-1 shadow-xl">{modulosDisponiveis.map((modulo) => <button key={modulo} onClick={() => { setModuloAtual(modulo); setSeletorAberto(false); navigate(dashboardModulo[modulo]); }} className={`w-full flex items-center gap-2 px-3 py-2 rounded text-left text-xs ${moduloAtual === modulo ? 'bg-emerald-600 text-white' : 'text-slate-300 hover:bg-[#223a2d]'}`}><span>{nomesModulos[modulo].icone}</span>{nomesModulos[modulo].nome}</button>)}</div>}
+          {seletorAberto && <div className="absolute z-50 mt-1 w-full bg-[#162920] border border-[#294535] rounded-md p-1 shadow-xl">{modulosDisponiveis.map((modulo) => <button key={modulo} onClick={() => { setModuloAtual(modulo); setFocoManual(modulo === 'todos'); setSeletorAberto(false); navigate(dashboardModulo[modulo]); }} className={`w-full flex items-center gap-2 px-3 py-2 rounded text-left text-xs ${moduloAtual === modulo ? 'bg-emerald-600 text-white' : 'text-slate-300 hover:bg-[#223a2d]'}`}><span>{nomesModulos[modulo].icone}</span>{nomesModulos[modulo].nome}</button>)}</div>}
         </div>
         <p className="px-3 text-[10px] font-semibold text-slate-400 uppercase tracking-wider my-2.5">
           {nomesModulos[moduloAtual].nome}
