@@ -190,8 +190,8 @@ export const Sidebar = ({ mobileAberto = false, onFechar }: SidebarProps) => {
         />
       )}
       <aside
-        className={`w-72 sm:w-64 bg-[#0d1a14] text-slate-300 flex flex-col z-50 shrink-0 h-full border-r border-[#192c23] select-none fixed inset-y-0 left-0 transition-transform duration-200 md:static md:translate-x-0 ${
-          mobileAberto ? 'translate-x-0' : '-translate-x-full'
+        className={`w-72 sm:w-64 bg-[#0d1a14] text-slate-300 flex flex-col z-50 shrink-0 h-full border-r border-[#192c23] select-none fixed inset-y-0 left-0 transition-all duration-200 overflow-hidden md:relative md:translate-x-0 ${
+          mobileAberto ? 'translate-x-0 md:w-64' : '-translate-x-full md:w-0 md:border-r-0'
         }`}
       >
       {/* 1. Branding Header */}
@@ -211,7 +211,7 @@ export const Sidebar = ({ mobileAberto = false, onFechar }: SidebarProps) => {
         </div>
         <button
           onClick={onFechar}
-          className="md:hidden p-1.5 text-slate-400 hover:text-white hover:bg-[#15271f] rounded-md shrink-0"
+          className="p-1.5 text-slate-400 hover:text-white hover:bg-[#15271f] rounded-md shrink-0"
           aria-label="Fechar menu"
         >
           <X size={18} />
@@ -220,8 +220,10 @@ export const Sidebar = ({ mobileAberto = false, onFechar }: SidebarProps) => {
 
       {/* 2. Menu Navigation */}
       <nav className="p-3 flex-1 space-y-1 overflow-y-auto" onClick={(e) => {
+        // No desktop o menu fica persistente entre telas do módulo; só fecha sozinho
+        // no mobile, onde é um drawer que deve sumir depois de escolher um link.
         const target = e.target as HTMLElement;
-        if (target.closest('a')) onFechar?.();
+        if (target.closest('a') && window.matchMedia('(max-width: 767px)').matches) onFechar?.();
       }}>
         {usuario.perfil !== 'solicitante' && (
           <NavLink

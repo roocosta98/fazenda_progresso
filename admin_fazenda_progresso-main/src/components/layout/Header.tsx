@@ -28,7 +28,7 @@ export const Header = ({ onAbrirMenu }: HeaderProps) => {
       <div className="flex items-center gap-2 min-w-0 flex-1">
         <button
           onClick={onAbrirMenu}
-          className="md:hidden p-1.5 -ml-1 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-md transition-colors shrink-0"
+          className="p-1.5 -ml-1 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-md transition-colors shrink-0"
           aria-label="Abrir menu"
         >
           <Menu size={20} />
