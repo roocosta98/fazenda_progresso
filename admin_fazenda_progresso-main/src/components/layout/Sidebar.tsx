@@ -16,14 +16,18 @@ import {
   LogOut,
   BarChart3,
   Boxes,
+  Factory,
+  Wrench,
 } from 'lucide-react';
 import logoFp from '../../assets/logo.png';
+import type { ModuloSistema } from '../../types';
 
 interface LinkItem {
   to: string;
   icon: React.ReactNode;
   label: string;
   badge?: number;
+  pendente?: boolean;
 }
 
 interface GrupoItem {
@@ -37,10 +41,15 @@ const isGrupo = (item: LinkItem | GrupoItem): item is GrupoItem => 'children' in
 export const Sidebar = () => {
   const { usuario, logout } = useAuth();
   const [grupoAberto, setGrupoAberto] = useState(true);
+  const [seletorAberto, setSeletorAberto] = useState(false);
+  const modulosDisponiveis = usuario?.tipoUsuario === 'admin'
+    ? ['logistica_frota', 'estoque', 'producao_batata', 'manutencao'] as const
+    : (usuario?.modulos?.length ? usuario.modulos : ['logistica_frota'] as const);
+  const [moduloAtual, setModuloAtual] = useState<typeof modulosDisponiveis[number]>(modulosDisponiveis[0]);
 
   if (!usuario) return null;
 
-  const items: (LinkItem | GrupoItem)[] =
+  const itensLogistica: (LinkItem | GrupoItem)[] =
     usuario.perfil === 'solicitante'
       ? [{ to: '/solicitante/minhas', icon: <List size={18} />, label: 'Minhas Solicitações' }]
       : [
@@ -61,6 +70,30 @@ export const Sidebar = () => {
             ],
           },
         ];
+  const itensPorModulo: Record<ModuloSistema, (LinkItem | GrupoItem)[]> = {
+    logistica_frota: itensLogistica,
+    estoque: [{ to: '/logistica/estoque', icon: <Boxes size={18} />, label: 'Painel de Estoque' }],
+    producao_batata: [
+      { to: '#', icon: <LayoutDashboard size={18} />, label: 'Painel de Produção', pendente: true },
+      { to: '#', icon: <Trophy size={18} />, label: 'Safras', pendente: true },
+      { to: '#', icon: <Truck size={18} />, label: 'Colheita e Transporte', pendente: true },
+      { to: '#', icon: <BarChart3 size={18} />, label: 'Comparativo por Safra', pendente: true },
+    ],
+    manutencao: [
+      { to: '#', icon: <LayoutDashboard size={18} />, label: 'Painel de Manutenção', pendente: true },
+      { to: '#', icon: <Truck size={18} />, label: 'Ativos e Equipamentos', pendente: true },
+      { to: '#', icon: <ClipboardCheck size={18} />, label: 'Ordens de Serviço', pendente: true },
+      { to: '#', icon: <Clock size={18} />, label: 'Preventivas', pendente: true },
+      { to: '#', icon: <List size={18} />, label: 'Histórico por Equipamento', pendente: true },
+    ],
+  };
+  const items = itensPorModulo[moduloAtual] ?? itensLogistica;
+  const nomesModulos: Record<ModuloSistema, { nome: string; icone: React.ReactNode }> = {
+    logistica_frota: { nome: 'Logística / Frota', icone: <Truck size={16} /> },
+    estoque: { nome: 'Estoque', icone: <Boxes size={16} /> },
+    producao_batata: { nome: 'Produção / Batata', icone: <Factory size={16} /> },
+    manutencao: { nome: 'Manutenção', icone: <Wrench size={16} /> },
+  };
 
   const linkClasses = (isActive: boolean) =>
     `flex items-center justify-between text-xs tracking-tight transition-colors duration-150 group ${
@@ -90,11 +123,18 @@ export const Sidebar = () => {
 
       {/* 2. Menu Navigation */}
       <nav className="p-3 flex-1 space-y-1 overflow-y-auto">
+        <div className="mb-4 relative">
+          <p className="px-3 text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Módulo atual</p>
+          <button onClick={() => setSeletorAberto((atual) => !atual)} className="w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-md bg-[#162920] border border-[#294535] text-white text-xs font-semibold">
+            <span className="flex items-center gap-2 min-w-0"><span className="text-emerald-400">{nomesModulos[moduloAtual].icone}</span><span className="truncate">{nomesModulos[moduloAtual].nome}</span></span><ChevronDown size={14} className={seletorAberto ? 'rotate-180 transition-transform' : 'transition-transform'} />
+          </button>
+          {seletorAberto && <div className="absolute z-50 mt-1 w-full bg-[#162920] border border-[#294535] rounded-md p-1 shadow-xl">{modulosDisponiveis.map((modulo) => <button key={modulo} onClick={() => { setModuloAtual(modulo); setSeletorAberto(false); }} className={`w-full flex items-center gap-2 px-3 py-2 rounded text-left text-xs ${moduloAtual === modulo ? 'bg-emerald-600 text-white' : 'text-slate-300 hover:bg-[#223a2d]'}`}><span>{nomesModulos[modulo].icone}</span>{nomesModulos[modulo].nome}</button>)}</div>}
+        </div>
         <p className="px-3 text-[10px] font-semibold text-slate-400 uppercase tracking-wider my-2.5">
-          Operação & Frota
+          {nomesModulos[moduloAtual].nome}
         </p>
 
-        {items.map((item) => {
+        {items.length === 0 ? <p className="px-3 py-4 text-xs leading-relaxed text-slate-500">As telas deste módulo serão disponibilizadas em breve.</p> : items.map((item) => {
           if (isGrupo(item)) {
             return (
               <div key={item.label} className="pt-2">
@@ -142,6 +182,10 @@ export const Sidebar = () => {
                 )}
               </div>
             );
+          }
+
+          if (item.pendente) {
+            return <div key={item.label} className="flex items-center gap-2.5 rounded-md px-3 py-2 text-xs font-medium text-slate-600 cursor-not-allowed"><span>{item.icon}</span><span>{item.label}</span><span className="ml-auto text-[9px] uppercase">em breve</span></div>;
           }
 
           return (

@@ -1,4 +1,6 @@
 export type PerfilUsuario = 'solicitante' | 'logistica' | 'motorista';
+export type ModuloSistema = 'logistica_frota' | 'estoque' | 'producao_batata' | 'manutencao';
+export type TipoUsuarioSistema = 'admin' | 'comum';
 
 export interface Usuario {
   id: string;
@@ -6,6 +8,8 @@ export interface Usuario {
   nome: string;
   perfil: PerfilUsuario;
   departamento?: string;
+  tipoUsuario?: TipoUsuarioSistema;
+  modulos?: ModuloSistema[];
 }
 
 export type StatusVeiculo = 'disponivel' | 'em_uso' | 'manutencao';
