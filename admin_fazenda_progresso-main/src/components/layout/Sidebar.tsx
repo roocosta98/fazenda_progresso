@@ -77,7 +77,7 @@ export const Sidebar = () => {
     ],
     manutencao: [
       { to: '/manutencao', icon: <LayoutDashboard size={18} />, label: 'Painel de Manutenção' },
-      { to: '#', icon: <Truck size={18} />, label: 'Ativos e Equipamentos', pendente: true },
+      { to: '/manutencao/ativos', icon: <Truck size={18} />, label: 'Ativos e Equipamentos' },
       { to: '#', icon: <ClipboardCheck size={18} />, label: 'Ordens de Serviço', pendente: true },
       { to: '#', icon: <Clock size={18} />, label: 'Preventivas', pendente: true },
       { to: '#', icon: <List size={18} />, label: 'Histórico por Equipamento', pendente: true },
