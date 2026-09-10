@@ -94,6 +94,10 @@ export const AppRoutes = () => {
         <Route path="/producao/batata/lancamentos" element={<ProtectedRoute allowedRoles={['logistica']}><ProducaoBatata tela="lancamentos" /></ProtectedRoute>} />
         <Route path="/producao/batata/comparativo" element={<ProtectedRoute allowedRoles={['logistica']}><ProducaoBatata tela="comparativo" /></ProtectedRoute>} />
         <Route path="/manutencao" element={<ProtectedRoute allowedRoles={['logistica']}><Manutencao /></ProtectedRoute>} />
+        <Route path="/manutencao/ativos" element={<ProtectedRoute allowedRoles={['logistica']}><Manutencao /></ProtectedRoute>} />
+        <Route path="/manutencao/ordens" element={<ProtectedRoute allowedRoles={['logistica']}><Manutencao /></ProtectedRoute>} />
+        <Route path="/manutencao/preventivas" element={<ProtectedRoute allowedRoles={['logistica']}><Manutencao /></ProtectedRoute>} />
+        <Route path="/manutencao/historico" element={<ProtectedRoute allowedRoles={['logistica']}><Manutencao /></ProtectedRoute>} />
         <Route path="/compras" element={<ProtectedRoute allowedRoles={['logistica']}><Compras /></ProtectedRoute>} />
         <Route path="/administracao/usuarios" element={<ProtectedRoute allowedRoles={['logistica']}><GestaoUsuarios /></ProtectedRoute>} />
       </Route>

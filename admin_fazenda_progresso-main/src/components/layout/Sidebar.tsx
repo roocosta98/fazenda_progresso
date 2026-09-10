@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { useState } from 'react';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
   List,
@@ -24,15 +24,6 @@ import {
 import logoFp from '../../assets/logo.png';
 import type { ModuloSistema } from '../../types';
 
-const moduloFromPath = (pathname: string): ModuloSistema | null => {
-  if (pathname.startsWith('/logistica/estoque')) return 'estoque';
-  if (pathname.startsWith('/logistica')) return 'logistica_frota';
-  if (pathname.startsWith('/producao')) return 'producao_batata';
-  if (pathname.startsWith('/manutencao')) return 'manutencao';
-  if (pathname.startsWith('/compras')) return 'compras';
-  return null;
-};
-
 interface LinkItem {
   to: string;
   icon: React.ReactNode;
@@ -48,24 +39,18 @@ interface GrupoItem {
 }
 
 const isGrupo = (item: LinkItem | GrupoItem): item is GrupoItem => 'children' in item;
+type SelecaoModulo = 'todos' | ModuloSistema;
 
 export const Sidebar = () => {
   const { usuario, logout } = useAuth();
-  const location = useLocation();
+  const navigate = useNavigate();
   const [grupoAberto, setGrupoAberto] = useState(true);
   const [seletorAberto, setSeletorAberto] = useState(false);
-  const modulosDisponiveis: ModuloSistema[] = usuario?.tipoUsuario === 'admin'
-    ? ['logistica_frota', 'estoque', 'producao_batata', 'manutencao', 'compras']
-    : (usuario?.modulos?.length ? usuario.modulos : ['logistica_frota']);
-  const [moduloAtual, setModuloAtual] = useState<ModuloSistema>(
-    moduloFromPath(location.pathname) ?? modulosDisponiveis[0],
-  );
-
-  useEffect(() => {
-    const moduloDaRota = moduloFromPath(location.pathname);
-    if (moduloDaRota && modulosDisponiveis.includes(moduloDaRota)) setModuloAtual(moduloDaRota);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.pathname]);
+  const modulosPermitidos = usuario?.tipoUsuario === 'admin'
+    ? ['logistica_frota', 'estoque', 'producao_batata', 'manutencao', 'compras'] as const
+    : (usuario?.modulos?.length ? usuario.modulos : ['logistica_frota'] as const);
+  const modulosDisponiveis: SelecaoModulo[] = ['todos', ...modulosPermitidos as ModuloSistema[]];
+  const [moduloAtual, setModuloAtual] = useState<SelecaoModulo>('todos');
 
   if (!usuario) return null;
 
@@ -94,10 +79,10 @@ export const Sidebar = () => {
     ],
     manutencao: [
       { to: '/manutencao', icon: <LayoutDashboard size={18} />, label: 'Painel de Manutenção' },
-      { to: '#', icon: <Truck size={18} />, label: 'Ativos e Equipamentos', pendente: true },
-      { to: '#', icon: <ClipboardCheck size={18} />, label: 'Ordens de Serviço', pendente: true },
-      { to: '#', icon: <Clock size={18} />, label: 'Preventivas', pendente: true },
-      { to: '#', icon: <List size={18} />, label: 'Histórico por Equipamento', pendente: true },
+      { to: '/manutencao/ativos', icon: <Truck size={18} />, label: 'Ativos e Equipamentos' },
+      { to: '/manutencao/ordens', icon: <ClipboardCheck size={18} />, label: 'Ordens de Serviço' },
+      { to: '/manutencao/preventivas', icon: <Clock size={18} />, label: 'Preventivas' },
+      { to: '/manutencao/historico', icon: <List size={18} />, label: 'Histórico por Equipamento' },
     ],
     compras: [
       { to: '/compras', icon: <ShoppingCart size={18} />, label: 'Painel de Compras' },
@@ -107,13 +92,27 @@ export const Sidebar = () => {
     label: 'Administração', icon: <Settings size={18} />,
     children: [{ to: '/administracao/usuarios', icon: <Settings size={16} />, label: 'Usuários' }],
   }] : [];
-  const items = [...(itensPorModulo[moduloAtual] ?? itensLogistica), ...itensAdministracao];
-  const nomesModulos: Record<ModuloSistema, { nome: string; icone: React.ReactNode }> = {
+  const nomesModulos: Record<SelecaoModulo, { nome: string; icone: React.ReactNode }> = {
+    todos: { nome: 'Todos os módulos', icone: <LayoutDashboard size={16} /> },
     logistica_frota: { nome: 'Logística / Frota', icone: <Truck size={16} /> },
     estoque: { nome: 'Estoque', icone: <Boxes size={16} /> },
     producao_batata: { nome: 'Produção', icone: <Factory size={16} /> },
     manutencao: { nome: 'Manutenção', icone: <Wrench size={16} /> },
     compras: { nome: 'Compras', icone: <ShoppingCart size={16} /> },
+  };
+  const items: (LinkItem | GrupoItem)[] = [
+    ...(moduloAtual === 'todos'
+      ? modulosPermitidos.map((modulo) => ({ label: nomesModulos[modulo as ModuloSistema].nome, icon: nomesModulos[modulo as ModuloSistema].icone, children: itensPorModulo[modulo as ModuloSistema] as LinkItem[] }))
+      : itensPorModulo[moduloAtual]),
+    ...itensAdministracao,
+  ];
+  const dashboardModulo: Record<SelecaoModulo, string> = {
+    todos: '/logistica/dashboard',
+    logistica_frota: '/logistica/dashboard',
+    estoque: '/logistica/estoque/dashboard',
+    producao_batata: '/producao/batata',
+    manutencao: '/manutencao',
+    compras: '/compras',
   };
 
   const linkClasses = (isActive: boolean) =>
@@ -158,7 +157,7 @@ export const Sidebar = () => {
           <button onClick={() => setSeletorAberto((atual) => !atual)} className="w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-md bg-[#162920] border border-[#294535] text-white text-xs font-semibold">
             <span className="flex items-center gap-2 min-w-0"><span className="text-emerald-400">{nomesModulos[moduloAtual].icone}</span><span className="truncate">{nomesModulos[moduloAtual].nome}</span></span><ChevronDown size={14} className={seletorAberto ? 'rotate-180 transition-transform' : 'transition-transform'} />
           </button>
-          {seletorAberto && <div className="absolute z-50 mt-1 w-full bg-[#162920] border border-[#294535] rounded-md p-1 shadow-xl">{modulosDisponiveis.map((modulo) => <button key={modulo} onClick={() => { setModuloAtual(modulo); setSeletorAberto(false); }} className={`w-full flex items-center gap-2 px-3 py-2 rounded text-left text-xs ${moduloAtual === modulo ? 'bg-emerald-600 text-white' : 'text-slate-300 hover:bg-[#223a2d]'}`}><span>{nomesModulos[modulo].icone}</span>{nomesModulos[modulo].nome}</button>)}</div>}
+          {seletorAberto && <div className="absolute z-50 mt-1 w-full bg-[#162920] border border-[#294535] rounded-md p-1 shadow-xl">{modulosDisponiveis.map((modulo) => <button key={modulo} onClick={() => { setModuloAtual(modulo); setSeletorAberto(false); navigate(dashboardModulo[modulo]); }} className={`w-full flex items-center gap-2 px-3 py-2 rounded text-left text-xs ${moduloAtual === modulo ? 'bg-emerald-600 text-white' : 'text-slate-300 hover:bg-[#223a2d]'}`}><span>{nomesModulos[modulo].icone}</span>{nomesModulos[modulo].nome}</button>)}</div>}
         </div>
         <p className="px-3 text-[10px] font-semibold text-slate-400 uppercase tracking-wider my-2.5">
           {nomesModulos[moduloAtual].nome}
