@@ -78,9 +78,9 @@ export const Sidebar = () => {
     manutencao: [
       { to: '/manutencao', icon: <LayoutDashboard size={18} />, label: 'Painel de Manutenção' },
       { to: '/manutencao/ativos', icon: <Truck size={18} />, label: 'Ativos e Equipamentos' },
-      { to: '#', icon: <ClipboardCheck size={18} />, label: 'Ordens de Serviço', pendente: true },
-      { to: '#', icon: <Clock size={18} />, label: 'Preventivas', pendente: true },
-      { to: '#', icon: <List size={18} />, label: 'Histórico por Equipamento', pendente: true },
+      { to: '/manutencao/ordens', icon: <ClipboardCheck size={18} />, label: 'Ordens de Serviço' },
+      { to: '/manutencao/preventivas', icon: <Clock size={18} />, label: 'Preventivas' },
+      { to: '/manutencao/historico', icon: <List size={18} />, label: 'Histórico por Equipamento' },
     ],
   };
   const itensAdministracao: GrupoItem[] = usuario.tipoUsuario === 'admin' ? [{
