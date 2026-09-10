@@ -1,8 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
-import { LogOut, Bell, Settings, Wifi, Search, CheckCircle2, ChevronDown } from 'lucide-react';
+import { LogOut, Bell, Settings, Wifi, Search, CheckCircle2, ChevronDown, Menu } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
-export const Header = () => {
+interface HeaderProps {
+  onAbrirMenu?: () => void;
+}
+
+export const Header = ({ onAbrirMenu }: HeaderProps) => {
   const { usuario, logout } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -19,24 +23,31 @@ export const Header = () => {
   }, []);
 
   return (
-    <header className="bg-white border-b border-slate-200 sticky top-0 z-40 px-6 h-14 flex items-center justify-between shadow-2xs">
-      {/* Barra de Busca Corporativa */}
-      <div className="flex items-center gap-2 max-w-md w-full">
-        <div className="relative w-full max-w-xs">
+    <header className="bg-white border-b border-slate-200 sticky top-0 z-30 px-3 sm:px-6 h-14 flex items-center justify-between gap-2 shadow-2xs">
+      {/* Botão de menu mobile + Barra de Busca Corporativa */}
+      <div className="flex items-center gap-2 min-w-0 flex-1">
+        <button
+          onClick={onAbrirMenu}
+          className="md:hidden p-1.5 -ml-1 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-md transition-colors shrink-0"
+          aria-label="Abrir menu"
+        >
+          <Menu size={20} />
+        </button>
+        <div className="relative w-full max-w-xs hidden sm:block">
           <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
             placeholder="Buscar por OS, motorista ou placa..."
             className="w-full pl-8 pr-12 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-md text-slate-800 placeholder-slate-400 focus:outline-hidden focus:bg-white focus:border-emerald-700 focus:ring-1 focus:ring-emerald-700/20 transition-all"
           />
-          <kbd className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-mono text-slate-400 bg-white px-1.5 py-0.5 rounded border border-slate-200 shadow-2xs">
+          <kbd className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-mono text-slate-400 bg-white px-1.5 py-0.5 rounded border border-slate-200 shadow-2xs hidden lg:block">
             Ctrl+K
           </kbd>
         </div>
       </div>
 
       {/* Ações e Informações de Sessão */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 sm:gap-4 shrink-0">
         {/* Status de Integrações (Sóbrios) */}
         <div className="hidden lg:flex items-center gap-2 text-xs">
           <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-50/80 text-emerald-800 rounded-md border border-emerald-200/70 text-[11px] font-medium">

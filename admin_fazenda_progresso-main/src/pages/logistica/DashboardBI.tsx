@@ -166,7 +166,7 @@ export const DashboardBI = () => {
         
         {/* Bloco Superior: 10 KPIs Lineares */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-5 mb-6">
-          <div className="grid grid-cols-5 xl:grid-cols-10 gap-y-6 gap-x-2 text-center divide-x divide-slate-100">
+          <div className="grid grid-cols-2 sm:grid-cols-5 xl:grid-cols-10 gap-y-6 gap-x-2 text-center divide-x divide-slate-100">
             
             <div className="flex flex-col">
               <span className="text-[10px] font-semibold text-slate-500 mb-1.5">Programações</span>

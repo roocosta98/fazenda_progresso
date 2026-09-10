@@ -26,6 +26,7 @@ import {
   Users,
   HardHat,
   ClipboardList,
+  X,
 } from 'lucide-react';
 import logoFp from '../../assets/logo.png';
 import type { ModuloSistema } from '../../types';
@@ -64,7 +65,12 @@ const moduloFromPath = (pathname: string): ModuloSistema | null => {
   return null;
 };
 
-export const Sidebar = () => {
+interface SidebarProps {
+  mobileAberto?: boolean;
+  onFechar?: () => void;
+}
+
+export const Sidebar = ({ mobileAberto = false, onFechar }: SidebarProps) => {
   const { usuario, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -175,10 +181,22 @@ export const Sidebar = () => {
     }`;
 
   return (
-    <aside className="w-64 bg-[#0d1a14] text-slate-300 flex flex-col relative z-50 shrink-0 h-full border-r border-[#192c23] select-none">
+    <>
+      {/* Backdrop do menu mobile */}
+      {mobileAberto && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+          onClick={onFechar}
+        />
+      )}
+      <aside
+        className={`w-72 sm:w-64 bg-[#0d1a14] text-slate-300 flex flex-col z-50 shrink-0 h-full border-r border-[#192c23] select-none fixed inset-y-0 left-0 transition-transform duration-200 md:static md:translate-x-0 ${
+          mobileAberto ? 'translate-x-0' : '-translate-x-full'
+        }`}
+      >
       {/* 1. Branding Header */}
-      <div className="h-16 flex items-center px-4 border-b border-[#182b22] bg-[#0b1611]/80">
-        <div className="flex items-center gap-3">
+      <div className="h-16 flex items-center justify-between px-4 border-b border-[#182b22] bg-[#0b1611]/80 shrink-0">
+        <div className="flex items-center gap-3 min-w-0">
           <div className="w-9 h-9 rounded-md bg-[#162920] border border-[#233d30] flex items-center justify-center shrink-0 overflow-hidden shadow-2xs">
             <img src={logoFp} alt="Logo FP" className="w-7 h-7 object-contain" />
           </div>
@@ -191,10 +209,20 @@ export const Sidebar = () => {
             </h1>
           </div>
         </div>
+        <button
+          onClick={onFechar}
+          className="md:hidden p-1.5 text-slate-400 hover:text-white hover:bg-[#15271f] rounded-md shrink-0"
+          aria-label="Fechar menu"
+        >
+          <X size={18} />
+        </button>
       </div>
 
       {/* 2. Menu Navigation */}
-      <nav className="p-3 flex-1 space-y-1 overflow-y-auto">
+      <nav className="p-3 flex-1 space-y-1 overflow-y-auto" onClick={(e) => {
+        const target = e.target as HTMLElement;
+        if (target.closest('a')) onFechar?.();
+      }}>
         {usuario.perfil !== 'solicitante' && (
           <NavLink
             to="/inicio"
@@ -319,6 +347,7 @@ export const Sidebar = () => {
           </button>
         </div>
       </div>
-    </aside>
+      </aside>
+    </>
   );
 };
