@@ -4,7 +4,7 @@ import { exigirAcessoCustos } from './custosAuth.js';
 import { consultarSankhya } from './estoquePainel.js';
 
 const TABELAS_PERMITIDAS = new Set(['TGFPRO', 'TGFEST', 'TGFLOC', 'TGFGIR', 'TGFCUS', 'TGFITE', 'TGFCAB', 'TGFTOP', 'TGFPAR', 'TGFITC', 'TGFCOT', 'TSIUSU']);
-const ESQUEMA = `TGFPRO(CODPROD,DESCRPROD,REFERENCIA,MARCA,ATIVO,ESTMIN,ESTMAX); TGFEST(CODPROD,CODLOCAL,CODEMP,CONTROLE,ESTOQUE); TGFGIR(CODPROD,CODLOCAL,CODEMP,GIRODIARIO,DIASSEMVENDA,ESTCUSTGER,PRODFALTA,ESTMINGIR,PONTOPED); TGFCUS(CODPROD,CODEMP,CUSMEDICM,CUSSEMICM,DTATUAL,NUNOTA); TGFLOC(CODLOCAL,DESCRLOCAL); TGFITE(NUNOTA,CODPROD,QTDNEG,CUSTO); TGFCAB(NUNOTA,CODEMP,DTNEG,CODTIPOPER,CODPARC); TGFTOP(CODTIPOPER,ATUALEST,DESCROPER); TGFPAR(CODPARC,NOMEPARC); TGFITC(NUMCOTACAO,CODPARC,CONFIABFORN,QUALATEND,QUALPROD,PRAZOENTREGA,MELHOR); TGFCOT(NUMCOTACAO,DHINIC,DHFINAL,SITUACAO,CODUSUREQ); TSIUSU(CODUSU,NOMEUSU).`;
+const ESQUEMA = `TGFPRO(CODPROD,DESCRPROD,REFERENCIA,MARCA,ATIVO,ESTMIN,ESTMAX); TGFEST(CODPROD,CODLOCAL,CODEMP,CONTROLE,ESTOQUE); TGFGIR(CODPROD,CODLOCAL,CODEMP,GIRODIARIO,DIASSEMVENDA,ESTCUSTGER,PRODFALTA,ESTMINGIR,PONTOPED); TGFCUS(CODPROD,CODEMP,CUSMEDICM,CUSSEMICM,DTATUAL,NUNOTA); TGFLOC(CODLOCAL,DESCRLOCAL); TGFITE(NUNOTA,CODPROD,QTDNEG,CUSTO); TGFCAB(NUNOTA,CODEMP,DTNEG,CODTIPOPER,CODPARC); TGFTOP(CODTIPOPER,ATUALEST,DESCROPER); TGFPAR(CODPARC,NOMEPARC); TGFITC(NUMCOTACAO,CODPROD,CODPARC,SITUACAO,CONFIABFORN,QUALATEND,QUALPROD,PRAZOENTREGA,MELHOR); TGFCOT(NUMCOTACAO,DHINIC,DHFINAL,SITUACAO,CODUSUREQ); TSIUSU(CODUSU,NOMEUSU).`;
 
 function normalizarSituacao(sql: string) {
   // Em algumas instalações Sankhya SITUACAO é inteiro; ao comparar com 'N',
@@ -19,10 +19,12 @@ function consultaAtalho(pergunta: string) {
   const texto = pergunta.toLocaleLowerCase();
   if (/fornecedor/.test(texto) && /prazo/.test(texto)) return `SELECT TOP 100 PAR.NOMEPARC AS FORNECEDOR, AVG(TRY_CONVERT(DECIMAL(18,2), ITC.PRAZOENTREGA)) AS PRAZOMEDIO, COUNT(*) AS TOTALCOTACOES
     FROM TGFITC ITC LEFT JOIN TGFPAR PAR ON PAR.CODPARC=ITC.CODPARC GROUP BY PAR.NOMEPARC ORDER BY PRAZOMEDIO ASC`;
-  if (/cota[cç][aã]o/.test(texto) && /(abert|prazo)/.test(texto)) return `SELECT TOP 100 COT.NUMCOTACAO, COT.DHINIC, COT.DHFINAL, COT.SITUACAO, USU.NOMEUSU AS COMPRADOR
-    FROM TGFCOT COT LEFT JOIN TSIUSU USU ON USU.CODUSU=COT.CODUSUREQ WHERE CAST(COT.SITUACAO AS VARCHAR(20)) NOT IN ('F','C') ORDER BY COT.DHFINAL ASC`;
+  if (/cota[cç][aã]o/.test(texto) && /(abert|prazo)/.test(texto)) return `SELECT TOP 100 COT.NUMCOTACAO, COT.DHINIC, COT.DHFINAL, USU.NOMEUSU AS COMPRADOR
+    FROM TGFCOT COT LEFT JOIN TSIUSU USU ON USU.CODUSU=COT.CODUSUREQ
+    WHERE EXISTS (SELECT 1 FROM TGFITC I WHERE I.NUMCOTACAO=COT.NUMCOTACAO AND CAST(I.SITUACAO AS VARCHAR(20)) NOT IN ('F','C'))
+    ORDER BY COT.DHFINAL ASC`;
   if (/(abaixo|ruptura|mínimo|minimo)/.test(texto) && /(produto|estoque)/.test(texto)) return `SELECT TOP 100 P.CODPROD, P.DESCRPROD, E.ESTOQUE, P.ESTMIN AS MINIMO, L.DESCRLOCAL AS LOCAL
-    FROM TGFPRO P JOIN TGFEST E ON E.CODPROD=P.CODPROD LEFT JOIN TGFLOC L ON L.CODLOCAL=E.CODLOCAL WHERE P.ATIVO='S' AND P.ESTMIN IS NOT NULL AND E.ESTOQUE<=P.ESTMIN ORDER BY E.ESTOQUE ASC`;
+    FROM TGFPRO P JOIN TGFEST E ON E.CODPROD=P.CODPROD AND E.CODEMP=1 LEFT JOIN TGFLOC L ON L.CODLOCAL=E.CODLOCAL WHERE P.ATIVO='S' AND P.ESTMIN IS NOT NULL AND E.ESTOQUE<=P.ESTMIN ORDER BY E.ESTOQUE ASC`;
   return null;
 }
 
@@ -45,7 +47,7 @@ export async function pesquisarEstoque(req: VercelRequest, res: VercelResponse) 
     const consulta = await ia.chat.completions.create({
       model: process.env.OPENAI_MODEL ?? 'gpt-4o-mini', temperature: 0,
       response_format: { type: 'json_object' },
-      messages: [{ role: 'system', content: `Você é um assistente de estoque Sankhya. Converta perguntas em SQL SOMENTE LEITURA. Use exclusivamente este schema: ${ESQUEMA} Responda JSON {"sql":"..."}. Use SELECT ou WITH, no máximo TOP 100; nunca use ponto-e-vírgula, DML, metadados ou tabelas fora da lista. REGRA DE TIPO: TGFCOT.SITUACAO pode ser número ou texto; nunca compare SITUACAO diretamente com letras. Quando precisar filtrar, use CAST(COT.SITUACAO AS VARCHAR(20)).` }, { role: 'user', content: pergunta }],
+      messages: [{ role: 'system', content: `Você é um assistente de estoque Sankhya. Converta perguntas em SQL SOMENTE LEITURA. Use exclusivamente este schema: ${ESQUEMA} Responda JSON {"sql":"..."}. Use SELECT ou WITH, no máximo TOP 100; nunca use ponto-e-vírgula, DML, metadados ou tabelas fora da lista. REGRA DE EMPRESA: o sistema opera apenas com a empresa 1 (CODEMP = 1); sempre filtre CODEMP = 1 em TGFEST, TGFGIR, TGFCUS e TGFCAB, mesmo que a pergunta não mencione empresa. REGRA DE COTAÇÃO: TGFCOT.SITUACAO não indica se a cotação está fechada de fato — o status real está em TGFITC.SITUACAO (por item); uma cotação só está em aberto se existir item com CAST(SITUACAO AS VARCHAR(20)) NOT IN ('F','C'). REGRA DE TIPO: SITUACAO pode ser número ou texto; nunca compare diretamente com letras, sempre use CAST(... AS VARCHAR(20)).` }, { role: 'user', content: pergunta }],
     });
     const gerado = JSON.parse(consulta.choices[0]?.message.content ?? '{}') as { sql?: string };
     const sql = validarSql(normalizarSituacao(consultaAtalho(pergunta) ?? String(gerado.sql ?? '')));
