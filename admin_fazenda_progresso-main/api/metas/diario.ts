@@ -413,6 +413,10 @@ async function modoExecutivo(req: VercelRequest, res: VercelResponse) {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  // Dado muda a cada sincronização; nunca deixar CDN/navegador servir uma resposta antiga
+  // (inclusive um erro passageiro) no lugar de reconsultar o banco.
+  res.setHeader('Cache-Control', 'no-store, max-age=0');
+
   if (req.method !== 'GET') {
     res.status(405).json({ error: 'Método não permitido' });
     return;
