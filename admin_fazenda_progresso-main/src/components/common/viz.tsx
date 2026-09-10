@@ -1,5 +1,5 @@
 import React from 'react';
-import { Info } from 'lucide-react';
+import { AlertTriangle, Info } from 'lucide-react';
 
 // Componentes de apresentação compartilhados pelos painéis (tokens e formatadores em vizTokens.ts).
 
@@ -36,6 +36,14 @@ export const CardViz = ({ titulo, acessorio, children }: {
 export const SemDado = ({ mensagem }: { mensagem: string }) => (
   <div className="flex items-center justify-center gap-2 py-12 text-xs text-slate-400">
     <Info size={14} /> {mensagem}
+  </div>
+);
+
+// Distinto de SemDado: isso é uma falha real (timeout, 5xx), não ausência de dado no
+// período — sem essa diferença, um erro passageiro parece "não tem nada aqui" pro usuário.
+export const ErroCarregamento = ({ mensagem }: { mensagem: string }) => (
+  <div className="flex items-center justify-center gap-2 py-12 text-xs text-amber-700 bg-amber-50 rounded-xl border border-amber-200">
+    <AlertTriangle size={14} /> {mensagem}
   </div>
 );
 

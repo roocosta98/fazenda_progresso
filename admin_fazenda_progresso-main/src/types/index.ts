@@ -1,5 +1,16 @@
 export type PerfilUsuario = 'solicitante' | 'logistica' | 'motorista';
-export type ModuloSistema = 'logistica_frota' | 'estoque' | 'producao_batata' | 'manutencao' | 'compras';
+export type ModuloSistema =
+  | 'logistica_frota'
+  | 'estoque'
+  | 'producao_batata'
+  | 'manutencao'
+  | 'compras'
+  | 'financeiro'
+  | 'comercial'
+  | 'custos'
+  | 'rh'
+  | 'seguranca_trabalho'
+  | 'controladoria';
 export type TipoUsuarioSistema = 'admin' | 'comum';
 
 export interface Usuario {

@@ -10,13 +10,15 @@ import {
   Tooltip,
   Cell,
   ReferenceLine,
+  PieChart,
+  Pie,
 } from 'recharts';
 
 import {
   COR, estiloTooltip, formatMoeda, formatMoedaCurta, formatMinutos, formatDiaCurto,
   hojeISO, primeiroDiaMesISO, somar,
 } from '../../components/common/vizTokens';
-import { CardKpi, CardViz, SemDado, Legenda } from '../../components/common/viz';
+import { CardKpi, CardViz, SemDado, ErroCarregamento, Legenda } from '../../components/common/viz';
 import { useAuth } from '../../context/AuthContext';
 import { cabecalhoPerfil } from '../../utils/apiAuth';
 
@@ -123,7 +125,9 @@ export const PainelMetasDiario: React.FC = () => {
 
   const [linhasDiarias, setLinhasDiarias] = useState<LinhaDiariaVeiculo[]>([]);
   const [motivos, setMotivos] = useState<MotivoAgregado[]>([]);
+  const [motivosErro, setMotivosErro] = useState<string | null>(null);
   const [motor, setMotor] = useState<MotorAgregado | null>(null);
+  const [motorErro, setMotorErro] = useState<string | null>(null);
   const [alarmes24h, setAlarmes24h] = useState<number | null>(null);
   const [insights, setInsights] = useState<InsightItem[]>([]);
 
@@ -149,8 +153,29 @@ export const PainelMetasDiario: React.FC = () => {
       }
     };
 
-    // Dados centrais primeiro: a consulta de motor pode ser lenta e não deve
-    // bloquear KPIs, gráfico diário e a tabela de caminhões.
+    // Consultas mais pesadas (motor, motivos) às vezes estouram o timeout do SQL Server na
+    // primeira tentativa (view grande, servidor ocupado). Uma segunda tentativa evita que a tela
+    // fique "em branco" por uma falha transitória — só desiste (e mostra erro) na segunda falha.
+    const buscarComRetry = async <T,>(url: string, fallback: T, onErro: (mensagem: string | null) => void): Promise<T> => {
+      for (let tentativa = 1; tentativa <= 2; tentativa += 1) {
+        try {
+          const resp = await fetch(url, { headers: cabecalhoPerfil(usuario?.perfil) });
+          if (!resp.ok) throw new Error(`API respondeu ${resp.status}`);
+          onErro(null);
+          return (await resp.json()) as T;
+        } catch (e) {
+          console.error(`Falha ao consultar (tentativa ${tentativa})`, url, e);
+          if (tentativa === 2) {
+            onErro('Falha ao carregar esses dados. Clique em Atualizar para tentar de novo.');
+            return fallback;
+          }
+        }
+      }
+      return fallback;
+    };
+
+    // Dados centrais primeiro: motor/motivos podem ser lentos e não devem bloquear KPIs,
+    // gráfico diário e a tabela de caminhões.
     const [eqs, mots, diario, exec] = await Promise.all([
       buscar<EquipamentoItem[]>(`${API_URL}/api/frota/equipamentos`, []),
       buscar<string[]>(`${API_URL}/api/metas/diario?modo=motoristas&${qs}`, []),
@@ -166,8 +191,8 @@ export const PainelMetasDiario: React.FC = () => {
     setCarregando(false);
 
     void Promise.all([
-      buscar<MotivoAgregado[]>(`${API_URL}/api/metas/diario?modo=motivos&${qs}`, []),
-      buscar<MotorAgregado>(`${API_URL}/api/metas/diario?modo=motor&${qs}`, { minutosMotorLigado: 0, minutosMotorOcioso: 0, diasComDado: 0, porDia: [] }),
+      buscarComRetry<MotivoAgregado[]>(`${API_URL}/api/metas/diario?modo=motivos&${qs}`, [], setMotivosErro),
+      buscarComRetry<MotorAgregado>(`${API_URL}/api/metas/diario?modo=motor&${qs}`, { minutosMotorLigado: 0, minutosMotorOcioso: 0, diasComDado: 0, porDia: [] }, setMotorErro),
       buscar<InsightItem[]>(`${API_URL}/api/insights/listar?resolvido=false`, []),
     ]).then(([motivosResp, motorResp, insightsResp]) => {
       setMotivos(motivosResp);
@@ -460,7 +485,9 @@ export const PainelMetasDiario: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Motivos de parada — agora com o rótulo real (Estado/Operação), não "Outros" */}
         <CardViz titulo="Principais motivos de parada e operação">
-          {motivosGrafico.length === 0 ? (
+          {motivosErro ? (
+            <ErroCarregamento mensagem={motivosErro} />
+          ) : motivosGrafico.length === 0 ? (
             <SemDado mensagem="Nenhum registro de estado/operação no período." />
           ) : (
             <div className="space-y-3">
@@ -485,12 +512,14 @@ export const PainelMetasDiario: React.FC = () => {
           )}
         </CardViz>
 
-        {/* Motor: produtivo x ocioso — barra 100%, não rosca de 2 fatias */}
+        {/* Motor: produtivo x ocioso — pizza (preferência do usuário sobre a barra 100%) */}
         <CardViz titulo="Uso do motor: produtivo x ocioso">
-          {minutosLigado === 0 ? (
+          {motorErro ? (
+            <ErroCarregamento mensagem={motorErro} />
+          ) : minutosLigado === 0 ? (
             <SemDado mensagem="Sem leitura de motor no período." />
           ) : (
-            <div className="space-y-5">
+            <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Motor produtivo</p>
@@ -504,15 +533,29 @@ export const PainelMetasDiario: React.FC = () => {
                 </div>
               </div>
 
-              <div>
-                <div className="flex w-full h-4 rounded-full overflow-hidden bg-slate-100 gap-0.5">
-                  <div style={{ width: `${100 - percentualOcioso}%`, backgroundColor: COR.serie1 }} />
-                  <div style={{ width: `${percentualOcioso}%`, backgroundColor: COR.atencao }} />
-                </div>
-                <div className="flex justify-between mt-2">
-                  <Legenda itens={[{ cor: COR.serie1, rotulo: 'Produtivo' }, { cor: COR.atencao, rotulo: 'Ocioso (ligado e parado)' }]} />
-                  <span className="text-[11px] text-slate-400">Motor ligado: {formatMinutos(minutosLigado)}</span>
-                </div>
+              <div className="h-56 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={[
+                        { nome: 'Produtivo', minutos: minutosProdutivo, cor: COR.serie1 },
+                        { nome: 'Ocioso (ligado e parado)', minutos: minutosOcioso, cor: COR.atencao },
+                      ]}
+                      dataKey="minutos"
+                      nameKey="nome"
+                      innerRadius={55}
+                      outerRadius={85}
+                      paddingAngle={2}
+                    >
+                      {[COR.serie1, COR.atencao].map((cor) => <Cell key={cor} fill={cor} />)}
+                    </Pie>
+                    <Tooltip contentStyle={estiloTooltip} formatter={(valor) => formatMinutos(Number(valor))} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="flex items-center justify-between">
+                <Legenda itens={[{ cor: COR.serie1, rotulo: 'Produtivo' }, { cor: COR.atencao, rotulo: 'Ocioso (ligado e parado)' }]} />
+                <span className="text-[11px] text-slate-400">Motor ligado: {formatMinutos(minutosLigado)}</span>
               </div>
 
               <p className="text-[11px] text-slate-400">

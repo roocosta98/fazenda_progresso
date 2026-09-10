@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Truck, Boxes, Factory, Wrench, ShoppingCart } from 'lucide-react';
+import { Truck, Boxes, Factory, Wrench, ShoppingCart, Wallet, Handshake, Calculator, Users, HardHat, ClipboardList } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import type { ModuloSistema } from '../../types';
 
@@ -10,6 +10,7 @@ interface CardModulo {
   icone: React.ReactNode;
   to: string;
   cor: string;
+  ativo: boolean;
 }
 
 const CARDS: CardModulo[] = [
@@ -20,6 +21,7 @@ const CARDS: CardModulo[] = [
     icone: <Truck size={28} />,
     to: '/logistica/dashboard',
     cor: 'bg-blue-50 text-blue-600 border-blue-200',
+    ativo: true,
   },
   {
     modulo: 'estoque',
@@ -28,6 +30,7 @@ const CARDS: CardModulo[] = [
     icone: <Boxes size={28} />,
     to: '/logistica/estoque/dashboard',
     cor: 'bg-amber-50 text-amber-600 border-amber-200',
+    ativo: true,
   },
   {
     modulo: 'producao_batata',
@@ -36,6 +39,7 @@ const CARDS: CardModulo[] = [
     icone: <Factory size={28} />,
     to: '/producao/batata',
     cor: 'bg-emerald-50 text-emerald-600 border-emerald-200',
+    ativo: false,
   },
   {
     modulo: 'manutencao',
@@ -44,6 +48,7 @@ const CARDS: CardModulo[] = [
     icone: <Wrench size={28} />,
     to: '/manutencao',
     cor: 'bg-orange-50 text-orange-600 border-orange-200',
+    ativo: false,
   },
   {
     modulo: 'compras',
@@ -52,6 +57,61 @@ const CARDS: CardModulo[] = [
     icone: <ShoppingCart size={28} />,
     to: '/compras',
     cor: 'bg-violet-50 text-violet-600 border-violet-200',
+    ativo: false,
+  },
+  {
+    modulo: 'financeiro',
+    titulo: 'Financeiro',
+    descricao: 'Contas a pagar, a receber e fluxo de caixa.',
+    icone: <Wallet size={28} />,
+    to: '/financeiro',
+    cor: 'bg-teal-50 text-teal-600 border-teal-200',
+    ativo: false,
+  },
+  {
+    modulo: 'comercial',
+    titulo: 'Comercial',
+    descricao: 'Vendas, contratos e clientes.',
+    icone: <Handshake size={28} />,
+    to: '/comercial',
+    cor: 'bg-rose-50 text-rose-600 border-rose-200',
+    ativo: false,
+  },
+  {
+    modulo: 'custos',
+    titulo: 'Custos',
+    descricao: 'Apuração e rateio de custos por centro.',
+    icone: <Calculator size={28} />,
+    to: '/custos',
+    cor: 'bg-sky-50 text-sky-600 border-sky-200',
+    ativo: false,
+  },
+  {
+    modulo: 'rh',
+    titulo: 'DP / RH',
+    descricao: 'Folha, admissões e gestão de pessoas.',
+    icone: <Users size={28} />,
+    to: '/rh',
+    cor: 'bg-fuchsia-50 text-fuchsia-600 border-fuchsia-200',
+    ativo: false,
+  },
+  {
+    modulo: 'seguranca_trabalho',
+    titulo: 'Segurança do Trabalho',
+    descricao: 'Treinamentos, EPIs e ocorrências.',
+    icone: <HardHat size={28} />,
+    to: '/seguranca-trabalho',
+    cor: 'bg-yellow-50 text-yellow-600 border-yellow-200',
+    ativo: false,
+  },
+  {
+    modulo: 'controladoria',
+    titulo: 'Controladoria',
+    descricao: 'Indicadores gerenciais e auditoria.',
+    icone: <ClipboardList size={28} />,
+    to: '/controladoria',
+    cor: 'bg-slate-100 text-slate-600 border-slate-200',
+    ativo: false,
   },
 ];
 
@@ -75,8 +135,15 @@ export function Inicio() {
           <button
             key={card.modulo}
             onClick={() => navigate(card.to)}
-            className="group text-left bg-white border border-slate-200/80 rounded-2xl p-6 hover:shadow-lg hover:-translate-y-0.5 transition-all"
+            className="group relative text-left bg-white border border-slate-200/80 rounded-2xl p-6 hover:shadow-lg hover:-translate-y-0.5 transition-all"
           >
+            <span
+              className={`absolute top-4 right-4 text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                card.ativo ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'
+              }`}
+            >
+              {card.ativo ? 'Ativo' : 'Em construção'}
+            </span>
             <div className={`inline-flex items-center justify-center w-14 h-14 rounded-2xl border ${card.cor}`}>
               {card.icone}
             </div>
