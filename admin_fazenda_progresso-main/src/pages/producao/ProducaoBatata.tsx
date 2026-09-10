@@ -548,18 +548,16 @@ function Lancamentos({
   );
 }
 function Comparativo({ dados }: { dados: Resumo[] }) {
+  const comparaveis = dados.filter((item) => item.CustoPorTonelada !== null);
+  const melhor = [...comparaveis].sort((a, b) => Number(a.CustoPorTonelada) - Number(b.CustoPorTonelada))[0];
+  const pior = [...comparaveis].sort((a, b) => Number(b.CustoPorTonelada) - Number(a.CustoPorTonelada))[0];
+  const diferenca = melhor && pior ? Number(pior.CustoPorTonelada) - Number(melhor.CustoPorTonelada) : null;
   return (
-    <section className="overflow-hidden rounded-2xl border bg-white">
-      <div className="border-b p-5">
-        <h2 className="font-bold text-slate-800">
-          Custo por tonelada entre safras
-        </h2>
-        <p className="mt-1 text-sm text-slate-500">
-          Só é calculado quando há produção registrada.
-        </p>
-      </div>
-      <TabelaSafras dados={dados} custos />
-    </section>
+    <div className="space-y-5">
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-3"><Kpi icone={<BarChart3 size={19}/>} rotulo="Safras comparáveis" valor={String(comparaveis.length)} apoio="Com produção e custo registrados"/><Kpi icone={<Scale size={19}/>} rotulo="Melhor custo por tonelada" valor={melhor ? moeda(melhor.CustoPorTonelada) : '—'} apoio={melhor ? melhor.Nome : 'Sem dados suficientes'}/><Kpi icone={<Factory size={19}/>} rotulo="Variação entre extremos" valor={diferenca === null ? '—' : moeda(diferenca)} apoio={pior && melhor ? `${pior.Nome} vs. ${melhor.Nome}` : 'Sem dados suficientes'}/></section>
+      <section className="grid grid-cols-1 gap-5 xl:grid-cols-2"><GraficoProducao titulo="Comparativo de toneladas" dados={dados} chave="Toneladas" cor="#059669"/><GraficoProducao titulo="Comparativo de custo por tonelada" dados={comparaveis} chave="CustoPorTonelada" cor="#2563eb" moeda/></section>
+      <section className="overflow-hidden rounded-2xl border bg-white"><div className="border-b p-5"><h2 className="font-bold text-slate-800">Custo por tonelada entre safras</h2><p className="mt-1 text-sm text-slate-500">Compare produção, custo e eficiência de cada ciclo.</p></div><TabelaSafras dados={dados} custos /></section>
+    </div>
   );
 }
 function TabelaSafras({ dados, custos }: { dados: Resumo[]; custos: boolean }) {
