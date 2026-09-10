@@ -15,6 +15,10 @@
     {
       "source": "/api/producao/batata",
       "destination": "/api/gastos/resumo?modo=producao-batata"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ]
 }
