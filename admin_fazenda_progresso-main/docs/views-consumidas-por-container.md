@@ -6,7 +6,7 @@
 
 | Container | Papel | Views SQL Server consumidas diretamente |
 |---|---|---|
-| `admin_fazenda_progresso-main` | Painel administrativo/logística no Vercel | `vw_PainelMotoristaVeiculo`, `vw_ResultadoDiarioVeiculo`, `vw_ResultadoDiarioMotorista`, `vw_MotivosOperacaoEquipamento`, `vw_TempoMotorEquipamento`, `vw_ProgressoMensalVeiculo`, `vw_ProgressoMensalMotorista`, `vw_UltimaPosicao` |
+| `admin_fazenda_progresso-main` | Painel administrativo/logística no Vercel | `vw_PainelMotoristaVeiculo`, `vw_ResultadoDiarioVeiculo`, `vw_ResultadoDiarioMotorista`, `vw_MotivosOperacaoEquipamento`, `fn_TempoMotorEquipamento`, `vw_ProgressoMensalVeiculo`, `vw_ProgressoMensalMotorista`, `vw_UltimaPosicao` |
 | `App` | Aplicativo do motorista | `vw_PainelMotoristaVeiculo`, `vw_ResultadoDiarioMotorista`, `vw_ProgressoMensalMotorista` |
 | `admin_fazenda_progresso-main/server` | Backend Express local/legado | `vw_UltimaPosicao` |
 
@@ -21,7 +21,7 @@ Os componentes React não acessam o banco: eles chamam as rotas listadas abaixo.
 | `api/metas/diario.ts?modo=diario` | `vw_ResultadoDiarioVeiculo` | Custos, quilômetros, litros, meta e resultado diário por veículo. |
 | `api/metas/diario.ts?modo=motoristas` | `vw_ResultadoDiarioMotorista` | Lista de motoristas com resultado diário no período. |
 | `api/metas/diario.ts?modo=motivos` | `vw_MotivosOperacaoEquipamento`, `vw_ResultadoDiarioVeiculo` | Motivos de parada/operação e custo associado; cruza com a jornada do motorista. |
-| `api/metas/diario.ts?modo=motor` | `vw_TempoMotorEquipamento`, `vw_ResultadoDiarioVeiculo` | Tempo de motor ligado/ocioso, limitado à jornada cadastrada. |
+| `api/metas/diario.ts?modo=motor` | `fn_TempoMotorEquipamento(dataInicio, dataFim, equipamentoId)`, `vw_ResultadoDiarioVeiculo` | Tempo de motor ligado/ocioso por dia, medido pela telemetria (não é limitado pela jornada do motorista). |
 | `api/metas/diario.ts?modo=executivo` | `vw_ResultadoDiarioVeiculo`, `vw_PainelMotoristaVeiculo` | KPIs executivos e agregados de custo/meta. |
 | `api/metas/diario.ts?modo=progresso-veiculo` | `vw_ProgressoMensalVeiculo` | Evolução mensal por veículo. |
 | `api/metas/diario.ts?modo=progresso-motorista` | `vw_ProgressoMensalMotorista` | Evolução mensal por motorista. |
@@ -61,9 +61,8 @@ vw_ResultadoDiarioVeiculo ─────┼─> api/metas/diario?modo=motivos �
 JornadaMotorista ──────────────┤
 CustoHoraMaquina ──────────────┘
 
-vw_TempoMotorEquipamento ──────┐
-vw_ResultadoDiarioVeiculo ─────┼─> api/metas/diario?modo=motor ───> uso do motor
-JornadaMotorista ──────────────┘
+fn_TempoMotorEquipamento ──────┐
+vw_ResultadoDiarioVeiculo ─────┴─> api/metas/diario?modo=motor ───> uso do motor
 ```
 
-Sem `JornadaMotorista` homologada, as leituras de parada e tempo de motor não devem ser interpretadas como ociosidade real: o código deliberadamente não usa 24 horas como jornada de trabalho.
+Sem `JornadaMotorista` homologada, as leituras de parada (modo=motivos) não devem ser interpretadas como ociosidade real: o código deliberadamente não usa 24 horas como jornada de trabalho. Já `modo=motor` não depende de `JornadaMotorista` — o motor ligado/ocioso é medido direto pela telemetria do equipamento.
