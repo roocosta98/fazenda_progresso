@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { DataTable } from '../../components/common/DataTable';
+import { Carregando } from '../../components/common/viz';
 
 const API_URL = import.meta.env.VITE_API_URL ?? '';
 
@@ -127,7 +128,7 @@ export const AvaliacaoConducao = () => {
       {erro && <div className="bg-rose-50 border border-rose-200 text-rose-700 rounded-xl p-4 text-sm">{erro}</div>}
 
       {loading ? (
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-12 text-center text-slate-400">Carregando...</div>
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-12"><Carregando /></div>
       ) : (
         <DataTable
           columns={columns}

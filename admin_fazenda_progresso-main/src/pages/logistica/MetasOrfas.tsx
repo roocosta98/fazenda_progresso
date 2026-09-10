@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { RefreshCw, Link2, CheckCircle2 } from 'lucide-react';
 import { DataTable } from '../../components/common/DataTable';
+import { Carregando } from '../../components/common/viz';
 
 const API_URL = import.meta.env.VITE_API_URL ?? '';
 
@@ -163,7 +164,7 @@ export const MetasOrfas = () => {
       )}
 
       {loading ? (
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-12 text-center text-slate-400">Carregando...</div>
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-12"><Carregando /></div>
       ) : (
         <DataTable columns={columns} data={orfas} keyExtractor={(l) => `${l.MetaMotoristaId}`} emptyMessage="Nenhuma meta órfã nesta competência." />
       )}

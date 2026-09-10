@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Search, Truck, User, Tag, RefreshCw } from 'lucide-react';
+import { Search, Truck, Tag, RefreshCw } from 'lucide-react';
 import { DataTable } from '../../components/common/DataTable';
+import { Carregando } from '../../components/common/viz';
 
 const API_URL = import.meta.env.VITE_API_URL ?? '';
 
@@ -178,8 +179,8 @@ export const GestaoFrota = () => {
       </div>
 
       {loading ? (
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-12 text-center text-slate-400 flex items-center justify-center gap-2">
-          <User size={16} className="animate-pulse" /> Carregando...
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-12">
+          <Carregando />
         </div>
       ) : activeTab === 'veiculos' ? (
         <DataTable columns={columnsEquipamentos} data={filteredEquipamentos} keyExtractor={(eq) => String(eq.EquipamentoId)} />

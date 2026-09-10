@@ -18,7 +18,7 @@ import {
   COR, estiloTooltip, formatMoeda, formatMoedaCurta, formatMinutos, formatDiaCurto,
   somar,
 } from '../../components/common/vizTokens';
-import { CardKpi, CardViz, SemDado, ErroCarregamento, Legenda } from '../../components/common/viz';
+import { CardKpi, CardViz, SemDado, ErroCarregamento, Legenda, Carregando } from '../../components/common/viz';
 import { useAuth } from '../../context/AuthContext';
 import { cabecalhoPerfil } from '../../utils/apiAuth';
 
@@ -349,6 +349,14 @@ export const PainelMetasDiario: React.FC<PainelMetasDiarioProps> = ({ dataDe, da
     media: 'bg-amber-100 text-amber-800',
     baixa: 'bg-slate-100 text-slate-600',
   };
+
+  if (carregando && linhasDiarias.length === 0 && veiculos.length === 0) {
+    return (
+      <div className="bg-white rounded-2xl border border-slate-200/80 p-12">
+        <Carregando mensagem="Carregando painel de metas…" />
+      </div>
+    );
+  }
 
   return (
     <div className={`space-y-5 pb-12 transition-opacity ${carregando ? 'opacity-60' : 'opacity-100'}`}>

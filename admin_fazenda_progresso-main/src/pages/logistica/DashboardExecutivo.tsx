@@ -3,6 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { cabecalhoPerfil } from '../../utils/apiAuth';
 import { PieChart as PieChartIcon, Wallet, ShieldCheck, AlertTriangle } from 'lucide-react';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Carregando } from '../../components/common/viz';
 
 const API_URL = import.meta.env.VITE_API_URL ?? '';
 
@@ -119,7 +120,7 @@ export const DashboardExecutivo = ({
       {erro && <div className="bg-rose-50 border border-rose-200 text-rose-700 rounded-xl p-4 text-sm">{erro}</div>}
 
       {loading || !dados ? (
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-12 text-center text-slate-400">Carregando...</div>
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-12"><Carregando /></div>
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
