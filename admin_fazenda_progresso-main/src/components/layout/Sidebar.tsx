@@ -60,15 +60,12 @@ export const Sidebar = () => {
           { to: '/logistica/avaliacao-conducao', icon: <ClipboardCheck size={18} />, label: 'Avaliação de Condução' },
           { to: '/logistica/monitoramento', icon: <MapIcon size={18} />, label: 'Telemetria & Mapa' },
           { to: '/logistica/monitor-tv', icon: <MonitorPlay size={18} />, label: 'Monitor TV' },
-          {
-            label: 'Administração',
-            icon: <Settings size={18} />,
-            children: [
-              { to: '/logistica/frota', icon: <Truck size={16} />, label: 'Gestão de Frota' },
-              { to: '/logistica/metas-orfas', icon: <Link2 size={16} />, label: 'Metas Órfãs' },
-              { to: '/logistica/estoque', icon: <Boxes size={16} />, label: 'Estoque' },
-            ],
-          },
+          { to: '/logistica/frota', icon: <Truck size={18} />, label: 'Gestão de Frota' },
+          { to: '/logistica/metas-orfas', icon: <Link2 size={18} />, label: 'Metas Órfãs' },
+          ...(usuario.tipoUsuario === 'admin' ? [{
+            label: 'Administração', icon: <Settings size={18} />,
+            children: [{ to: '/administracao/usuarios', icon: <Settings size={16} />, label: 'Usuários' }],
+          } as GrupoItem] : []),
         ];
   const itensPorModulo: Record<ModuloSistema, (LinkItem | GrupoItem)[]> = {
     logistica_frota: itensLogistica,

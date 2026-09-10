@@ -7,6 +7,10 @@
     {
       "source": "/api/estoque/pesquisar",
       "destination": "/api/gastos/resumo?modo=estoque-pesquisar"
+    },
+    {
+      "source": "/api/administracao/usuarios",
+      "destination": "/api/gastos/resumo?modo=usuarios"
     }
   ]
 }

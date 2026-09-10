@@ -2,7 +2,7 @@ import type { Usuario, Projeto, Veiculo, Motorista, SolicitacaoTransporte } from
 
 export const MOCK_USUARIOS: Usuario[] = [
   { id: '1', idSankhya: 'S-1001', nome: 'João - Técnico de Campo', perfil: 'solicitante', departamento: 'Agrícola' },
-  { id: '2', idSankhya: 'S-1002', nome: 'Carlos - Gestor de Frota', perfil: 'logistica', departamento: 'Logística' },
+  { id: '2', idSankhya: 'S-1002', nome: 'Carlos - Gestor de Frota', perfil: 'logistica', departamento: 'Logística', tipoUsuario: 'admin', modulos: ['logistica_frota', 'estoque', 'producao_batata', 'manutencao'] },
   { id: '3', idSankhya: 'S-1003', nome: 'Antônio - Motorista', perfil: 'motorista', departamento: 'Frota' },
 ];
 
