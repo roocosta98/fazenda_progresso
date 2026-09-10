@@ -1,0 +1,112 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@theme {
+  /* Identidade Corporativa Fazenda Progresso */
+  --color-brand-primary: #1e3a2f;      /* Verde floresta profundo */
+  --color-brand-primary-hover: #274c3d;
+  --color-brand-secondary: #2d5a46;    /* Verde musgo elegante */
+  --color-brand-accent: #3d735a;
+  --color-brand-subtle: #f2f7f4;
+
+  /* Neutros e Superfícies B2B */
+  --color-sidebar-bg: #0d1a14;        /* Dark Forest Profundo */
+  --color-sidebar-border: #182b22;
+  --color-sidebar-hover: #15261e;
+  --color-sidebar-active: #1c3227;
+
+  --color-canvas-bg: #f8fafc;
+  --color-card-bg: #ffffff;
+  --color-card-border: #e2e8f0;
+
+  /* Tipografia Corporativa */
+  --color-text-primary: #0f172a;      /* Slate-900 */
+  --color-text-secondary: #475569;    /* Slate-600 */
+  --color-text-muted: #64748b;        /* Slate-500 */
+  --color-text-subtle: #94a3b8;       /* Slate-400 */
+
+  /* Estados de Sistema (Sóbrios / Enterprise) */
+  --color-status-success: #059669;    /* Emerald-600 */
+  --color-status-success-bg: #f0fdf4;
+  --color-status-success-border: #bbf7d0;
+
+  --color-status-warning: #d97706;    /* Amber-600 */
+  --color-status-warning-bg: #fffbeb;
+  --color-status-warning-border: #fde68a;
+
+  --color-status-danger: #dc2626;     /* Red-600 */
+  --color-status-danger-bg: #fef2f2;
+  --color-status-danger-border: #fecaca;
+
+  --color-status-info: #0284c7;       /* Sky-600 */
+  --color-status-info-bg: #f0f9ff;
+  --color-status-info-border: #bae6fd;
+
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  
+  --shadow-corporate-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  --shadow-corporate-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+  --shadow-corporate-md: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.04);
+}
+
+html, body {
+  font-family: var(--font-sans);
+  background-color: var(--color-canvas-bg);
+  color: var(--color-text-primary);
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar Corporativo Discreto */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-300 rounded-full;
+}
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-slate-400;
+}
+
+@keyframes slide-in-right {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in-up {
+  animation: fade-in-up 0.3s ease-out forwards;
+}
+@keyframes pulse-ring {
+  0% { transform: scale(0.8); opacity: 0.5; }
+  100% { transform: scale(2.5); opacity: 0; }
+}
+.animate-pulse-ring {
+  animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}

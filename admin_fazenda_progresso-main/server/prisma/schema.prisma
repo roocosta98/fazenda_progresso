@@ -1,0 +1,137 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum PerfilUsuario {
+  solicitante
+  logistica
+  motorista
+}
+
+enum StatusVeiculo {
+  disponivel
+  em_uso
+  manutencao
+}
+
+enum StatusMotorista {
+  disponivel
+  em_rota
+  folga
+}
+
+enum StatusSolicitacao {
+  pendente
+  agendada
+  em_execucao
+  concluida
+  cancelada
+}
+
+model Usuario {
+  id            String                  @id @default(cuid())
+  idSankhya     String?
+  nome          String
+  perfil        PerfilUsuario
+  departamento  String?
+  solicitacoes  SolicitacaoTransporte[]
+  createdAt     DateTime                @default(now())
+  updatedAt     DateTime                @updatedAt
+}
+
+model Projeto {
+  id            String                  @id @default(cuid())
+  nome          String
+  centroCusto   String
+  solicitacoes  SolicitacaoTransporte[]
+}
+
+model Veiculo {
+  id            String                  @id @default(cuid())
+  placa         String                  @unique
+  modelo        String
+  tipo          String
+  status        StatusVeiculo           @default(disponivel)
+  odometro      Int?
+  solicitacoes  SolicitacaoTransporte[]
+}
+
+model Motorista {
+  id            String                  @id @default(cuid())
+  nome          String
+  telefone      String
+  status        StatusMotorista         @default(disponivel)
+  solicitacoes  SolicitacaoTransporte[]
+}
+
+model SolicitacaoTransporte {
+  id                     String                  @id @default(cuid())
+  numeroOS               String                  @unique
+  solicitanteId          String
+  solicitante            Usuario                 @relation(fields: [solicitanteId], references: [id])
+  tipoServico            String
+  origem                 String
+  origemLat              Float?
+  origemLng              Float?
+  destino                String
+  destinoLat             Float?
+  destinoLng             Float?
+  dataSolicitacao        DateTime
+  dataProgramada         DateTime?
+  horarioProgramado      String?
+  projetoId              String
+  projeto                Projeto                 @relation(fields: [projetoId], references: [id])
+  observacoes            String?
+  status                 StatusSolicitacao       @default(pendente)
+  veiculoId              String?
+  veiculo                Veiculo?                @relation(fields: [veiculoId], references: [id])
+  motoristaId            String?
+  motorista              Motorista?              @relation(fields: [motoristaId], references: [id])
+  kmInicial              Int?
+  kmFinal                Int?
+  dataHoraSaida          DateTime?
+  dataHoraChegada        DateTime?
+  observacaoLogistica    String?
+  motivoCancelamento     String?
+  reagendada             Boolean                 @default(false)
+  emAtraso               Boolean                 @default(false)
+  assinaturaRecebedor    String?
+  nomeRecebedor          String?
+  fotoComprovante        String?
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
+  historicoTrocaVeiculo  HistoricoTrocaVeiculo[]
+  gpsPings               GpsPing[]
+}
+
+model HistoricoTrocaVeiculo {
+  id               String                @id @default(cuid())
+  solicitacaoId    String
+  solicitacao      SolicitacaoTransporte @relation(fields: [solicitacaoId], references: [id])
+  data             DateTime              @default(now())
+  veiculoAnterior  String
+  veiculoNovo      String
+  justificativa    String
+}
+
+model GpsPing {
+  id             Int                   @id @default(autoincrement())
+  solicitacaoId  String
+  solicitacao    SolicitacaoTransporte @relation(fields: [solicitacaoId], references: [id])
+  lat            Float
+  lng            Float
+  timestamp      DateTime              @default(now())
+}
+
+model Notificacao {
+  id         String   @id @default(cuid())
+  tipo       String
+  mensagem   String
+  lida       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+}

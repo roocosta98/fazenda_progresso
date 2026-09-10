@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+@theme {
+  /* Identidade Visual Corporativa - Fazenda Progresso */
+  --color-primary: #1E3A2F; /* Verde Folha/Musgo Escuro */
+  --color-primary-dark: #142820; /* Verde mais escuro para hovers */
+  --color-secondary: #D4AF37; /* Dourado/Amarelo Sóbrio (se necessário) */
+  --color-dark: #1E293B; /* Grafite Profundo (slate-800) */
+  --color-light: #F8F9FA; /* Off-white / Bege Suave */
+}
+
+@layer base {
+  body {
+    @apply bg-gray-50 text-gray-900 font-sans antialiased;
+  }
+}
+
+/* Utilitários adicionais de scroll para mobile (esconder barra de rolagem mas permitir scroll) */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
