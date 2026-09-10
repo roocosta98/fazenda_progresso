@@ -1,0 +1,11 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "rewrites": [
+    { "source": "/api/insights/listar", "destination": "/api/insights/[acao]?acao=listar" },
+    { "source": "/api/insights/gerar", "destination": "/api/insights/[acao]?acao=gerar" },
+    { "source": "/api/frota/equipamentos", "destination": "/api/frota/[recurso]?recurso=equipamentos" },
+    { "source": "/api/frota/operadores", "destination": "/api/frota/[recurso]?recurso=operadores" },
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  ]
+}

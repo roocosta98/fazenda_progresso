@@ -4,17 +4,11 @@ import OpenAI from 'openai';
 import { getMssqlPool } from '../_lib/mssql.js';
 import { INTERVALO_REVISAO_KM_HORAS, MARGEM_ALERTA_KM_HORAS } from '../_lib/manutencaoPreditiva.js';
 
-// Painel de Insights (IA) — sugestão do Cássio (WhatsApp): "trazer uma IA pra fazer
-// a leitura dos dados e trazer alguma sugestão pra gente". Agrega Metas + Gastos +
-// Alarmes num resumo compacto e manda pra OpenAI interpretar e sugerir.
-//
-// Privacidade: o payload NUNCA inclui SalarioBase, CustoMotoristaMes ou
-// CustoOperacionalTotalMes (que embute o motorista) — só métricas de performance
-// (Km/L, CPK controlável, contagem de alarmes) e custo do EQUIPAMENTO. Dado de
-// remuneração não sai da infraestrutura da fazenda pra um provedor externo.
-//
-// As 3 agregações rodam isoladas (try/catch cada uma): se uma falhar (ex.: schema
-// mudou), as outras duas ainda alimentam a IA em vez de derrubar o recurso inteiro.
+// Unificação de api/insights/listar.ts e api/insights/gerar.ts em um único endpoint [acao].ts
+// para respeitar o limite de 12 Serverless Functions do plano Hobby na Vercel.
+// Atende:
+// - GET/POST /api/insights/listar
+// - POST /api/insights/gerar
 
 const QUERY_METAS = `
 WITH Consumo AS (
@@ -61,10 +55,6 @@ HAVING COUNT(*) > 0
 ORDER BY QtdAlarmes30Dias DESC
 `;
 
-// Manutenção preditiva leve (Fase D, melhoria pedida pelo Rodrigo / PRD §12): não recalcula nada
-// pesado, só olha o horímetro/odômetro acumulado de cada equipamento contra um intervalo fixo de
-// revisão (api/_lib/manutencaoPreditiva.ts). Only equipamentos dentro da margem de alerta entram
-// no payload — assim a IA só gera insight de manutenção quando o limite é realmente ultrapassado.
 const QUERY_MANUTENCAO = `
 SELECT DISTINCT NomeEquipamento, HorimetroOdometroAtual
 FROM vw_PainelMotoristaVeiculo
@@ -85,12 +75,61 @@ interface InsightGerado {
   recomendacao?: string | null;
 }
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== 'POST') {
-    res.status(405).json({ error: 'Método não permitido' });
+async function listar(req: VercelRequest, res: VercelResponse) {
+  try {
+    const resolvidoParam = typeof req.query.resolvido === 'string' ? req.query.resolvido : null;
+
+    const pool = await getMssqlPool();
+    let where = '';
+    if (resolvidoParam === 'false') {
+      where = 'WHERE Resolvido = 0';
+    } else if (resolvidoParam === 'true') {
+      where = 'WHERE Resolvido = 1';
+    }
+
+    const result = await pool.request().query(`
+      SELECT * FROM InsightIA
+      ${where}
+      ORDER BY GeradoEm DESC
+    `);
+    res.status(200).json(result.recordset);
+  } catch (error) {
+    console.error('Erro ao consultar InsightIA:', error);
+    res.status(502).json({ error: 'Falha ao consultar o banco de dados da fazenda (SQL Server). A tabela InsightIA existe?' });
+  }
+}
+
+async function atualizar(req: VercelRequest, res: VercelResponse) {
+  const { insightId, lido, resolvido, resolvidoPor } = req.body ?? {};
+  if (typeof insightId !== 'number') {
+    res.status(400).json({ error: 'insightId é obrigatório e deve ser numérico' });
     return;
   }
 
+  try {
+    const pool = await getMssqlPool();
+    await pool.request()
+      .input('insightId', sql.Int, insightId)
+      .input('lido', sql.Bit, typeof lido === 'boolean' ? lido : null)
+      .input('resolvido', sql.Bit, typeof resolvido === 'boolean' ? resolvido : null)
+      .input('resolvidoPor', sql.NVarChar, resolvido ? (resolvidoPor ?? null) : null)
+      .query(`
+        UPDATE InsightIA
+        SET
+          Lido = COALESCE(@lido, Lido),
+          Resolvido = COALESCE(@resolvido, Resolvido),
+          ResolvidoPor = CASE WHEN @resolvido = 1 THEN @resolvidoPor ELSE ResolvidoPor END,
+          ResolvidoEm = CASE WHEN @resolvido = 1 THEN SYSUTCDATETIME() ELSE ResolvidoEm END
+        WHERE InsightId = @insightId
+      `);
+    res.status(200).json({ ok: true });
+  } catch (error) {
+    console.error('Erro ao atualizar InsightIA:', error);
+    res.status(502).json({ error: 'Falha ao atualizar o insight no banco de dados' });
+  }
+}
+
+async function gerar(_req: VercelRequest, res: VercelResponse) {
   if (!process.env.OPENAI_API_KEY) {
     res.status(502).json({ error: 'OPENAI_API_KEY não configurada no Vercel' });
     return;
@@ -141,9 +180,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         }),
     ]);
 
-    // Regra determinística (não é a IA que decide o limite): só entra no payload quem já está
-    // dentro da margem de alerta pro próximo múltiplo do intervalo de revisão — assim a IA nunca
-    // "inventa" um alerta de manutenção pra um equipamento que ainda está longe da troca.
     const manutencao = horimetros
       .map((h) => {
         const restante = INTERVALO_REVISAO_KM_HORAS - (h.HorimetroOdometroAtual % INTERVALO_REVISAO_KM_HORAS);
@@ -234,4 +270,22 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.error('Erro ao gerar insights:', error);
     res.status(502).json({ error: 'Falha ao gerar insights (banco de dados ou OpenAI)' });
   }
+}
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  const acao = req.query.acao || (req.url?.includes('gerar') ? 'gerar' : 'listar');
+  
+  if (acao === 'gerar' && req.method === 'POST') {
+    return gerar(req, res);
+  }
+
+  if (req.method === 'GET') {
+    return listar(req, res);
+  }
+
+  if (req.method === 'POST') {
+    return atualizar(req, res);
+  }
+
+  res.status(405).json({ error: 'Método não permitido' });
 }
