@@ -17,6 +17,10 @@
       "destination": "/api/gastos/resumo?modo=producao-batata"
     },
     {
+      "source": "/api/manutencao",
+      "destination": "/api/gastos/resumo?modo=manutencao"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

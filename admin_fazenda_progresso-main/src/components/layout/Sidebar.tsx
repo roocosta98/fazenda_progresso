@@ -73,7 +73,7 @@ export const Sidebar = () => {
       { to: '/producao/batata/comparativo', icon: <BarChart3 size={18} />, label: 'Comparativo por Safra' },
     ],
     manutencao: [
-      { to: '#', icon: <LayoutDashboard size={18} />, label: 'Painel de Manutenção', pendente: true },
+      { to: '/manutencao', icon: <LayoutDashboard size={18} />, label: 'Painel de Manutenção' },
       { to: '#', icon: <Truck size={18} />, label: 'Ativos e Equipamentos', pendente: true },
       { to: '#', icon: <ClipboardCheck size={18} />, label: 'Ordens de Serviço', pendente: true },
       { to: '#', icon: <Clock size={18} />, label: 'Preventivas', pendente: true },

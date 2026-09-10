@@ -17,6 +17,7 @@ import { Estoque } from '../pages/estoque/Estoque';
 import { DashboardEstoque } from '../pages/estoque/DashboardEstoque';
 import { ProducaoBatata } from '../pages/producao/ProducaoBatata';
 import { GestaoUsuarios } from '../pages/administracao/GestaoUsuarios';
+import { Manutencao } from '../pages/manutencao/Manutencao';
 
 const ProtectedRoute = ({ children, allowedRoles }: { children: ReactNode, allowedRoles?: string[] }) => {
   const { usuario } = useAuth();
@@ -85,6 +86,7 @@ export const AppRoutes = () => {
         <Route path="/producao/batata/safras" element={<ProtectedRoute allowedRoles={['logistica']}><ProducaoBatata tela="safras" /></ProtectedRoute>} />
         <Route path="/producao/batata/lancamentos" element={<ProtectedRoute allowedRoles={['logistica']}><ProducaoBatata tela="lancamentos" /></ProtectedRoute>} />
         <Route path="/producao/batata/comparativo" element={<ProtectedRoute allowedRoles={['logistica']}><ProducaoBatata tela="comparativo" /></ProtectedRoute>} />
+        <Route path="/manutencao" element={<ProtectedRoute allowedRoles={['logistica']}><Manutencao /></ProtectedRoute>} />
         <Route path="/administracao/usuarios" element={<ProtectedRoute allowedRoles={['logistica']}><GestaoUsuarios /></ProtectedRoute>} />
       </Route>
       
