@@ -82,6 +82,9 @@ export const AppRoutes = () => {
         />
         <Route path="/logistica/estoque/dashboard" element={<ProtectedRoute allowedRoles={['logistica']}><DashboardEstoque /></ProtectedRoute>} />
         <Route path="/producao/batata" element={<ProtectedRoute allowedRoles={['logistica']}><ProducaoBatata /></ProtectedRoute>} />
+        <Route path="/producao/batata/safras" element={<ProtectedRoute allowedRoles={['logistica']}><ProducaoBatata tela="safras" /></ProtectedRoute>} />
+        <Route path="/producao/batata/lancamentos" element={<ProtectedRoute allowedRoles={['logistica']}><ProducaoBatata tela="lancamentos" /></ProtectedRoute>} />
+        <Route path="/producao/batata/comparativo" element={<ProtectedRoute allowedRoles={['logistica']}><ProducaoBatata tela="comparativo" /></ProtectedRoute>} />
         <Route path="/administracao/usuarios" element={<ProtectedRoute allowedRoles={['logistica']}><GestaoUsuarios /></ProtectedRoute>} />
       </Route>
       

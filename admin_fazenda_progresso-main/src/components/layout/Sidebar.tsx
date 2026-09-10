@@ -68,9 +68,9 @@ export const Sidebar = () => {
     estoque: [{ to: '/logistica/estoque/dashboard', icon: <BarChart3 size={18} />, label: 'Dashboard' }, { to: '/logistica/estoque', icon: <Boxes size={18} />, label: 'Painel de Estoque' }],
     producao_batata: [
       { to: '/producao/batata', icon: <LayoutDashboard size={18} />, label: 'Painel de Produção' },
-      { to: '/producao/batata', icon: <Trophy size={18} />, label: 'Safras' },
-      { to: '/producao/batata', icon: <Truck size={18} />, label: 'Colheita e Transporte' },
-      { to: '/producao/batata', icon: <BarChart3 size={18} />, label: 'Comparativo por Safra' },
+      { to: '/producao/batata/safras', icon: <Trophy size={18} />, label: 'Safras' },
+      { to: '/producao/batata/lancamentos', icon: <Truck size={18} />, label: 'Colheita e Transporte' },
+      { to: '/producao/batata/comparativo', icon: <BarChart3 size={18} />, label: 'Comparativo por Safra' },
     ],
     manutencao: [
       { to: '#', icon: <LayoutDashboard size={18} />, label: 'Painel de Manutenção', pendente: true },
