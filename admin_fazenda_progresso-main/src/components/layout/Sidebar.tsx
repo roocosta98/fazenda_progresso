@@ -18,6 +18,8 @@ import {
   Boxes,
   Factory,
   Wrench,
+  ShoppingCart,
+  Home,
 } from 'lucide-react';
 import logoFp from '../../assets/logo.png';
 import type { ModuloSistema } from '../../types';
@@ -45,7 +47,7 @@ export const Sidebar = () => {
   const [grupoAberto, setGrupoAberto] = useState(true);
   const [seletorAberto, setSeletorAberto] = useState(false);
   const modulosPermitidos = usuario?.tipoUsuario === 'admin'
-    ? ['logistica_frota', 'estoque', 'producao_batata', 'manutencao'] as const
+    ? ['logistica_frota', 'estoque', 'producao_batata', 'manutencao', 'compras'] as const
     : (usuario?.modulos?.length ? usuario.modulos : ['logistica_frota'] as const);
   const modulosDisponiveis: SelecaoModulo[] = ['todos', ...modulosPermitidos as ModuloSistema[]];
   const [moduloAtual, setModuloAtual] = useState<SelecaoModulo>('todos');
@@ -82,6 +84,9 @@ export const Sidebar = () => {
       { to: '/manutencao/preventivas', icon: <Clock size={18} />, label: 'Preventivas' },
       { to: '/manutencao/historico', icon: <List size={18} />, label: 'Histórico por Equipamento' },
     ],
+    compras: [
+      { to: '/compras', icon: <ShoppingCart size={18} />, label: 'Painel de Compras' },
+    ],
   };
   const itensAdministracao: GrupoItem[] = usuario.tipoUsuario === 'admin' ? [{
     label: 'Administração', icon: <Settings size={18} />,
@@ -91,8 +96,9 @@ export const Sidebar = () => {
     todos: { nome: 'Todos os módulos', icone: <LayoutDashboard size={16} /> },
     logistica_frota: { nome: 'Logística / Frota', icone: <Truck size={16} /> },
     estoque: { nome: 'Estoque', icone: <Boxes size={16} /> },
-    producao_batata: { nome: 'Produção / Batata', icone: <Factory size={16} /> },
+    producao_batata: { nome: 'Produção', icone: <Factory size={16} /> },
     manutencao: { nome: 'Manutenção', icone: <Wrench size={16} /> },
+    compras: { nome: 'Compras', icone: <ShoppingCart size={16} /> },
   };
   const items: (LinkItem | GrupoItem)[] = [
     ...(moduloAtual === 'todos'
@@ -106,6 +112,7 @@ export const Sidebar = () => {
     estoque: '/logistica/estoque/dashboard',
     producao_batata: '/producao/batata',
     manutencao: '/manutencao',
+    compras: '/compras',
   };
 
   const linkClasses = (isActive: boolean) =>
@@ -136,6 +143,15 @@ export const Sidebar = () => {
 
       {/* 2. Menu Navigation */}
       <nav className="p-3 flex-1 space-y-1 overflow-y-auto">
+        {usuario.perfil !== 'solicitante' && (
+          <NavLink
+            to="/inicio"
+            className="flex items-center gap-2.5 px-3 py-2 mb-3 rounded-md text-xs font-semibold text-slate-300 border border-[#233d30] hover:bg-[#15271f] hover:text-white transition-colors"
+          >
+            <Home size={16} className="text-emerald-400" />
+            Início
+          </NavLink>
+        )}
         <div className="mb-4 relative">
           <p className="px-3 text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Módulo atual</p>
           <button onClick={() => setSeletorAberto((atual) => !atual)} className="w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-md bg-[#162920] border border-[#294535] text-white text-xs font-semibold">
