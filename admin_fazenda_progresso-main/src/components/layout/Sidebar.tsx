@@ -37,16 +37,18 @@ interface GrupoItem {
 }
 
 const isGrupo = (item: LinkItem | GrupoItem): item is GrupoItem => 'children' in item;
+type SelecaoModulo = 'todos' | ModuloSistema;
 
 export const Sidebar = () => {
   const { usuario, logout } = useAuth();
   const navigate = useNavigate();
   const [grupoAberto, setGrupoAberto] = useState(true);
   const [seletorAberto, setSeletorAberto] = useState(false);
-  const modulosDisponiveis = usuario?.tipoUsuario === 'admin'
+  const modulosPermitidos = usuario?.tipoUsuario === 'admin'
     ? ['logistica_frota', 'estoque', 'producao_batata', 'manutencao'] as const
     : (usuario?.modulos?.length ? usuario.modulos : ['logistica_frota'] as const);
-  const [moduloAtual, setModuloAtual] = useState<typeof modulosDisponiveis[number]>(modulosDisponiveis[0]);
+  const modulosDisponiveis: SelecaoModulo[] = ['todos', ...modulosPermitidos as ModuloSistema[]];
+  const [moduloAtual, setModuloAtual] = useState<SelecaoModulo>('todos');
 
   if (!usuario) return null;
 
@@ -85,14 +87,16 @@ export const Sidebar = () => {
     label: 'Administração', icon: <Settings size={18} />,
     children: [{ to: '/administracao/usuarios', icon: <Settings size={16} />, label: 'Usuários' }],
   }] : [];
-  const items = [...(itensPorModulo[moduloAtual] ?? itensLogistica), ...itensAdministracao];
-  const nomesModulos: Record<ModuloSistema, { nome: string; icone: React.ReactNode }> = {
+  const items = [...(moduloAtual === 'todos' ? modulosPermitidos.flatMap((modulo) => itensPorModulo[modulo as ModuloSistema]) : itensPorModulo[moduloAtual]), ...itensAdministracao];
+  const nomesModulos: Record<SelecaoModulo, { nome: string; icone: React.ReactNode }> = {
+    todos: { nome: 'Todos os módulos', icone: <LayoutDashboard size={16} /> },
     logistica_frota: { nome: 'Logística / Frota', icone: <Truck size={16} /> },
     estoque: { nome: 'Estoque', icone: <Boxes size={16} /> },
     producao_batata: { nome: 'Produção / Batata', icone: <Factory size={16} /> },
     manutencao: { nome: 'Manutenção', icone: <Wrench size={16} /> },
   };
-  const dashboardModulo: Record<ModuloSistema, string> = {
+  const dashboardModulo: Record<SelecaoModulo, string> = {
+    todos: '/logistica/dashboard',
     logistica_frota: '/logistica/dashboard',
     estoque: '/logistica/estoque/dashboard',
     producao_batata: '/producao/batata',
