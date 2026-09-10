@@ -65,7 +65,7 @@ export const Sidebar = () => {
         ];
   const itensPorModulo: Record<ModuloSistema, (LinkItem | GrupoItem)[]> = {
     logistica_frota: itensLogistica,
-    estoque: [{ to: '/logistica/estoque', icon: <Boxes size={18} />, label: 'Painel de Estoque' }],
+    estoque: [{ to: '/logistica/estoque/dashboard', icon: <BarChart3 size={18} />, label: 'Dashboard' }, { to: '/logistica/estoque', icon: <Boxes size={18} />, label: 'Painel de Estoque' }],
     producao_batata: [
       { to: '#', icon: <LayoutDashboard size={18} />, label: 'Painel de Produção', pendente: true },
       { to: '#', icon: <Trophy size={18} />, label: 'Safras', pendente: true },

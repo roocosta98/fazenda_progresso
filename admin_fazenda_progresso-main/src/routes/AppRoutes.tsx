@@ -14,6 +14,7 @@ import { AvaliacaoConducao } from '../pages/logistica/AvaliacaoConducao';
 import { MapaMonitoramento } from '../pages/logistica/MapaMonitoramento';
 import { TelaTVMonitor } from '../pages/logistica/TelaTVMonitor';
 import { Estoque } from '../pages/estoque/Estoque';
+import { DashboardEstoque } from '../pages/estoque/DashboardEstoque';
 import { GestaoUsuarios } from '../pages/administracao/GestaoUsuarios';
 
 const ProtectedRoute = ({ children, allowedRoles }: { children: ReactNode, allowedRoles?: string[] }) => {
@@ -78,6 +79,7 @@ export const AppRoutes = () => {
           path="/logistica/estoque"
           element={<ProtectedRoute allowedRoles={['logistica']}><Estoque /></ProtectedRoute>}
         />
+        <Route path="/logistica/estoque/dashboard" element={<ProtectedRoute allowedRoles={['logistica']}><DashboardEstoque /></ProtectedRoute>} />
         <Route path="/administracao/usuarios" element={<ProtectedRoute allowedRoles={['logistica']}><GestaoUsuarios /></ProtectedRoute>} />
       </Route>
       

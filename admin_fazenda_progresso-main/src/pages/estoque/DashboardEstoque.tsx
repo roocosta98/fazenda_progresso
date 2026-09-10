@@ -1,0 +1,23 @@
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Bar, BarChart, CartesianGrid, Legend, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { BarChart3, RefreshCw } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { cabecalhoPerfil } from '../../utils/apiAuth';
+
+const API_URL = import.meta.env.VITE_API_URL ?? '';
+type Linha = Record<string, unknown>;
+type Dados = { ruptura: Linha[]; semMovimentacao: Linha[]; valor: Linha[]; giroProdutos: Linha[] };
+const moedaCurta = (v: number) => v >= 1_000_000 ? `R$ ${(v / 1_000_000).toFixed(1)} mi` : `R$ ${(v / 1000).toFixed(0)} mil`;
+const numero = (v: unknown) => Number(v ?? 0);
+
+export function DashboardEstoque() {
+  const { usuario } = useAuth(); const [dados, setDados] = useState<Dados | null>(null); const [erro, setErro] = useState<string | null>(null); const [carregando, setCarregando] = useState(true);
+  const carregar = useCallback(async () => { setCarregando(true); try { const r = await fetch(`${API_URL}/api/estoque/painel`, { headers: cabecalhoPerfil(usuario?.perfil) }); const body = await r.json(); if (!r.ok) throw new Error(body.error); setDados(body); setErro(null); } catch (e) { setErro(e instanceof Error ? e.message : 'Falha ao carregar dashboard.'); } finally { setCarregando(false); } }, [usuario?.perfil]);
+  useEffect(() => { carregar(); }, [carregar]);
+  const curvaAbc = useMemo(() => ['A', 'B', 'C'].map((classe) => ({ classe, valor: (dados?.valor ?? []).filter((l) => l.CLASSEABC === classe).reduce((s, l) => s + numero(l.VALORTOTAL), 0) })), [dados]);
+  const ruptura = useMemo(() => (dados?.ruptura ?? []).slice(0, 10).map((l) => ({ produto: String(l.DESCRPROD ?? '').slice(0, 22), estoque: numero(l.ESTOQUE), minimo: numero(l.MINIMO) })), [dados]);
+  const giro = useMemo(() => (dados?.giroProdutos ?? []).slice(0, 10).map((l) => ({ produto: String(l.DESCRPROD ?? '').slice(0, 22), valor: numero(l.VALOR) })), [dados]);
+  const parados = useMemo(() => (dados?.semMovimentacao ?? []).slice(0, 10).map((l) => ({ produto: String(l.DESCRPROD ?? '').slice(0, 22), dias: numero(l.DIASSEMVENDA), valor: numero(l.VALORESTOQUE) })), [dados]);
+  return <div className="space-y-5 pb-12"><div className="flex items-center justify-between"><div><p className="text-xs uppercase font-bold tracking-wider text-emerald-700">Estoque</p><h1 className="text-2xl font-bold text-slate-800">Dashboard de Estoque</h1><p className="text-sm text-slate-500 mt-1">Visão gráfica dos níveis, valor, giro e itens parados.</p></div><button onClick={carregar} className="inline-flex gap-2 items-center bg-emerald-600 text-white px-4 py-2.5 rounded-xl text-sm font-bold"><RefreshCw size={16} className={carregando ? 'animate-spin' : ''}/>Atualizar</button></div>{erro && <div className="p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-sm">{erro}</div>}{carregando && !dados ? <div className="p-12 bg-white border rounded-2xl text-center text-slate-400">Carregando dados do Sankhya…</div> : <div className="grid grid-cols-1 xl:grid-cols-2 gap-5"><Grafico titulo="Valor por Curva ABC"><ResponsiveContainer width="100%" height={260}><PieChart><Pie data={curvaAbc} dataKey="valor" nameKey="classe" fill="#10b981"/><Tooltip/><Legend/></PieChart></ResponsiveContainer></Grafico><Grafico titulo="Itens mais críticos"><ResponsiveContainer width="100%" height={260}><BarChart data={ruptura}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="produto" hide/><YAxis/><Tooltip/><Legend/><Bar dataKey="estoque" fill="#ef4444" name="Estoque"/><Bar dataKey="minimo" fill="#f59e0b" name="Mínimo"/></BarChart></ResponsiveContainer></Grafico><Grafico titulo="Maior giro de vendas (90 dias)"><ResponsiveContainer width="100%" height={260}><BarChart data={giro} layout="vertical"><CartesianGrid strokeDasharray="3 3"/><XAxis type="number" tickFormatter={moedaCurta}/><YAxis dataKey="produto" type="category" width={150}/><Tooltip/><Bar dataKey="valor" fill="#2563eb" name="valor"/></BarChart></ResponsiveContainer></Grafico><Grafico titulo="Produtos parados há mais tempo"><ResponsiveContainer width="100%" height={260}><BarChart data={parados}><CartesianGrid strokeDasharray="3 3"/><XAxis dataKey="produto" hide/><YAxis/><Tooltip/><Legend/><Bar dataKey="dias" fill="#f59e0b" name="dias"/></BarChart></ResponsiveContainer></Grafico></div>}</div>;
+}
+function Grafico({ titulo, children }: { titulo: string; children: React.ReactNode }) { return <section className="bg-white border rounded-2xl p-5"><h2 className="font-bold text-slate-800 flex gap-2 items-center"><BarChart3 size={17} className="text-emerald-600"/>{titulo}</h2><div className="mt-4">{children}</div></section>; }
