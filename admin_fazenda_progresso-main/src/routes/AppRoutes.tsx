@@ -16,6 +16,7 @@ import { TelaTVMonitor } from '../pages/logistica/TelaTVMonitor';
 import { Safras } from '../pages/logistica/Safras';
 import { ColheitaTransporte } from '../pages/logistica/ColheitaTransporte';
 import { Manutencao } from '../pages/logistica/Manutencao';
+import { GiroEstoque } from '../pages/logistica/GiroEstoque';
 
 const ProtectedRoute = ({ children, allowedRoles: _allowedRoles }: { children: ReactNode, allowedRoles?: string[] }) => {
   const { usuario } = useAuth();
@@ -82,6 +83,10 @@ export const AppRoutes = () => {
         <Route
           path="/logistica/colheita-transporte"
           element={<ProtectedRoute allowedRoles={['logistica']}><ColheitaTransporte /></ProtectedRoute>}
+        />
+        <Route
+          path="/logistica/estoque"
+          element={<ProtectedRoute allowedRoles={['logistica']}><GiroEstoque /></ProtectedRoute>}
         />
       </Route>
       

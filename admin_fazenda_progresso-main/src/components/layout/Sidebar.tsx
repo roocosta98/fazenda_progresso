@@ -19,6 +19,7 @@ import {
   Tractor,
   Wrench,
   Layers3,
+  Boxes,
 } from 'lucide-react';
 import logoFp from '../../assets/logo.png';
 
@@ -75,6 +76,7 @@ export const Sidebar = () => {
   const items: (LinkItem | GrupoItem)[] = [
           { to: '/solicitante/minhas', icon: <List size={18} />, label: 'Minhas Solicitações', modulo: 'operacao' },
           { to: '/logistica/dashboard', icon: <LayoutDashboard size={18} />, label: 'Dashboard', modulo: 'gestao' },
+          { to: '/logistica/estoque', icon: <Boxes size={18} />, label: 'Giro de Estoque', modulo: 'gestao' },
           { to: '/logistica/bi', icon: <BarChart3 size={18} />, label: 'Métricas', modulo: 'gestao' },
           { to: '/logistica/pendentes', icon: <Clock size={18} />, label: 'Fila de Aprovação', badge: 2, modulo: 'operacao' },
           { to: '/logistica/metas', icon: <Trophy size={18} />, label: 'Metas & Ranking', modulo: 'gestao' },
