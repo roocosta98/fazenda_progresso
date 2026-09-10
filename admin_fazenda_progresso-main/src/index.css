@@ -58,6 +58,13 @@ html, body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Evita que `border` sem cor explícita herde a cor escura do texto. */
+@layer base {
+  *, ::after, ::before, ::backdrop, ::file-selector-button {
+    border-color: var(--color-card-border);
+  }
+}
+
 /* Scrollbar Corporativo Discreto */
 ::-webkit-scrollbar {
   width: 5px;
