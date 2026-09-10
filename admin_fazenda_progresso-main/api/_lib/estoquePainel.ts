@@ -23,7 +23,7 @@ async function autenticarSankhya() {
   return tokenSankhya.valor;
 }
 
-async function consultarSankhya(sql: string): Promise<Record<string, unknown>[]> {
+export async function consultarSankhya(sql: string): Promise<Record<string, unknown>[]> {
   const url = process.env.SANKHYA_API_URL?.replace(/\/$/, '');
   const executar = async (token: string) => {
     const resposta = await fetch(`${url}/gateway/v1/mge/service.sbr?serviceName=DbExplorerSP.executeQuery&outputType=json`, {

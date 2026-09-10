@@ -3,6 +3,10 @@
     {
       "source": "/api/estoque/painel",
       "destination": "/api/gastos/resumo?modo=estoque"
+    },
+    {
+      "source": "/api/estoque/pesquisar",
+      "destination": "/api/gastos/resumo?modo=estoque-pesquisar"
     }
   ]
 }
