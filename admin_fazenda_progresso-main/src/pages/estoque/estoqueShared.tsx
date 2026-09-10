@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import { AlertTriangle, Boxes, TrendingUp } from 'lucide-react';
+import { AlertTriangle, Boxes, RefreshCw, TrendingUp } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { cabecalhoPerfil } from '../../utils/apiAuth';
+import { hojeISO, primeiroDiaMesISO } from '../../components/common/vizTokens';
 
 const API_URL = import.meta.env.VITE_API_URL ?? '';
 
@@ -46,21 +47,50 @@ export const valorCelula = (chave: string, valor: unknown) => {
 
 export function useEstoquePainel() {
   const { usuario } = useAuth();
+  const [dataDe, setDataDe] = useState(primeiroDiaMesISO());
+  const [dataAte, setDataAte] = useState(hojeISO());
   const [dados, setDados] = useState<DadosEstoque | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(true);
   const carregar = useCallback(async () => {
     setCarregando(true); setErro(null);
     try {
-      const resposta = await fetch(`${API_URL}/api/estoque/painel`, { headers: cabecalhoPerfil(usuario?.perfil) });
+      const qs = new URLSearchParams({ dataInicio: dataDe, dataFim: dataAte });
+      const resposta = await fetch(`${API_URL}/api/estoque/painel?${qs}`, { headers: cabecalhoPerfil(usuario?.perfil) });
       const corpo = await resposta.json();
       if (!resposta.ok) throw new Error(corpo.error ?? 'Falha ao consultar o estoque.');
       setDados(corpo);
     } catch (falha) { setErro(falha instanceof Error ? falha.message : 'Falha ao carregar o estoque.'); }
     finally { setCarregando(false); }
-  }, [usuario?.perfil]);
+  }, [usuario?.perfil, dataDe, dataAte]);
   useEffect(() => { carregar(); }, [carregar]);
-  return { dados, erro, carregando, carregar };
+  return { dados, erro, carregando, carregar, dataDe, setDataDe, dataAte, setDataAte };
+}
+
+export function FiltroDataEstoque({ dataDe, setDataDe, dataAte, setDataAte, carregando, carregar }: {
+  dataDe: string; setDataDe: (v: string) => void;
+  dataAte: string; setDataAte: (v: string) => void;
+  carregando: boolean; carregar: () => void;
+}) {
+  return (
+    <div className="bg-white p-4 rounded-2xl border border-slate-200/80 flex flex-wrap items-center gap-3">
+      <div className="flex items-center gap-1.5">
+        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">De</span>
+        <input type="date" value={dataDe} max={dataAte} onChange={(e) => setDataDe(e.target.value)}
+          className="px-3 py-1.5 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl text-slate-700" />
+      </div>
+      <div className="flex items-center gap-1.5">
+        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Até</span>
+        <input type="date" value={dataAte} min={dataDe} onChange={(e) => setDataAte(e.target.value)}
+          className="px-3 py-1.5 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl text-slate-700" />
+      </div>
+      <p className="text-[11px] text-slate-400">Filtra o consumo/giro por requisição. Ruptura, Curva ABC, cotações e fornecedores mostram sempre o cadastro atual.</p>
+      <button onClick={carregar} disabled={carregando}
+        className="ml-auto inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-bold disabled:opacity-60">
+        <RefreshCw size={16} className={carregando ? 'animate-spin' : ''} /> Atualizar
+      </button>
+    </div>
+  );
 }
 
 export function KpiCardsEstoque({ kpis }: { kpis: Linha }) {
@@ -69,7 +99,7 @@ export function KpiCardsEstoque({ kpis }: { kpis: Linha }) {
     { rotulo: 'Itens em ruptura', valor: numero(kpis.TOTALRUPTURA), Icon: AlertTriangle },
     { rotulo: 'Sem venda há 90+ dias', valor: numero(kpis.TOTALSEMMOVIMENTACAO), Icon: AlertTriangle },
     { rotulo: 'Cotações em aberto', valor: numero(kpis.TOTALCOTACOES), Icon: Boxes },
-    { rotulo: 'Giro de estoque (90 dias)', valor: kpis.giroEstoque == null ? '—' : `${numero(kpis.giroEstoque, 2)}x`, Icon: TrendingUp },
+    { rotulo: 'Giro de estoque (período)', valor: kpis.giroEstoque == null ? '—' : `${numero(kpis.giroEstoque, 2)}x`, Icon: TrendingUp },
   ];
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3">

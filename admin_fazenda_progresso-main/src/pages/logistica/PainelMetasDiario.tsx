@@ -16,7 +16,7 @@ import {
 
 import {
   COR, estiloTooltip, formatMoeda, formatMoedaCurta, formatMinutos, formatDiaCurto,
-  hojeISO, primeiroDiaMesISO, somar,
+  somar,
 } from '../../components/common/vizTokens';
 import { CardKpi, CardViz, SemDado, ErroCarregamento, Legenda } from '../../components/common/viz';
 import { useAuth } from '../../context/AuthContext';
@@ -113,10 +113,15 @@ interface InsightItem {
   GeradoEm: string;
 }
 
-export const PainelMetasDiario: React.FC = () => {
+interface PainelMetasDiarioProps {
+  dataDe: string;
+  setDataDe: (valor: string) => void;
+  dataAte: string;
+  setDataAte: (valor: string) => void;
+}
+
+export const PainelMetasDiario: React.FC<PainelMetasDiarioProps> = ({ dataDe, dataAte }) => {
   const { usuario } = useAuth();
-  const [dataDe, setDataDe] = useState(primeiroDiaMesISO());
-  const [dataAte, setDataAte] = useState(hojeISO());
   const [veiculoSelecionado, setVeiculoSelecionado] = useState('todos');
   const [motoristaSelecionado, setMotoristaSelecionado] = useState('todos');
 
@@ -347,18 +352,8 @@ export const PainelMetasDiario: React.FC = () => {
 
   return (
     <div className={`space-y-5 pb-12 transition-opacity ${carregando ? 'opacity-60' : 'opacity-100'}`}>
-      {/* Filtros: uma linha só, acima de tudo que eles afetam */}
+      {/* Filtros locais desta aba — o período (De/Até) é compartilhado e fica na barra acima das abas */}
       <div className="bg-white p-4 rounded-2xl border border-slate-200/80 flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-1.5">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">De</span>
-          <input type="date" value={dataDe} max={dataAte} onChange={(e) => setDataDe(e.target.value)}
-            className="px-3 py-1.5 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl text-slate-700" />
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Até</span>
-          <input type="date" value={dataAte} min={dataDe} onChange={(e) => setDataAte(e.target.value)}
-            className="px-3 py-1.5 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl text-slate-700" />
-        </div>
         <div className="flex items-center gap-1.5">
           <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Veículo</span>
           <select value={veiculoSelecionado} onChange={(e) => setVeiculoSelecionado(e.target.value)}

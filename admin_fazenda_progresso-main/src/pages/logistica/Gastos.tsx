@@ -44,10 +44,13 @@ const CardTotal = ({ icon, label, valor }: { icon: React.ReactNode; label: strin
   </div>
 );
 
-export const Gastos = () => {
+interface GastosProps {
+  dataDe: string;
+  dataAte: string;
+}
+
+export const Gastos = ({ dataDe: dataInicio, dataAte: dataFim }: GastosProps) => {
   const { usuario } = useAuth();
-  const [dataInicio, setDataInicio] = useState(new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0]);
-  const [dataFim, setDataFim] = useState(new Date().toISOString().split('T')[0]);
   const [tipoEquipamento, setTipoEquipamento] = useState('todos');
   const [linhas, setLinhas] = useState<LinhaGasto[]>([]);
   const [loading, setLoading] = useState(true);
@@ -142,27 +145,9 @@ export const Gastos = () => {
 
   return (
     <div className="space-y-6">
-      {/* Barra de Filtro Unificada no Topo */}
+      {/* Filtro local desta aba — o período (De/Até) é compartilhado e fica na barra acima das abas */}
       <div className="bg-white p-4 rounded-2xl shadow-soft border border-slate-200/80 flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-1.5">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">DE</span>
-            <input
-              type="date"
-              value={dataInicio}
-              onChange={(e) => setDataInicio(e.target.value)}
-              className="border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold bg-slate-50 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-slate-700"
-            />
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">ATÉ</span>
-            <input
-              type="date"
-              value={dataFim}
-              onChange={(e) => setDataFim(e.target.value)}
-              className="border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-semibold bg-slate-50 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-slate-700"
-            />
-          </div>
           <div className="flex items-center gap-1.5">
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">EQUIPAMENTO</span>
             <select

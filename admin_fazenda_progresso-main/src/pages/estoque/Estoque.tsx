@@ -1,8 +1,8 @@
 import { useMemo, useState } from 'react';
-import { ChevronDown, ChevronUp, RefreshCw, Search } from 'lucide-react';
+import { ChevronDown, ChevronUp, Search } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { cabecalhoPerfil } from '../../utils/apiAuth';
-import { KpiCardsEstoque, rotuloColuna, useEstoquePainel, valorCelula, type Linha } from './estoqueShared';
+import { FiltroDataEstoque, KpiCardsEstoque, rotuloColuna, useEstoquePainel, valorCelula, type Linha } from './estoqueShared';
 
 const API_URL = import.meta.env.VITE_API_URL ?? '';
 
@@ -28,7 +28,7 @@ function Secao({ titulo, subtitulo, linhas, erro }: { titulo: string; subtitulo:
 
 export function Estoque() {
   const { usuario } = useAuth();
-  const { dados, erro, carregando, carregar } = useEstoquePainel();
+  const { dados, erro, carregando, carregar, dataDe, setDataDe, dataAte, setDataAte } = useEstoquePainel();
   const [pergunta, setPergunta] = useState('');
   const [pesquisando, setPesquisando] = useState(false);
   const [erroPesquisa, setErroPesquisa] = useState<string | null>(null);
@@ -45,7 +45,8 @@ export function Estoque() {
     finally { setPesquisando(false); }
   };
   return <div className="space-y-5 pb-12">
-    <div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-xs font-bold tracking-wider uppercase text-emerald-700">Controle de estoque</p><h1 className="text-2xl font-bold text-slate-800">Estoque inteligente</h1><p className="text-sm text-slate-500 mt-1">Dados operacionais do Sankhya (empresa 01): níveis, giro, fornecedores e cotações.</p></div><button onClick={carregar} disabled={carregando} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-bold disabled:opacity-60"><RefreshCw size={16} className={carregando ? 'animate-spin' : ''}/> Atualizar</button></div>
+    <div><p className="text-xs font-bold tracking-wider uppercase text-emerald-700">Controle de estoque</p><h1 className="text-2xl font-bold text-slate-800">Estoque inteligente</h1><p className="text-sm text-slate-500 mt-1">Dados operacionais do Sankhya (empresa 01): níveis, giro, fornecedores e cotações.</p></div>
+    <FiltroDataEstoque dataDe={dataDe} setDataDe={setDataDe} dataAte={dataAte} setDataAte={setDataAte} carregando={carregando} carregar={carregar} />
     {(erro || erroPesquisa) && <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm">{erro ?? erroPesquisa}</div>}
     <KpiCardsEstoque kpis={dados?.kpis ?? {}} />
     <section className="bg-emerald-950 rounded-2xl border border-emerald-800 p-5 text-white">
@@ -59,7 +60,7 @@ export function Estoque() {
       <Secao titulo="Ruptura e estoque mínimo/máximo" subtitulo="Itens sinalizados para reposição ou abaixo do mínimo configurado." linhas={dados.ruptura} erro={dados.erros.ruptura}/>
       <Secao titulo="Itens sem movimentação" subtitulo="Produtos sem venda por 90 dias ou mais." linhas={dados.semMovimentacao} erro={dados.erros.semMovimentacao}/>
       <Secao titulo="Maior valor em estoque · Curva ABC" subtitulo="Valor calculado por estoque × custo gerencial mais recente." linhas={dados.valor} erro={dados.erros.valor}/>
-      <Secao titulo="Giro por produto" subtitulo="Consumo por requisição nos últimos 90 dias, giro e dias de cobertura do estoque atual." linhas={dados.giroProdutos} erro={dados.erros.giroProdutos}/>
+      <Secao titulo="Giro por produto" subtitulo="Consumo por requisição no período filtrado, giro e dias de cobertura do estoque atual." linhas={dados.giroProdutos} erro={dados.erros.giroProdutos}/>
       <Secao titulo="Ranking de fornecedores" subtitulo="Histórico de cotações: confiabilidade, qualidade, prazo e vitórias." linhas={dados.fornecedores} erro={dados.erros.fornecedores}/>
       <Secao titulo="Cotações em aberto" subtitulo="Cotações com pelo menos um item ainda não fechado ou cancelado." linhas={dados.cotacoes} erro={dados.erros.cotacoes}/>
     </div>}
