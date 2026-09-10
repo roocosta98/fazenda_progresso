@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getMssqlPool } from '../_lib/mssql.js';
-import { exigirAcessoCustos } from '../_lib/custosAuth.js';
+import { getMssqlPool } from './mssql.js';
+import { exigirAcessoCustos } from './custosAuth.js';
 
 // As consultas reproduzem o módulo de estoque recebido: dados reais do
 // Sankhya (TGF*) e cada seção é independente para um schema incompleto não
@@ -49,7 +49,7 @@ const consultas = {
     (SELECT SUM(I.CUSTO*I.QTDNEG) FROM TGFITE I WHERE EXISTS (SELECT 1 FROM TGFCAB C WHERE C.NUNOTA=I.NUNOTA AND C.CODEMP=1 AND C.DTNEG>=DATEADD(DAY,-90,GETDATE()) AND EXISTS (SELECT 1 FROM TGFTOP T WHERE T.CODTIPOPER=C.CODTIPOPER AND T.ATUALEST='B' AND T.DESCROPER LIKE '%VENDA%'))) AS CUSTOVENDAS90`
 };
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
+export async function painelEstoque(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Método não permitido' });
   if (!exigirAcessoCustos(req, res)) return;
   try {

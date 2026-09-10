@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/estoque/painel",
+      "destination": "/api/gastos/resumo?modo=estoque"
+    }
+  ]
+}
