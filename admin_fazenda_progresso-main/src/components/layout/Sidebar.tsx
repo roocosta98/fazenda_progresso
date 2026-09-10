@@ -157,6 +157,7 @@ export const Sidebar = () => {
                       <NavLink
                         key={child.to}
                         to={child.to}
+                        end
                         className={({ isActive }) =>
                           `flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs transition-colors ${
                             isActive
@@ -186,7 +187,7 @@ export const Sidebar = () => {
           }
 
           return (
-            <NavLink key={item.to} to={item.to} className={({ isActive }) => linkClasses(isActive)}>
+            <NavLink key={item.to} to={item.to} end className={({ isActive }) => linkClasses(isActive)}>
               {({ isActive }) => (
                 <>
                   <div className="flex items-center gap-2.5">
