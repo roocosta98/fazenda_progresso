@@ -11,6 +11,10 @@
     {
       "source": "/api/administracao/usuarios",
       "destination": "/api/gastos/resumo?modo=usuarios"
+    },
+    {
+      "source": "/api/producao/batata",
+      "destination": "/api/gastos/resumo?modo=producao-batata"
     }
   ]
 }

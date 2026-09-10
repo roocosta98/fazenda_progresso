@@ -6,6 +6,7 @@ import { exigirAcessoCustos } from '../_lib/custosAuth.js';
 import { painelEstoque } from '../_lib/estoquePainel.js';
 import { pesquisarEstoque } from '../_lib/estoquePesquisa.js';
 import { usuariosSistema } from '../_lib/usuariosSistema.js';
+import { producaoBatata } from '../_lib/producaoBatata.js';
 
 // Módulo Gastos do PRD (seção 6): CustosFixosEquipamento + Motoristas, com
 // CustoOperacionalTotalMes = custo motorista + custo fixo.
@@ -47,6 +48,7 @@ function competenciaAtualYYYYMM(): string {
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.query.modo === 'usuarios') return usuariosSistema(req, res);
+  if (req.query.modo === 'producao-batata') return producaoBatata(req, res);
   if (req.query.modo === 'estoque-pesquisar') return pesquisarEstoque(req, res);
   if (req.query.modo === 'estoque') return painelEstoque(req, res);
   if (!exigirAcessoCustos(req, res)) return;
