@@ -12,7 +12,7 @@ import {
   ReferenceLine,
 } from 'recharts';
 import {
-  COR, estiloTooltip, formatMoeda, formatMoedaCurta, hojeISO, primeiroDiaMesISO, somar,
+  COR, estiloTooltip, formatMoeda, formatMoedaCurta, somar,
 } from '../../components/common/vizTokens';
 import { CardKpi, CardViz, SemDado, Legenda } from '../../components/common/viz';
 import { useAuth } from '../../context/AuthContext';
@@ -68,10 +68,15 @@ interface Agregado {
   diasComMeta: number;
 }
 
-export const LucroPrejuizo: React.FC = () => {
+interface LucroPrejuizoProps {
+  dataDe: string;
+  setDataDe: (valor: string) => void;
+  dataAte: string;
+  setDataAte: (valor: string) => void;
+}
+
+export const LucroPrejuizo: React.FC<LucroPrejuizoProps> = ({ dataDe, dataAte }) => {
   const { usuario } = useAuth();
-  const [dataDe, setDataDe] = useState(primeiroDiaMesISO());
-  const [dataAte, setDataAte] = useState(hojeISO());
   const [visao, setVisao] = useState<'veiculo' | 'motorista'>('veiculo');
 
   const [porVeiculo, setPorVeiculo] = useState<LinhaVeiculo[]>([]);
@@ -171,7 +176,7 @@ export const LucroPrejuizo: React.FC = () => {
 
   return (
     <div className={`space-y-5 transition-opacity ${carregando ? 'opacity-60' : 'opacity-100'}`}>
-      {/* Filtros — uma linha só, acima de tudo que eles afetam */}
+      {/* Filtro local desta aba — o período (De/Até) é compartilhado e fica na barra acima das abas */}
       <div className="bg-white p-4 rounded-2xl border border-slate-200/80 flex flex-wrap items-center gap-3">
         <div className="flex bg-slate-100 p-1 rounded-xl">
           <button
@@ -186,17 +191,6 @@ export const LucroPrejuizo: React.FC = () => {
           >
             <User size={14} /> Por motorista
           </button>
-        </div>
-
-        <div className="flex items-center gap-1.5">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">De</span>
-          <input type="date" value={dataDe} max={dataAte} onChange={(e) => setDataDe(e.target.value)}
-            className="px-3 py-1.5 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl text-slate-700" />
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Até</span>
-          <input type="date" value={dataAte} min={dataDe} onChange={(e) => setDataAte(e.target.value)}
-            className="px-3 py-1.5 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl text-slate-700" />
         </div>
 
         <button onClick={carregar}

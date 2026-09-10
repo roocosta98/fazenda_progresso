@@ -25,6 +25,7 @@ import type { SolicitacaoTransporte } from '../../types';
 import { PainelMetasDiario } from './PainelMetasDiario';
 import { Gastos } from './Gastos';
 import { InsightsIA } from './InsightsIA';
+import { hojeISO, primeiroDiaMesISO } from '../../components/common/vizTokens';
 
 const API_URL = import.meta.env.VITE_API_URL ?? '';
 
@@ -51,6 +52,13 @@ export const Dashboard = () => {
 
   const [aba, setAba] = useState<Aba>('metas');
   const [kpi, setKpi] = useState<KpiExecutivo | null>(null);
+
+  // Filtro de data compartilhado por Painel Operacional, Lucro x Prejuízo e Gastos & Custos —
+  // antes cada aba tinha seu próprio "De/Até" independente, então trocar de aba mudava o
+  // período sem avisar (parecia que os relatórios "não respeitavam a data selecionada em cima").
+  const [dataDe, setDataDe] = useState(primeiroDiaMesISO());
+  const [dataAte, setDataAte] = useState(hojeISO());
+  const abasComFiltroData: Aba[] = ['metas', 'lucro-prejuizo', 'gastos'];
 
   const [visao, setVisao] = useState<'hoje' | 'semana'>('hoje');
   const [dataFiltro, setDataFiltro] = useState<string>(new Date().toISOString().split('T')[0]);
@@ -140,7 +148,23 @@ export const Dashboard = () => {
         ))}
       </div>
 
-      {aba === 'lucro-prejuizo' && <LucroPrejuizo />}
+      {abasComFiltroData.includes(aba) && (
+        <div className="bg-white p-4 rounded-2xl border border-slate-200/80 flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">De</span>
+            <input type="date" value={dataDe} max={dataAte} onChange={(e) => setDataDe(e.target.value)}
+              className="px-3 py-1.5 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl text-slate-700" />
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Até</span>
+            <input type="date" value={dataAte} min={dataDe} onChange={(e) => setDataAte(e.target.value)}
+              className="px-3 py-1.5 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl text-slate-700" />
+          </div>
+          <p className="text-[11px] text-slate-400">Vale para as 3 abas de dados diários (Painel Operacional, Lucro x Prejuízo e Gastos & Custos).</p>
+        </div>
+      )}
+
+      {aba === 'lucro-prejuizo' && <LucroPrejuizo dataDe={dataDe} setDataDe={setDataDe} dataAte={dataAte} setDataAte={setDataAte} />}
 
       {aba === 'driveaval' && <DashboardDriveAval />}
 
@@ -340,11 +364,11 @@ export const Dashboard = () => {
         </div>
       )}
 
-      {aba === 'metas' && <PainelMetasDiario />}
+      {aba === 'metas' && <PainelMetasDiario dataDe={dataDe} setDataDe={setDataDe} dataAte={dataAte} setDataAte={setDataAte} />}
 
       {aba === 'gastos' && (
         <div className="space-y-8">
-          <Gastos />
+          <Gastos dataDe={dataDe} dataAte={dataAte} />
         </div>
       )}
 

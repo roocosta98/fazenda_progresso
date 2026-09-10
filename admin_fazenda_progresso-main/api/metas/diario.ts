@@ -212,22 +212,9 @@ async function modoMotor(req: VercelRequest, res: VercelResponse) {
     ))
   `;
 
-  const totais = await pool.request()
-    .input('equipamentoId', sql.Int, equipamentoId)
-    .input('motorista', sql.NVarChar, motorista)
-    .input('dataInicio', sql.DateTime2, dataInicio)
-    .input('dataFim', sql.DateTime2, dataFim)
-    .query(`
-      SELECT
-        SUM(ISNULL(t.MinutosMotorLigado,0)) AS MinutosMotorLigado,
-        SUM(ISNULL(t.MinutosMotorOcioso,0)) AS MinutosMotorOcioso,
-        COUNT(DISTINCT t.Dia) AS DiasComDado
-      FROM vw_TempoMotorEquipamento t
-      WHERE t.Dia >= @dataInicio AND t.Dia < @dataFim
-        AND (@equipamentoId IS NULL OR t.EquipamentoId = @equipamentoId)
-        ${filtroMotorista}
-    `);
-
+  // Antes rodava essa mesma agregação 2x (uma pro total, outra por dia) contra uma view pesada —
+  // dobrava o tempo de resposta à toa (chegou a 46s em produção). Uma consulta só, agregada por
+  // dia, e o total sai somando o array em JS.
   const porDia = await pool.request()
     .input('equipamentoId', sql.Int, equipamentoId)
     .input('motorista', sql.NVarChar, motorista)
@@ -246,11 +233,11 @@ async function modoMotor(req: VercelRequest, res: VercelResponse) {
       ORDER BY t.Dia
     `);
 
-  const linha = totais.recordset[0] ?? { MinutosMotorLigado: 0, MinutosMotorOcioso: 0, DiasComDado: 0 };
+  const linhas = porDia.recordset as { MinutosMotorLigado: number | null; MinutosMotorOcioso: number | null }[];
   res.status(200).json({
-    minutosMotorLigado: Number(linha.MinutosMotorLigado ?? 0),
-    minutosMotorOcioso: Number(linha.MinutosMotorOcioso ?? 0),
-    diasComDado: Number(linha.DiasComDado ?? 0),
+    minutosMotorLigado: linhas.reduce((soma, l) => soma + Number(l.MinutosMotorLigado ?? 0), 0),
+    minutosMotorOcioso: linhas.reduce((soma, l) => soma + Number(l.MinutosMotorOcioso ?? 0), 0),
+    diasComDado: linhas.length,
     porDia: porDia.recordset,
   });
 }

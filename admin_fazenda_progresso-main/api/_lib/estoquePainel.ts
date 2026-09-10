@@ -43,10 +43,39 @@ export async function consultarSankhya(sql: string): Promise<Record<string, unkn
   return (retorno.responseBody?.rows ?? []).map((linha) => Object.fromEntries(colunas.map((coluna, indice) => [coluna, linha[indice] ?? null])));
 }
 
+// A API do Sankhya (DbExplorerSP.executeQuery) não aceita parâmetros — o SQL vai como texto puro
+// direto pra query. Por isso as datas do filtro nunca são interpoladas cruas: sempre validadas
+// contra este formato antes de entrar em qualquer string de SQL.
+const DATA_ISO = /^\d{4}-\d{2}-\d{2}$/;
+
+function validarDataIso(valor: unknown): string | null {
+  return typeof valor === 'string' && DATA_ISO.test(valor) ? valor : null;
+}
+
+function primeiroDiaMesAtualIso(): string {
+  const agora = new Date();
+  return `${agora.getUTCFullYear()}-${String(agora.getUTCMonth() + 1).padStart(2, '0')}-01`;
+}
+
+function hojeIso(): string {
+  return new Date().toISOString().split('T')[0];
+}
+
+function periodoEstoque(req: VercelRequest): { dataInicio: string; dataFim: string; dias: number } {
+  const dataInicio = validarDataIso(Array.isArray(req.query.dataInicio) ? req.query.dataInicio[0] : req.query.dataInicio) ?? primeiroDiaMesAtualIso();
+  const dataFim = validarDataIso(Array.isArray(req.query.dataFim) ? req.query.dataFim[0] : req.query.dataFim) ?? hojeIso();
+  const dias = Math.max(Math.round((new Date(`${dataFim}T00:00:00Z`).getTime() - new Date(`${dataInicio}T00:00:00Z`).getTime()) / 86_400_000) + 1, 1);
+  return { dataInicio, dataFim, dias };
+}
+
 // As consultas reproduzem o módulo de estoque recebido: dados reais do
 // Sankhya (TGF*) e cada seção é independente para um schema incompleto não
-// derrubar o painel inteiro.
-const consultas = {
+// derrubar o painel inteiro. Ruptura, Curva ABC, sem movimentação, fornecedores e cotações
+// refletem o estoque/cadastro ATUAL (não fazem sentido filtrados por período); só o consumo por
+// requisição (giro/KPI) varia com o período escolhido no filtro de data da tela.
+function montarConsultas(dataInicio: string, dataFim: string, dias: number) {
+  const filtroData = `CAB.DTNEG >= CONVERT(date,'${dataInicio}',23) AND CAB.DTNEG < DATEADD(DAY,1,CONVERT(date,'${dataFim}',23))`;
+  return {
   ruptura: `SELECT TOP 100 P.CODPROD, P.DESCRPROD, P.REFERENCIA, L.DESCRLOCAL AS LOCAL, E.CONTROLE AS LOTE,
       E.ESTOQUE, P.ESTMIN AS MINIMO, P.ESTMAX AS MAXIMO, G.ESTMINGIR AS MINIMOSUGERIDO, G.DIASRUPTURA, G.PRODFALTA, G.PONTOPED AS PONTOPEDIDO
     FROM TGFPRO P LEFT JOIN TGFEST E ON E.CODPROD=P.CODPROD AND E.CODEMP=1 LEFT JOIN TGFLOC L ON L.CODLOCAL=E.CODLOCAL
@@ -89,7 +118,7 @@ const consultas = {
         SUM(CASE WHEN CAB.TIPMOV = 'E' THEN ITE.QTDNEG ELSE 0 END) AS QTD_DEV_COMPRA
       FROM TGFCAB CAB
       INNER JOIN TGFITE ITE ON ITE.NUNOTA = CAB.NUNOTA
-      WHERE CAB.DTNEG BETWEEN DATEADD(DAY,-90,GETDATE()) AND GETDATE()
+      WHERE ${filtroData}
         AND CAB.TIPMOV IN ('C','Q','E','F') AND CAB.STATUSNOTA = 'L' AND CAB.CODEMP = 1
       GROUP BY CAB.CODEMP, ITE.CODPROD
     ), ESTOQUE AS (
@@ -100,7 +129,7 @@ const consultas = {
       MOV.QTD_REQUISICAO AS CONSUMO,
       ISNULL(EST.ESTOQUE_ATUAL, 0) AS ESTOQUE_ATUAL, ISNULL(PRO.ESTMIN, 0) AS ESTMIN, ISNULL(PRO.ESTMAX, 0) AS ESTMAX,
       CASE WHEN ISNULL(EST.ESTOQUE_ATUAL, 0) > 0 THEN MOV.QTD_REQUISICAO / NULLIF(EST.ESTOQUE_ATUAL, 0) ELSE 0 END AS GIRO_ESTOQUE,
-      CASE WHEN MOV.QTD_REQUISICAO > 0 THEN ISNULL(EST.ESTOQUE_ATUAL, 0) / NULLIF(MOV.QTD_REQUISICAO / 90.0, 0) ELSE NULL END AS DIAS_COBERTURA
+      CASE WHEN MOV.QTD_REQUISICAO > 0 THEN ISNULL(EST.ESTOQUE_ATUAL, 0) / NULLIF(MOV.QTD_REQUISICAO / ${dias}.0, 0) ELSE NULL END AS DIAS_COBERTURA
     FROM MOVIMENTOS MOV
     INNER JOIN TGFPRO PRO ON PRO.CODPROD = MOV.CODPROD
     LEFT JOIN ESTOQUE EST ON EST.CODEMP = MOV.CODEMP AND EST.CODPROD = MOV.CODPROD
@@ -115,18 +144,22 @@ const consultas = {
     (SELECT SUM(GIR.CONSUMO) FROM (
         SELECT ITE.CODPROD, SUM(CASE WHEN CAB.TIPMOV='Q' THEN ITE.QTDNEG ELSE 0 END) AS CONSUMO
         FROM TGFCAB CAB INNER JOIN TGFITE ITE ON ITE.NUNOTA=CAB.NUNOTA
-        WHERE CAB.DTNEG BETWEEN DATEADD(DAY,-90,GETDATE()) AND GETDATE() AND CAB.TIPMOV IN ('C','Q','E','F') AND CAB.STATUSNOTA='L' AND CAB.CODEMP=1
+        WHERE ${filtroData} AND CAB.TIPMOV IN ('C','Q','E','F') AND CAB.STATUSNOTA='L' AND CAB.CODEMP=1
         GROUP BY ITE.CODPROD
       ) GIR INNER JOIN TGFPRO PRO ON PRO.CODPROD=GIR.CODPROD INNER JOIN TGFGRU GRU ON GRU.CODGRUPOPROD=PRO.CODGRUPOPROD
       WHERE GRU.CODGRUPAI NOT IN (9000000,13000000,15000000,16000000,22000000,23000000,24000000,25000000,27000000,29000000,98000000)
-    ) AS CONSUMOTOTAL90,
-    (SELECT SUM(ISNULL(EST.ESTOQUE,0)) FROM TGFPRO P CROSS APPLY (SELECT SUM(E.ESTOQUE) AS ESTOQUE FROM TGFEST E WHERE E.CODPROD=P.CODPROD AND E.CODEMP=1) EST INNER JOIN TGFGRU GRU ON GRU.CODGRUPOPROD=P.CODGRUPOPROD WHERE P.ATIVO='S' AND GRU.CODGRUPAI NOT IN (9000000,13000000,15000000,16000000,22000000,23000000,24000000,25000000,27000000,29000000,98000000)) AS ESTOQUETOTALGIRO`
-};
+    ) AS CONSUMOPERIODO,
+    (SELECT SUM(ISNULL(EST.ESTOQUE,0)) FROM TGFPRO P CROSS APPLY (SELECT SUM(E.ESTOQUE) AS ESTOQUE FROM TGFEST E WHERE E.CODPROD=P.CODPROD AND E.CODEMP=1) EST INNER JOIN TGFGRU GRU ON GRU.CODGRUPOPROD=P.CODGRUPOPROD WHERE P.ATIVO='S' AND GRU.CODGRUPAI NOT IN (9000000,13000000,15000000,16000000,22000000,23000000,24000000,25000000,27000000,29000000,98000000)) AS ESTOQUETOTALGIRO`,
+  };
+}
 
 export async function painelEstoque(req: VercelRequest, res: VercelResponse) {
+  res.setHeader('Cache-Control', 'no-store, max-age=0');
   if (req.method !== 'GET') return res.status(405).json({ error: 'Método não permitido' });
   if (!exigirAcessoCustos(req, res)) return;
   try {
+    const { dataInicio, dataFim, dias } = periodoEstoque(req);
+    const consultas = montarConsultas(dataInicio, dataFim, dias);
     const erros: Record<string, string> = {};
     const executar = async (nome: keyof typeof consultas) => {
       try { return await consultarSankhya(consultas[nome]); }
@@ -136,8 +169,8 @@ export async function painelEstoque(req: VercelRequest, res: VercelResponse) {
       executar('ruptura'), executar('semMovimentacao'), executar('valor'), executar('fornecedores'), executar('cotacoes'), executar('giroProdutos'), executar('kpis'),
     ]);
     const kpis = kpiRows[0] ?? {};
-    const giroEstoque = Number(kpis.CONSUMOTOTAL90 ?? 0) / Number(kpis.ESTOQUETOTALGIRO ?? 0) || null;
-    res.status(200).json({ ruptura, semMovimentacao, valor, fornecedores, cotacoes, giroProdutos, kpis: { ...kpis, giroEstoque }, erros });
+    const giroEstoque = Number(kpis.CONSUMOPERIODO ?? 0) / Number(kpis.ESTOQUETOTALGIRO ?? 0) || null;
+    res.status(200).json({ ruptura, semMovimentacao, valor, fornecedores, cotacoes, giroProdutos, kpis: { ...kpis, giroEstoque }, periodo: { dataInicio, dataFim }, erros });
   } catch (error) {
     res.status(502).json({ error: 'Não foi possível conectar ao banco de dados de estoque.', detalhe: error instanceof Error ? error.message : undefined });
   }
