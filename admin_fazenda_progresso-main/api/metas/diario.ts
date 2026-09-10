@@ -196,6 +196,11 @@ async function modoMotivos(req: VercelRequest, res: VercelResponse) {
 // qualquer um desses joins falhando (sem custo lançado no dia, motorista sem jornada
 // cadastrada etc.) zera o total inteiro — foi o que deixou "Uso do motor" sempre em branco.
 // Motor ligado/ocioso é medido pela telemetria do equipamento, não pela jornada do motorista.
+//
+// dbo.fn_TempoMotorEquipamento(@dataInicio, @dataFim, @equipamentoId) substitui a antiga
+// vw_TempoMotorEquipamento: sendo function parametrizada, o filtro de data e de equipamento
+// entra ANTES do LEAD()/PARTITION BY, em vez de a view materializar o histórico inteiro de
+// todos os equipamentos e só filtrar depois — era esse o gargalo (chegou a ~20s por consulta).
 async function modoMotor(req: VercelRequest, res: VercelResponse) {
   const equipamentoId = equipamentoIdNumerico(req);
   const motorista = typeof req.query.motorista === 'string' ? req.query.motorista : null;
@@ -225,9 +230,8 @@ async function modoMotor(req: VercelRequest, res: VercelResponse) {
         t.Dia,
         SUM(ISNULL(t.MinutosMotorLigado,0)) AS MinutosMotorLigado,
         SUM(ISNULL(t.MinutosMotorOcioso,0)) AS MinutosMotorOcioso
-      FROM vw_TempoMotorEquipamento t
-      WHERE t.Dia >= @dataInicio AND t.Dia < @dataFim
-        AND (@equipamentoId IS NULL OR t.EquipamentoId = @equipamentoId)
+      FROM dbo.fn_TempoMotorEquipamento(@dataInicio, @dataFim, @equipamentoId) t
+      WHERE 1=1
         ${filtroMotorista}
       GROUP BY t.Dia
       ORDER BY t.Dia
