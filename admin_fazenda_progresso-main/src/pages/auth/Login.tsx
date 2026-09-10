@@ -1,15 +1,12 @@
 import { useAuth } from '../../context/AuthContext';
 import { Navigate } from 'react-router-dom';
 import { useState } from 'react';
-import { Leaf, User, ArrowRight, Lock, Mail } from 'lucide-react';
+import { Leaf, ArrowRight, Lock, Mail } from 'lucide-react';
 
-// Senha da conta de Logística (Carlos) — protótipo em modo de desenvolvimento, sem tabela de
-// usuários/senhas ainda (MOCK_USUARIOS não tem credencial nenhuma hoje). Checagem simples do
-// lado do cliente só pra não deixar qualquer um logar direto como Logística.
-const SENHA_LOGISTICA = 'senhadificil';
+const API_URL = import.meta.env.VITE_API_URL ?? '';
 
 export const Login = () => {
-  const { usuario, login } = useAuth();
+  const { usuario, loginUsuario } = useAuth();
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
   const [erro, setErro] = useState<string | null>(null);
@@ -18,14 +15,15 @@ export const Login = () => {
     return <Navigate to={usuario.perfil === 'solicitante' ? '/solicitante/minhas' : '/logistica/dashboard'} replace />;
   }
 
-  const handleFakeSubmit = (e: React.FormEvent) => {
+  const handleFakeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (senha !== SENHA_LOGISTICA) {
-      setErro('Senha incorreta.');
-      return;
-    }
     setErro(null);
-    login('2');
+    try {
+      const resposta = await fetch(`${API_URL}/api/administracao/usuarios`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ acao: 'login', email, senha }) });
+      const corpo = await resposta.json();
+      if (!resposta.ok) throw new Error(corpo.error ?? 'Não foi possível entrar.');
+      loginUsuario(corpo);
+    } catch (falha) { setErro(falha instanceof Error ? falha.message : 'Não foi possível entrar.'); }
   };
 
   return (
@@ -130,31 +128,7 @@ export const Login = () => {
             </button>
           </form>
 
-          <div className="relative mb-8">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-slate-50 text-slate-500 font-medium">Modo de Desenvolvimento</span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4">
-            <button
-              type="button"
-              onClick={() => login('1')}
-              className="flex items-center gap-3 p-4 border border-slate-200 bg-white rounded-xl hover:border-brand-primary hover:shadow-md transition-all text-left group"
-            >
-              <div className="bg-slate-50 p-2.5 rounded-lg group-hover:bg-brand-primary/10 transition-colors">
-                <User className="w-5 h-5 text-slate-600 group-hover:text-brand-primary transition-colors" />
-              </div>
-              <div>
-                <p className="font-medium text-slate-900 group-hover:text-brand-primary transition-colors">João</p>
-                <p className="text-xs text-slate-500">Solicitante</p>
-              </div>
-            </button>
-            <p className="text-xs text-slate-400 text-center">A conta de Logística (Carlos) exige senha — use o formulário acima.</p>
-          </div>
+          <p className="text-xs text-slate-400 text-center">Use o e-mail e a senha cadastrados pelo administrador.</p>
 
         </div>
       </div>

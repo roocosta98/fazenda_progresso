@@ -6,6 +6,7 @@ import { MOCK_USUARIOS } from '../mock/data';
 interface AuthContextType {
   usuario: Usuario | null;
   login: (userId: string) => void;
+  loginUsuario: (usuario: Usuario) => void;
   logout: () => void;
 }
 
@@ -22,7 +23,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = () => setUsuario(null);
 
   return (
-    <AuthContext.Provider value={{ usuario, login, logout }}>
+    <AuthContext.Provider value={{ usuario, login, loginUsuario: setUsuario, logout }}>
       {children}
     </AuthContext.Provider>
   );

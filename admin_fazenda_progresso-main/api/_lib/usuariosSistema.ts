@@ -11,6 +11,22 @@ function exigirAdmin(req: VercelRequest, res: VercelResponse) {
 }
 
 export async function usuariosSistema(req: VercelRequest, res: VercelResponse) {
+  const acao = String(req.body?.acao ?? req.query.acao ?? '');
+  if (acao === 'login') {
+    if (req.method !== 'POST') return res.status(405).json({ error: 'Método não permitido' });
+    const email = String(req.body?.email ?? '').trim().toLowerCase();
+    const senha = String(req.body?.senha ?? '');
+    try {
+      const pool = await getMssqlPool();
+      const resultado = await pool.request().input('email', sql.NVarChar, email).query(`SELECT UsuarioId,Nome,Email,TipoUsuario,SenhaHash,SenhaSalt,IteracoesSenha FROM dbo.UsuariosSistema WHERE Email=@email AND Ativo=1`);
+      const conta = resultado.recordset[0];
+      if (!conta) return res.status(401).json({ error: 'E-mail ou senha incorretos.' });
+      const hash = pbkdf2Sync(senha, conta.SenhaSalt, Number(conta.IteracoesSenha), Buffer.from(conta.SenhaHash).length, 'sha512');
+      if (!Buffer.from(conta.SenhaHash).equals(hash)) return res.status(401).json({ error: 'E-mail ou senha incorretos.' });
+      const permissoes = await pool.request().input('usuarioId', sql.Int, conta.UsuarioId).query('SELECT Modulo FROM dbo.UsuarioModulo WHERE UsuarioId=@usuarioId');
+      return res.status(200).json({ id: String(conta.UsuarioId), nome: conta.Nome, email: conta.Email, perfil: 'logistica', tipoUsuario: conta.TipoUsuario, modulos: permissoes.recordset.map((linha) => linha.Modulo) });
+    } catch (erro) { return res.status(502).json({ error: erro instanceof Error ? erro.message : 'Não foi possível validar o acesso.' }); }
+  }
   if (!exigirAdmin(req, res)) return;
   try {
     const pool = await getMssqlPool();
