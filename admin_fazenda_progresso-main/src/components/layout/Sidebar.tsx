@@ -62,10 +62,6 @@ export const Sidebar = () => {
           { to: '/logistica/monitor-tv', icon: <MonitorPlay size={18} />, label: 'Monitor TV' },
           { to: '/logistica/frota', icon: <Truck size={18} />, label: 'Gestão de Frota' },
           { to: '/logistica/metas-orfas', icon: <Link2 size={18} />, label: 'Metas Órfãs' },
-          ...(usuario.tipoUsuario === 'admin' ? [{
-            label: 'Administração', icon: <Settings size={18} />,
-            children: [{ to: '/administracao/usuarios', icon: <Settings size={16} />, label: 'Usuários' }],
-          } as GrupoItem] : []),
         ];
   const itensPorModulo: Record<ModuloSistema, (LinkItem | GrupoItem)[]> = {
     logistica_frota: itensLogistica,
@@ -84,7 +80,11 @@ export const Sidebar = () => {
       { to: '#', icon: <List size={18} />, label: 'Histórico por Equipamento', pendente: true },
     ],
   };
-  const items = itensPorModulo[moduloAtual] ?? itensLogistica;
+  const itensAdministracao: GrupoItem[] = usuario.tipoUsuario === 'admin' ? [{
+    label: 'Administração', icon: <Settings size={18} />,
+    children: [{ to: '/administracao/usuarios', icon: <Settings size={16} />, label: 'Usuários' }],
+  }] : [];
+  const items = [...(itensPorModulo[moduloAtual] ?? itensLogistica), ...itensAdministracao];
   const nomesModulos: Record<ModuloSistema, { nome: string; icone: React.ReactNode }> = {
     logistica_frota: { nome: 'Logística / Frota', icone: <Truck size={16} /> },
     estoque: { nome: 'Estoque', icone: <Boxes size={16} /> },
