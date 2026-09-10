@@ -133,6 +133,10 @@ export const PainelMetasDiario: React.FC<PainelMetasDiarioProps> = ({ dataDe, da
   const [motivosErro, setMotivosErro] = useState<string | null>(null);
   const [motor, setMotor] = useState<MotorAgregado | null>(null);
   const [motorErro, setMotorErro] = useState<string | null>(null);
+  // Motivos e motor chegam num segundo Promise.all, depois que o painel principal (carregando)
+  // já liberou a tela — sem essa flag própria, a seção mostra "sem dado" por um instante antes
+  // da resposta chegar, como se o período realmente estivesse vazio.
+  const [carregandoDetalhes, setCarregandoDetalhes] = useState(true);
   const [alarmes24h, setAlarmes24h] = useState<number | null>(null);
   const [insights, setInsights] = useState<InsightItem[]>([]);
 
@@ -195,6 +199,7 @@ export const PainelMetasDiario: React.FC<PainelMetasDiarioProps> = ({ dataDe, da
     setErro(diario.porVeiculo ? null : 'Não foi possível carregar os dados do painel diário.');
     setCarregando(false);
 
+    setCarregandoDetalhes(true);
     void Promise.all([
       buscarComRetry<MotivoAgregado[]>(`${API_URL}/api/metas/diario?modo=motivos&${qs}`, [], setMotivosErro),
       buscarComRetry<MotorAgregado>(`${API_URL}/api/metas/diario?modo=motor&${qs}`, { minutosMotorLigado: 0, minutosMotorOcioso: 0, diasComDado: 0, porDia: [] }, setMotorErro),
@@ -204,7 +209,7 @@ export const PainelMetasDiario: React.FC<PainelMetasDiarioProps> = ({ dataDe, da
       setMotor(motorResp);
       // Mantém todos em memória para localizar os vinculados a cada equipamento.
       setInsights(insightsResp);
-    });
+    }).finally(() => setCarregandoDetalhes(false));
   }, [dataDe, dataAte, veiculoSelecionado, motoristaSelecionado, usuario?.perfil]);
 
   useEffect(() => {
@@ -488,7 +493,9 @@ export const PainelMetasDiario: React.FC<PainelMetasDiarioProps> = ({ dataDe, da
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Motivos de parada — agora com o rótulo real (Estado/Operação), não "Outros" */}
         <CardViz titulo="Principais motivos de parada e operação">
-          {motivosErro ? (
+          {carregandoDetalhes ? (
+            <Carregando mensagem="Carregando motivos de parada…" />
+          ) : motivosErro ? (
             <ErroCarregamento mensagem={motivosErro} />
           ) : motivosGrafico.length === 0 ? (
             <SemDado mensagem="Nenhum registro de estado/operação no período." />
@@ -517,7 +524,9 @@ export const PainelMetasDiario: React.FC<PainelMetasDiarioProps> = ({ dataDe, da
 
         {/* Motor: produtivo x ocioso — pizza (preferência do usuário sobre a barra 100%) */}
         <CardViz titulo="Uso do motor: produtivo x ocioso">
-          {motorErro ? (
+          {carregandoDetalhes ? (
+            <Carregando mensagem="Carregando uso do motor…" />
+          ) : motorErro ? (
             <ErroCarregamento mensagem={motorErro} />
           ) : minutosLigado === 0 ? (
             <SemDado mensagem="Sem leitura de motor no período." />
