@@ -50,7 +50,6 @@ export const Sidebar = () => {
           { to: '/logistica/metas', icon: <Trophy size={18} />, label: 'Metas & Ranking' },
           { to: '/logistica/avaliacao-conducao', icon: <ClipboardCheck size={18} />, label: 'Avaliação de Condução' },
           { to: '/logistica/monitoramento', icon: <MapIcon size={18} />, label: 'Telemetria & Mapa' },
-          { to: '/logistica/estoque', icon: <Boxes size={18} />, label: 'Estoque' },
           { to: '/logistica/monitor-tv', icon: <MonitorPlay size={18} />, label: 'Monitor TV' },
           {
             label: 'Administração',
@@ -58,6 +57,7 @@ export const Sidebar = () => {
             children: [
               { to: '/logistica/frota', icon: <Truck size={16} />, label: 'Gestão de Frota' },
               { to: '/logistica/metas-orfas', icon: <Link2 size={16} />, label: 'Metas Órfãs' },
+              { to: '/logistica/estoque', icon: <Boxes size={16} />, label: 'Estoque' },
             ],
           },
         ];
