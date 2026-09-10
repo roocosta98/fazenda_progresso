@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
@@ -6,11 +6,17 @@ import { ErrorBoundary } from '../common/ErrorBoundary';
 
 export const MainLayout = () => {
   const location = useLocation();
+  // Menu começa fechado (tela Início "limpa", só com hambúrguer); ao sair da Início pra
+  // dentro de um módulo, abre sozinho. Fechar de novo (manual, via hambúrguer, ou o próprio
+  // Sidebar fechando no mobile ao tocar num link) fica só a critério do usuário depois disso.
   const [menuAberto, setMenuAberto] = useState(false);
+  const rotaAnterior = useRef(location.pathname);
 
-  // Fecha o menu mobile automaticamente ao navegar de tela
   useEffect(() => {
-    setMenuAberto(false);
+    if (rotaAnterior.current === '/inicio' && location.pathname !== '/inicio') {
+      setMenuAberto(true);
+    }
+    rotaAnterior.current = location.pathname;
   }, [location.pathname]);
 
   return (
