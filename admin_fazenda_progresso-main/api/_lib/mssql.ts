@@ -7,6 +7,10 @@ const config: sql.config = {
   user: process.env.MSSQL_USER,
   password: process.env.MSSQL_PASSWORD,
   connectionTimeout: Number(process.env.MSSQL_CONNECTION_TIMEOUT_MS ?? 15000),
+  // Padrão do driver (tedious) é 15s por consulta — baixo demais para agregações sobre views
+  // pesadas (ex.: vw_TempoMotorEquipamento), que estouram e viram ETIMEOUT mesmo com a query
+  // correta e dado existente. Timeout de conexão e de consulta são coisas diferentes no mssql.
+  requestTimeout: Number(process.env.MSSQL_REQUEST_TIMEOUT_MS ?? 45000),
   options: {
     encrypt: process.env.MSSQL_ENCRYPT === 'true',
     trustServerCertificate: process.env.MSSQL_TRUST_SERVER_CERTIFICATE !== 'false',
