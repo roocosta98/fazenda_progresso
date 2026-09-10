@@ -11,6 +11,21 @@ const moeda = (valor: unknown) => Number(valor ?? 0).toLocaleString('pt-BR', { s
 const numero = (valor: unknown, casas = 0) => Number(valor ?? 0).toLocaleString('pt-BR', { maximumFractionDigits: casas });
 const data = (valor: unknown) => valor ? new Date(String(valor)).toLocaleDateString('pt-BR') : '—';
 
+const ROTULOS_COLUNAS: Record<string, string> = {
+  CODPROD: 'Código', DESCRPROD: 'Descrição', REFERENCIA: 'Referência', LOCAL: 'Local', EMPRESA: 'Empresa', LOTE: 'Lote',
+  ESTOQUE: 'Estoque', MINIMO: 'Mínimo', MAXIMO: 'Máximo', MINIMOSUGERIDO: 'Mínimo sugerido', DIASRUPTURA: 'Dias p/ ruptura',
+  PRODFALTA: 'Em falta', PONTOPEDIDO: 'Ponto de pedido', GIRODIARIO: 'Giro diário', DIASSEMVENDA: 'Dias sem venda',
+  VALORESTOQUE: 'Valor em estoque', CUSTO: 'Custo', VALORTOTAL: 'Valor total', CLASSEABC: 'ABC', FORNECEDOR: 'Fornecedor',
+  CONFIABILIDADE: 'Confiabilidade', QUALIDADEATENDIMENTO: 'Qualidade de atendimento', QUALIDADEPRODUTO: 'Qualidade do produto',
+  PRAZOMEDIO: 'Prazo médio', TOTALCOTACOES: 'Total de cotações', TOTALVENCIDAS: 'Total vencidas', NUMCOTACAO: 'Nº cotação',
+  DHINIC: 'Início', DHFINAL: 'Prazo final', SITUACAO: 'Situação', COMPRADOR: 'Comprador', TOTALITENS: 'Total de itens',
+  CODEMP: 'Empresa', QTD_COMPRA: 'Qtd. compra', QTD_DEV_COMPRA: 'Qtd. devolução', COMPRA_LIQUIDA: 'Compra líquida',
+  CONSUMO: 'Consumo', ESTOQUE_ATUAL: 'Estoque atual', ESTMIN: 'Estoque mínimo', ESTMAX: 'Estoque máximo',
+  GIRO_ESTOQUE: 'Giro de estoque', DIAS_COBERTURA: 'Dias de cobertura',
+};
+const rotuloColuna = (chave: string) => ROTULOS_COLUNAS[chave]
+  ?? chave.replace(/_/g, ' ').toLowerCase().replace(/^\p{L}/u, (letra) => letra.toUpperCase());
+
 const valorCelula = (chave: string, valor: unknown) => {
   if (valor === null || valor === undefined || valor === '') return '—';
   if (/VALOR|CUSTO|CONFIAB|QUALIDADE|PRAZO|PONTO/i.test(chave)) return moeda(valor);
@@ -33,7 +48,7 @@ function Secao({ titulo, subtitulo, linhas, erro }: { titulo: string; subtitulo:
       {erro ? <p className="text-xs bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-3">Esta seção não pôde ser carregada: {erro}</p>
         : linhas.length === 0 ? <p className="text-sm text-slate-400 border border-dashed rounded-xl p-6 text-center">Nenhum dado encontrado.</p>
           : <><label className="mb-3 flex items-center gap-2 border rounded-xl px-3 py-2 max-w-sm text-slate-500"><Search size={14}/><input value={busca} onChange={(e) => setBusca(e.target.value)} placeholder="Buscar nesta lista" className="w-full outline-none text-xs" /></label>
-            <div className="overflow-auto max-h-[420px] border rounded-xl"><table className="w-full text-xs text-left"><thead className="sticky top-0 bg-slate-50 text-slate-500"><tr>{colunas.map((coluna) => <th key={coluna} className="p-3 font-semibold whitespace-nowrap">{coluna.replace(/([A-Z])/g, ' $1').trim()}</th>)}</tr></thead><tbody className="divide-y">{filtradas.map((linha, indice) => <tr key={indice} className="hover:bg-slate-50">{colunas.map((coluna) => <td key={coluna} className="p-3 whitespace-nowrap text-slate-700">{valorCelula(coluna, linha[coluna])}</td>)}</tr>)}</tbody></table></div>
+            <div className="overflow-auto max-h-[420px] border rounded-xl"><table className="w-full text-xs text-left"><thead className="sticky top-0 bg-slate-50 text-slate-500"><tr>{colunas.map((coluna) => <th key={coluna} className="p-3 font-semibold whitespace-nowrap">{rotuloColuna(coluna)}</th>)}</tr></thead><tbody className="divide-y">{filtradas.map((linha, indice) => <tr key={indice} className="hover:bg-slate-50">{colunas.map((coluna) => <td key={coluna} className="p-3 whitespace-nowrap text-slate-700">{valorCelula(coluna, linha[coluna])}</td>)}</tr>)}</tbody></table></div>
             <p className="text-[11px] text-slate-400 mt-2">Exibindo {filtradas.length} registro(s) carregados.</p></>}
     </div>}
   </section>;
@@ -88,13 +103,13 @@ export function Estoque() {
       <p className="text-sm text-emerald-100/80 mt-1">Faça uma pergunta em português. A IA consulta somente dados de estoque do Sankhya e devolve a resposta com os registros encontrados.</p>
       <div className="mt-4 flex flex-col sm:flex-row gap-2"><input value={pergunta} onChange={(e) => setPergunta(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') pesquisar(); }} placeholder="Ex.: quais produtos de agroquímico vencem nos próximos 30 dias?" className="flex-1 rounded-xl bg-white px-4 py-3 text-sm !text-slate-950 caret-slate-950 placeholder:!text-slate-500 outline-none"/><button onClick={pesquisar} disabled={pesquisando || !pergunta.trim()} className="px-5 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 font-bold text-sm">{pesquisando ? 'Consultando…' : 'Perguntar'}</button></div>
       <div className="flex flex-wrap gap-2 mt-3">{['Produtos com estoque abaixo do mínimo', 'Quais fornecedores têm melhor prazo de entrega?', 'Cotações em aberto com prazo nesta semana', 'Produtos com vinho, café ou batata em estoque'].map((sugestao) => <button key={sugestao} onClick={() => setPergunta(sugestao)} className="text-xs px-3 py-1.5 rounded-full border border-emerald-700 text-emerald-100 hover:bg-emerald-900">{sugestao}</button>)}</div>
-      {resultadoPesquisa && <div className="mt-4 bg-white/10 border border-emerald-800 rounded-xl p-4"><p className="text-sm leading-relaxed">{resultadoPesquisa.resumo ?? 'Consulta executada sem resumo.'}</p><details className="mt-3 text-xs text-emerald-100"><summary className="cursor-pointer">Ver consulta utilizada</summary><code className="block whitespace-pre-wrap mt-2 p-2 rounded bg-black/20">{resultadoPesquisa.sql}</code></details>{resultadoPesquisa.linhas.length > 0 && <div className="mt-3 max-h-64 overflow-auto rounded bg-white text-slate-800"><table className="w-full text-xs"><thead className="sticky top-0 bg-slate-100"><tr>{Object.keys(resultadoPesquisa.linhas[0]).map((coluna) => <th key={coluna} className="p-2 text-left">{coluna}</th>)}</tr></thead><tbody>{resultadoPesquisa.linhas.map((linha, indice) => <tr key={indice} className="border-t">{Object.entries(linha).map(([coluna, valor]) => <td key={coluna} className="p-2 whitespace-nowrap">{valorCelula(coluna, valor)}</td>)}</tr>)}</tbody></table></div>}</div>}
+      {resultadoPesquisa && <div className="mt-4 bg-white/10 border border-emerald-800 rounded-xl p-4"><p className="text-sm leading-relaxed">{resultadoPesquisa.resumo ?? 'Consulta executada sem resumo.'}</p><details className="mt-3 text-xs text-emerald-100"><summary className="cursor-pointer">Ver consulta utilizada</summary><code className="block whitespace-pre-wrap mt-2 p-2 rounded bg-black/20">{resultadoPesquisa.sql}</code></details>{resultadoPesquisa.linhas.length > 0 && <div className="mt-3 max-h-64 overflow-auto rounded bg-white text-slate-800"><table className="w-full text-xs"><thead className="sticky top-0 bg-slate-100"><tr>{Object.keys(resultadoPesquisa.linhas[0]).map((coluna) => <th key={coluna} className="p-2 text-left">{rotuloColuna(coluna)}</th>)}</tr></thead><tbody>{resultadoPesquisa.linhas.map((linha, indice) => <tr key={indice} className="border-t">{Object.entries(linha).map(([coluna, valor]) => <td key={coluna} className="p-2 whitespace-nowrap">{valorCelula(coluna, valor)}</td>)}</tr>)}</tbody></table></div>}</div>}
     </section>
     {carregando && !dados ? <div className="bg-white border rounded-2xl p-12 text-center text-slate-400">Carregando dados do estoque…</div> : dados && <div className="space-y-4">
       <Secao titulo="Ruptura e estoque mínimo/máximo" subtitulo="Itens sinalizados para reposição ou abaixo do mínimo configurado." linhas={dados.ruptura} erro={dados.erros.ruptura}/>
       <Secao titulo="Itens sem movimentação" subtitulo="Produtos sem venda por 90 dias ou mais." linhas={dados.semMovimentacao} erro={dados.erros.semMovimentacao}/>
       <Secao titulo="Maior valor em estoque · Curva ABC" subtitulo="Valor calculado por estoque × custo gerencial mais recente, empresa 01." linhas={dados.valor} erro={dados.erros.valor}/>
-      <Secao titulo="Giro por produto" subtitulo="Saídas de venda dos últimos 90 dias, ordenadas por valor." linhas={dados.giroProdutos} erro={dados.erros.giroProdutos}/>
+      <Secao titulo="Giro por produto" subtitulo="Consumo por requisição nos últimos 90 dias, giro e dias de cobertura do estoque atual." linhas={dados.giroProdutos} erro={dados.erros.giroProdutos}/>
       <Secao titulo="Ranking de fornecedores" subtitulo="Histórico de cotações: confiabilidade, qualidade, prazo e vitórias." linhas={dados.fornecedores} erro={dados.erros.fornecedores}/>
       <Secao titulo="Cotações em aberto" subtitulo="Cotações ainda não finalizadas ou canceladas." linhas={dados.cotacoes} erro={dados.erros.cotacoes}/>
     </div>}
