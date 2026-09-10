@@ -52,5 +52,10 @@ export const diasAtrasISO = (dias: number) => {
   return d.toISOString().split('T')[0];
 };
 
+export const primeiroDiaMesISO = () => {
+  const d = new Date();
+  return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split('T')[0];
+};
+
 export const somar = <T,>(lista: T[], pegar: (item: T) => number | null | undefined) =>
   lista.reduce((acc, item) => acc + (pegar(item) ?? 0), 0);
