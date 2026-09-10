@@ -1,6 +1,47 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getMssqlPool } from './mssql.js';
 import { exigirAcessoCustos } from './custosAuth.js';
+
+let tokenSankhya: { valor: string; expiraEm: number } | null = null;
+
+async function autenticarSankhya() {
+  if (tokenSankhya && tokenSankhya.expiraEm > Date.now()) return tokenSankhya.valor;
+  const url = process.env.SANKHYA_API_URL?.replace(/\/$/, '');
+  const clientId = process.env.SANKHYA_CLIENT_ID;
+  const clientSecret = process.env.SANKHYA_CLIENT_SECRET;
+  const xToken = process.env.SANKHYA_X_TOKEN;
+  if (!url || !clientId || !clientSecret || !xToken) {
+    throw new Error('Integração Sankhya não configurada. Cadastre SANKHYA_API_URL, SANKHYA_CLIENT_ID, SANKHYA_CLIENT_SECRET e SANKHYA_X_TOKEN na Vercel.');
+  }
+  const resposta = await fetch(`${url}/authenticate`, {
+    method: 'POST', headers: { 'X-Token': xToken, 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ client_id: clientId, client_secret: clientSecret, grant_type: 'client_credentials' }),
+  });
+  if (!resposta.ok) throw new Error(`Não foi possível autenticar no Sankhya (${resposta.status}).`);
+  const corpo = await resposta.json() as { access_token?: string; expires_in?: number };
+  if (!corpo.access_token) throw new Error('Sankhya não retornou access_token.');
+  tokenSankhya = { valor: corpo.access_token, expiraEm: Date.now() + Math.max((corpo.expires_in ?? 60) - 15, 5) * 1000 };
+  return tokenSankhya.valor;
+}
+
+async function consultarSankhya(sql: string): Promise<Record<string, unknown>[]> {
+  const url = process.env.SANKHYA_API_URL?.replace(/\/$/, '');
+  const executar = async (token: string) => {
+    const resposta = await fetch(`${url}/gateway/v1/mge/service.sbr?serviceName=DbExplorerSP.executeQuery&outputType=json`, {
+      method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ serviceName: 'DbExplorerSP.executeQuery', requestBody: { sql } }),
+    });
+    if (!resposta.ok) throw new Error(`Consulta ao Sankhya falhou (${resposta.status}).`);
+    return resposta.json() as Promise<{ status?: string; statusMessage?: string; responseBody?: { fieldsMetadata?: { name?: string }[]; rows?: unknown[][] } }>;
+  };
+  let retorno = await executar(await autenticarSankhya());
+  if (retorno.status !== '1') {
+    tokenSankhya = null;
+    retorno = await executar(await autenticarSankhya());
+  }
+  if (retorno.status !== '1') throw new Error(`Sankhya: ${retorno.statusMessage ?? 'consulta rejeitada'}`);
+  const colunas = retorno.responseBody?.fieldsMetadata?.map((campo) => campo.name ?? '') ?? [];
+  return (retorno.responseBody?.rows ?? []).map((linha) => Object.fromEntries(colunas.map((coluna, indice) => [coluna, linha[indice] ?? null])));
+}
 
 // As consultas reproduzem o módulo de estoque recebido: dados reais do
 // Sankhya (TGF*) e cada seção é independente para um schema incompleto não
@@ -53,10 +94,9 @@ export async function painelEstoque(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Método não permitido' });
   if (!exigirAcessoCustos(req, res)) return;
   try {
-    const pool = await getMssqlPool();
     const erros: Record<string, string> = {};
     const executar = async (nome: keyof typeof consultas) => {
-      try { return (await pool.request().query(consultas[nome])).recordset; }
+      try { return await consultarSankhya(consultas[nome]); }
       catch (error) { erros[nome] = error instanceof Error ? error.message : 'Falha na consulta'; return []; }
     };
     const [ruptura, semMovimentacao, valor, fornecedores, cotacoes, giroProdutos, kpiRows] = await Promise.all([
