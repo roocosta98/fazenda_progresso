@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
   List,
@@ -40,6 +40,7 @@ const isGrupo = (item: LinkItem | GrupoItem): item is GrupoItem => 'children' in
 
 export const Sidebar = () => {
   const { usuario, logout } = useAuth();
+  const navigate = useNavigate();
   const [grupoAberto, setGrupoAberto] = useState(true);
   const [seletorAberto, setSeletorAberto] = useState(false);
   const modulosDisponiveis = usuario?.tipoUsuario === 'admin'
@@ -91,6 +92,12 @@ export const Sidebar = () => {
     producao_batata: { nome: 'Produção / Batata', icone: <Factory size={16} /> },
     manutencao: { nome: 'Manutenção', icone: <Wrench size={16} /> },
   };
+  const dashboardModulo: Record<ModuloSistema, string> = {
+    logistica_frota: '/logistica/dashboard',
+    estoque: '/logistica/estoque/dashboard',
+    producao_batata: '/producao/batata',
+    manutencao: '/manutencao',
+  };
 
   const linkClasses = (isActive: boolean) =>
     `flex items-center justify-between text-xs tracking-tight transition-colors duration-150 group ${
@@ -125,7 +132,7 @@ export const Sidebar = () => {
           <button onClick={() => setSeletorAberto((atual) => !atual)} className="w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-md bg-[#162920] border border-[#294535] text-white text-xs font-semibold">
             <span className="flex items-center gap-2 min-w-0"><span className="text-emerald-400">{nomesModulos[moduloAtual].icone}</span><span className="truncate">{nomesModulos[moduloAtual].nome}</span></span><ChevronDown size={14} className={seletorAberto ? 'rotate-180 transition-transform' : 'transition-transform'} />
           </button>
-          {seletorAberto && <div className="absolute z-50 mt-1 w-full bg-[#162920] border border-[#294535] rounded-md p-1 shadow-xl">{modulosDisponiveis.map((modulo) => <button key={modulo} onClick={() => { setModuloAtual(modulo); setSeletorAberto(false); }} className={`w-full flex items-center gap-2 px-3 py-2 rounded text-left text-xs ${moduloAtual === modulo ? 'bg-emerald-600 text-white' : 'text-slate-300 hover:bg-[#223a2d]'}`}><span>{nomesModulos[modulo].icone}</span>{nomesModulos[modulo].nome}</button>)}</div>}
+          {seletorAberto && <div className="absolute z-50 mt-1 w-full bg-[#162920] border border-[#294535] rounded-md p-1 shadow-xl">{modulosDisponiveis.map((modulo) => <button key={modulo} onClick={() => { setModuloAtual(modulo); setSeletorAberto(false); navigate(dashboardModulo[modulo]); }} className={`w-full flex items-center gap-2 px-3 py-2 rounded text-left text-xs ${moduloAtual === modulo ? 'bg-emerald-600 text-white' : 'text-slate-300 hover:bg-[#223a2d]'}`}><span>{nomesModulos[modulo].icone}</span>{nomesModulos[modulo].nome}</button>)}</div>}
         </div>
         <p className="px-3 text-[10px] font-semibold text-slate-400 uppercase tracking-wider my-2.5">
           {nomesModulos[moduloAtual].nome}
