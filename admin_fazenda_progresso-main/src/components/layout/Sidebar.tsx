@@ -87,7 +87,6 @@ export const Sidebar = () => {
     label: 'Administração', icon: <Settings size={18} />,
     children: [{ to: '/administracao/usuarios', icon: <Settings size={16} />, label: 'Usuários' }],
   }] : [];
-  const items = [...(moduloAtual === 'todos' ? modulosPermitidos.flatMap((modulo) => itensPorModulo[modulo as ModuloSistema]) : itensPorModulo[moduloAtual]), ...itensAdministracao];
   const nomesModulos: Record<SelecaoModulo, { nome: string; icone: React.ReactNode }> = {
     todos: { nome: 'Todos os módulos', icone: <LayoutDashboard size={16} /> },
     logistica_frota: { nome: 'Logística / Frota', icone: <Truck size={16} /> },
@@ -95,6 +94,12 @@ export const Sidebar = () => {
     producao_batata: { nome: 'Produção / Batata', icone: <Factory size={16} /> },
     manutencao: { nome: 'Manutenção', icone: <Wrench size={16} /> },
   };
+  const items: (LinkItem | GrupoItem)[] = [
+    ...(moduloAtual === 'todos'
+      ? modulosPermitidos.map((modulo) => ({ label: nomesModulos[modulo as ModuloSistema].nome, icon: nomesModulos[modulo as ModuloSistema].icone, children: itensPorModulo[modulo as ModuloSistema] as LinkItem[] }))
+      : itensPorModulo[moduloAtual]),
+    ...itensAdministracao,
+  ];
   const dashboardModulo: Record<SelecaoModulo, string> = {
     todos: '/logistica/dashboard',
     logistica_frota: '/logistica/dashboard',
