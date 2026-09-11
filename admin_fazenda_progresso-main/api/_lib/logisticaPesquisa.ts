@@ -52,7 +52,7 @@ export async function pesquisarLogistica(req: VercelRequest, res: VercelResponse
     const linhas = resultado.recordset ?? [];
     const resumoResposta = await ia.chat.completions.create({
       model: process.env.OPENAI_MODEL ?? 'gpt-4o-mini', temperature: 0,
-      messages: [{ role: 'system', content: 'Resuma somente os dados recebidos em português, em no máximo 3 frases. Não invente fatos.' }, { role: 'user', content: `Pergunta: ${pergunta}\nDados: ${JSON.stringify(linhas.slice(0, 40))}` }],
+      messages: [{ role: 'system', content: `Resuma somente os dados recebidos em português, em no máximo 3 frases. Não invente fatos.${contextoTreinamento}` }, { role: 'user', content: `Pergunta: ${pergunta}\nDados: ${JSON.stringify(linhas.slice(0, 40))}` }],
     });
     res.status(200).json({ sql: sqlTexto, linhas, resumo: resumoResposta.choices[0]?.message.content ?? null });
   } catch (error) {
