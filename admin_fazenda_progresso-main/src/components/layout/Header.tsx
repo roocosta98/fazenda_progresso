@@ -26,13 +26,15 @@ export const Header = ({ onAbrirMenu }: HeaderProps) => {
     <header className="bg-white border-b border-slate-200 sticky top-0 z-30 px-3 sm:px-6 h-14 flex items-center justify-between gap-2 shadow-2xs">
       {/* Botão de menu mobile + Barra de Busca Corporativa */}
       <div className="flex items-center gap-2 min-w-0 flex-1">
-        <button
-          onClick={onAbrirMenu}
-          className="p-1.5 -ml-1 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-md transition-colors shrink-0"
-          aria-label="Abrir menu"
-        >
-          <Menu size={20} />
-        </button>
+        {onAbrirMenu && (
+          <button
+            onClick={onAbrirMenu}
+            className="p-1.5 -ml-1 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-md transition-colors shrink-0"
+            aria-label="Abrir menu"
+          >
+            <Menu size={20} />
+          </button>
+        )}
         <div className="relative w-full max-w-xs hidden sm:block">
           <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
