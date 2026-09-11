@@ -1,6 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import OpenAI from 'openai';
-import pdfParse from 'pdf-parse';
+// Importa a lib interna direto (não o index.js do pacote): o index.js do pdf-parse@1 roda um
+// bloco de "modo debug" (lê um PDF de teste do próprio pacote) sempre que `module.parent` for
+// undefined — o que acontece no bundler da Vercel, e derruba a função com ENOENT em produção.
+import pdfParse from 'pdf-parse/lib/pdf-parse.js';
 import mammoth from 'mammoth';
 import * as XLSX from 'xlsx';
 
