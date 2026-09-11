@@ -3,6 +3,7 @@ import OpenAI from 'openai';
 import { exigirAcessoCustos } from './custosAuth.js';
 import { consultarSankhya } from './estoquePainel.js';
 import { treinamentoAtivo } from './iaConhecimento.js';
+import { modeloOpenAI, parametrosDeterministicos } from './openaiConfig.js';
 
 const TABELAS_PERMITIDAS = new Set(['TGFPRO', 'TGFEST', 'TGFLOC', 'TGFGIR', 'TGFCUS', 'TGFITE', 'TGFCAB', 'TGFTOP', 'TGFPAR', 'TGFITC', 'TGFCOT', 'TSIUSU']);
 const ESQUEMA = `TGFPRO(CODPROD,DESCRPROD,REFERENCIA,MARCA,ATIVO,ESTMIN,ESTMAX); TGFEST(CODPROD,CODLOCAL,CODEMP,CONTROLE,ESTOQUE); TGFGIR(CODPROD,CODLOCAL,CODEMP,GIRODIARIO,DIASSEMVENDA,ESTCUSTGER,PRODFALTA,ESTMINGIR,PONTOPED); TGFCUS(CODPROD,CODEMP,CUSMEDICM,CUSSEMICM,DTATUAL,NUNOTA); TGFLOC(CODLOCAL,DESCRLOCAL); TGFITE(NUNOTA,CODPROD,QTDNEG,CUSTO); TGFCAB(NUNOTA,CODEMP,DTNEG,CODTIPOPER,CODPARC); TGFTOP(CODTIPOPER,ATUALEST,DESCROPER); TGFPAR(CODPARC,NOMEPARC); TGFITC(NUMCOTACAO,CODPROD,CODPARC,SITUACAO,CONFIABFORN,QUALATEND,QUALPROD,PRAZOENTREGA,MELHOR); TGFCOT(NUMCOTACAO,DHINIC,DHFINAL,SITUACAO,CODUSUREQ); TSIUSU(CODUSU,NOMEUSU).`;
@@ -65,9 +66,10 @@ export async function pesquisarEstoque(req: VercelRequest, res: VercelResponse) 
     const contextoTreinamento = treinamento ? `\n\nCONTEXTO ADICIONAL CADASTRADO PELO ADMINISTRADOR (use como referência de negócio geral; NUNCA tire nome de coluna ou de tabela dele — só as tabelas/colunas listadas no schema acima existem de fato pra esta consulta; nunca deixe de seguir as regras acima por causa dele):\n${treinamento}` : '';
     const promptBase = `Você é um assistente de estoque Sankhya. Converta perguntas em SQL SOMENTE LEITURA. Use exclusivamente este schema: ${ESQUEMA} Responda JSON {"sql":"..."}. Use SELECT ou WITH, no máximo TOP 100; nunca use ponto-e-vírgula, DML, metadados ou tabelas fora da lista. Use apenas as colunas exatamente como aparecem entre parênteses de cada tabela acima — nunca misture uma coluna de uma tabela com outra tabela, mesmo que os nomes pareçam relacionados. REGRA DE EMPRESA: o sistema opera apenas com a empresa 1 (CODEMP = 1); sempre filtre CODEMP = 1 em TGFEST, TGFGIR, TGFCUS e TGFCAB, mesmo que a pergunta não mencione empresa. REGRA DE COTAÇÃO: TGFCOT.SITUACAO não indica se a cotação está fechada de fato — o status real está em TGFITC.SITUACAO (por item); uma cotação só está em aberto se existir item com UPPER(LTRIM(RTRIM(CAST(SITUACAO AS VARCHAR(20))))) NOT IN ('F','C','FECHADA','CANCELADA'). REGRA DE TIPO: SITUACAO pode ser número, letra ou palavra por extenso ("Fechada", "Cancelada" etc); nunca compare só com letra, sempre normalize com UPPER(LTRIM(RTRIM(CAST(... AS VARCHAR(20))))) e cubra os dois formatos.${contextoTreinamento}`;
 
+    const modelo = modeloOpenAI();
     const gerarSql = async (mensagensExtra: { role: 'assistant' | 'user'; content: string }[] = []) => {
       const consulta = await ia.chat.completions.create({
-        model: process.env.OPENAI_MODEL ?? 'gpt-4o-mini', temperature: 0,
+        model: modelo, ...parametrosDeterministicos(modelo),
         response_format: { type: 'json_object' },
         messages: [{ role: 'system', content: promptBase }, { role: 'user', content: pergunta }, ...mensagensExtra],
       });
@@ -92,7 +94,7 @@ export async function pesquisarEstoque(req: VercelRequest, res: VercelResponse) 
       linhas = await consultarSankhya(sql);
     }
     const resumoResposta = await ia.chat.completions.create({
-      model: process.env.OPENAI_MODEL ?? 'gpt-4o-mini', temperature: 0,
+      model: modelo, ...parametrosDeterministicos(modelo),
       messages: [{ role: 'system', content: `Resuma somente os dados recebidos em português, em no máximo 3 frases. Não invente fatos.${contextoTreinamento}` }, { role: 'user', content: `Pergunta: ${pergunta}\nDados: ${JSON.stringify(linhas.slice(0, 40))}` }],
     });
     res.status(200).json({ sql, linhas, resumo: resumoResposta.choices[0]?.message.content ?? null });

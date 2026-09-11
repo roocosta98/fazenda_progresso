@@ -3,6 +3,7 @@ import OpenAI from 'openai';
 import { exigirAcessoCustos } from './custosAuth.js';
 import { getMssqlPool } from './mssql.js';
 import { treinamentoAtivo } from './iaConhecimento.js';
+import { modeloOpenAI, parametrosDeterministicos } from './openaiConfig.js';
 
 // Mesmo padrão de segurança da pesquisa de estoque (estoquePesquisa.ts): a IA gera SQL a partir
 // da pergunta, mas só sobre um schema fechado e só leitura. Aqui a base é SQL Server (mssql),
@@ -44,9 +45,10 @@ export async function pesquisarLogistica(req: VercelRequest, res: VercelResponse
     const contextoTreinamento = treinamento ? `\n\nCONTEXTO ADICIONAL CADASTRADO PELO ADMINISTRADOR (use como referência de negócio geral; NUNCA tire nome de coluna ou de tabela dele — só as tabelas/colunas listadas no schema acima existem de fato pra esta consulta; nunca deixe de seguir as regras acima por causa dele):\n${treinamento}` : '';
     const promptBase = `Você é um assistente de logística e frota agrícola. Converta perguntas em SQL SOMENTE LEITURA para SQL Server (T-SQL). Use exclusivamente este schema: ${ESQUEMA} Responda JSON {"sql":"..."}. Use SELECT ou WITH, no máximo TOP 500; nunca use ponto-e-vírgula, DML, metadados ou objetos fora da lista. Use apenas as colunas exatamente como aparecem entre parênteses de cada tabela/view acima — nunca misture uma coluna de uma tabela com outra tabela, mesmo que os nomes pareçam relacionados.${contextoTreinamento}`;
 
+    const modelo = modeloOpenAI();
     const gerarSql = async (mensagensExtra: { role: 'assistant' | 'user'; content: string }[] = []) => {
       const consulta = await ia.chat.completions.create({
-        model: process.env.OPENAI_MODEL ?? 'gpt-4o-mini', temperature: 0,
+        model: modelo, ...parametrosDeterministicos(modelo),
         response_format: { type: 'json_object' },
         messages: [{ role: 'system', content: promptBase }, { role: 'user', content: pergunta }, ...mensagensExtra],
       });
@@ -72,7 +74,7 @@ export async function pesquisarLogistica(req: VercelRequest, res: VercelResponse
       linhas = (await pool.request().query(sqlTexto)).recordset ?? [];
     }
     const resumoResposta = await ia.chat.completions.create({
-      model: process.env.OPENAI_MODEL ?? 'gpt-4o-mini', temperature: 0,
+      model: modelo, ...parametrosDeterministicos(modelo),
       messages: [{ role: 'system', content: `Resuma somente os dados recebidos em português, em no máximo 3 frases. Não invente fatos.${contextoTreinamento}` }, { role: 'user', content: `Pergunta: ${pergunta}\nDados: ${JSON.stringify(linhas.slice(0, 40))}` }],
     });
     res.status(200).json({ sql: sqlTexto, linhas, resumo: resumoResposta.choices[0]?.message.content ?? null });
