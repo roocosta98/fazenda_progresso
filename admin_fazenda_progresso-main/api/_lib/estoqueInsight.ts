@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import OpenAI from 'openai';
 import { exigirAcessoCustos } from './custosAuth.js';
 import { treinamentoAtivo } from './iaConhecimento.js';
+import { modeloOpenAI, parametrosDeterministicos } from './openaiConfig.js';
 
 // Uma linha de insight por seção do painel de estoque, gerada a partir dos dados que a própria
 // tela já carregou (o cliente manda uma amostra, não fazemos consulta nova ao Sankhya aqui).
@@ -26,8 +27,9 @@ export async function insightEstoque(req: VercelRequest, res: VercelResponse) {
     // já documentada (ex.: um campo que sempre vem zerado nesta instalação).
     const treinamento = await treinamentoAtivo('estoque');
     const contextoTreinamento = treinamento ? `\n\nCONTEXTO ADICIONAL CADASTRADO PELO ADMINISTRADOR (use como referência de negócio):\n${treinamento}` : '';
+    const modelo = modeloOpenAI();
     const resposta = await ia.chat.completions.create({
-      model: process.env.OPENAI_MODEL ?? 'gpt-4o-mini', temperature: 0,
+      model: modelo, ...parametrosDeterministicos(modelo),
       response_format: { type: 'json_object' },
       messages: [
         { role: 'system', content: `Você é um analista de estoque agrícola. Para cada seção recebida no JSON, escreva UMA frase curta (máximo 20 palavras) em português com o achado mais relevante daquela amostra de dados. Nunca invente números que não estejam nos dados enviados; se a amostra estiver vazia ou não tiver nada notável, diga isso em poucas palavras. Responda em JSON no formato {"nome_da_secao": "frase"}, uma chave por seção recebida.${contextoTreinamento}` },

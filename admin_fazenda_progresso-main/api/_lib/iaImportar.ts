@@ -6,6 +6,7 @@ import OpenAI from 'openai';
 import pdfParse from 'pdf-parse/lib/pdf-parse.js';
 import mammoth from 'mammoth';
 import * as XLSX from 'xlsx';
+import { modeloOpenAI, parametrosDeterministicos } from './openaiConfig.js';
 
 function exigirAdmin(req: VercelRequest, res: VercelResponse) {
   if (String(req.headers['x-user-type'] ?? '') !== 'admin') { res.status(403).json({ error: 'Apenas administradores podem gerir a configuração de IA.' }); return false; }
@@ -56,8 +57,9 @@ export async function importarConhecimentoIA(req: VercelRequest, res: VercelResp
     const textoParaIa = textoExtraido.slice(0, CARACTERES_MAXIMOS_PARA_IA);
 
     const ia = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    const modelo = modeloOpenAI();
     const sugestao = await ia.chat.completions.create({
-      model: process.env.OPENAI_MODEL ?? 'gpt-4o-mini', temperature: 0,
+      model: modelo, ...parametrosDeterministicos(modelo),
       response_format: { type: 'json_object' },
       messages: [
         {
