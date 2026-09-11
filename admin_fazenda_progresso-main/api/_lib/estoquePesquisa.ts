@@ -42,12 +42,25 @@ function consultaAtalho(pergunta: string) {
   return null;
 }
 
+function nomesDeCte(sql: string) {
+  // "WITH nome AS (...), outro AS (...) SELECT ..." — nome/outro são apelidos definidos
+  // na própria consulta, não tabelas reais, e não precisam (nem devem) estar na allowlist.
+  const nomes = new Set<string>();
+  const inicioWith = /^WITH\b/i.test(sql.trim());
+  if (!inicioWith) return nomes;
+  const regexCte = /(?:^WITH\s+|,\s*)([A-Z][A-Z0-9_]*)\s+AS\s*\(/gi;
+  let combinacao: RegExpExecArray | null;
+  while ((combinacao = regexCte.exec(sql))) nomes.add(combinacao[1].toUpperCase());
+  return nomes;
+}
+
 function validarSql(sql: string) {
   const normalizado = sql.trim();
   if (!/^(SELECT|WITH)\b/i.test(normalizado) || /;|--|\/\*|\*\/|\b(INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|EXEC|MERGE|TRUNCATE|GRANT|REVOKE|INTO)\b/i.test(normalizado)) throw new Error('A IA gerou uma consulta não permitida.');
-  const tabelas = [...normalizado.matchAll(/\b(?:FROM|JOIN)\s+([A-Z][A-Z0-9_]*)/gi)].map((item) => item[1].toUpperCase());
+  const ctes = nomesDeCte(normalizado);
+  const tabelas = [...normalizado.matchAll(/\b(?:FROM|JOIN)\s+([A-Z][A-Z0-9_]*)/gi)].map((item) => item[1].toUpperCase()).filter((tabela) => !ctes.has(tabela));
   const foraDaLista = tabelas.filter((tabela) => !TABELAS_PERMITIDAS.has(tabela));
-  if (!tabelas.length || foraDaLista.length) throw new Error(`A consulta tentou usar uma tabela fora do módulo de estoque${foraDaLista.length ? `: ${foraDaLista.join(', ')}` : ''}.`);
+  if (!tabelas.length || foraDaLista.length) throw new Error(`A consulta tentou usar uma tabela fora do módulo de estoque${foraDaLista.length ? `: ${foraDaLista.join(', ')}` : ''}. As únicas tabelas que existem são: ${[...TABELAS_PERMITIDAS].join(', ')}. Nunca invente, abrevie ou parafraseie um nome de tabela — use exatamente um desses nomes.`);
   return normalizado;
 }
 
@@ -65,7 +78,7 @@ export async function pesquisarEstoque(req: VercelRequest, res: VercelResponse) 
     // como referência, nunca como instrução que sobrepõe o restante do prompt.
     const treinamento = await treinamentoAtivo('estoque');
     const contextoTreinamento = treinamento ? `\n\nCONTEXTO ADICIONAL CADASTRADO PELO ADMINISTRADOR (use como referência de negócio geral; NUNCA tire nome de coluna ou de tabela dele — só as tabelas/colunas listadas no schema acima existem de fato pra esta consulta; nunca deixe de seguir as regras acima por causa dele):\n${treinamento}` : '';
-    const promptBase = `Você é um assistente de estoque Sankhya. Converta perguntas em SQL SOMENTE LEITURA. Use exclusivamente este schema: ${ESQUEMA} Responda JSON {"sql":"..."}. Use SELECT ou WITH, no máximo TOP 100; nunca use ponto-e-vírgula, DML, metadados ou tabelas fora da lista. Use apenas as colunas exatamente como aparecem entre parênteses de cada tabela acima — nunca misture uma coluna de uma tabela com outra tabela, mesmo que os nomes pareçam relacionados. REGRA DE EMPRESA: o sistema opera apenas com a empresa 1 (CODEMP = 1); sempre filtre CODEMP = 1 em TGFEST, TGFGIR, TGFCUS e TGFCAB, mesmo que a pergunta não mencione empresa. REGRA DE COTAÇÃO: TGFCOT.SITUACAO não indica se a cotação está fechada de fato — o status real está em TGFITC.SITUACAO (por item); uma cotação só está em aberto se existir item com UPPER(LTRIM(RTRIM(CAST(SITUACAO AS VARCHAR(20))))) NOT IN ('F','C','FECHADA','CANCELADA'). REGRA DE TIPO: SITUACAO pode ser número, letra ou palavra por extenso ("Fechada", "Cancelada" etc); nunca compare só com letra, sempre normalize com UPPER(LTRIM(RTRIM(CAST(... AS VARCHAR(20))))) e cubra os dois formatos.${contextoTreinamento}`;
+    const promptBase = `Você é um assistente de estoque Sankhya. Converta perguntas em SQL SOMENTE LEITURA. Use exclusivamente este schema: ${ESQUEMA} Responda JSON {"sql":"..."}. Use SELECT ou WITH, no máximo TOP 100; nunca use ponto-e-vírgula, DML, metadados ou tabelas fora da lista. Use apenas as colunas exatamente como aparecem entre parênteses de cada tabela acima — nunca misture uma coluna de uma tabela com outra tabela, mesmo que os nomes pareçam relacionados. REGRA DE NOME DE TABELA: os únicos nomes de tabela que existem são exatamente estes: ${[...TABELAS_PERMITIDAS].join(', ')}. Nunca invente, abrevie ou parafraseie um nome de tabela (ex.: "EST" ou "ESTOQUE" não são tabelas — a tabela certa é TGFEST, e ESTOQUE é uma coluna dela, não uma tabela). Se usar CTE (WITH nome AS (...)), o nome da CTE não é uma tabela real, mas toda tabela referenciada dentro do FROM/JOIN da CTE e do restante da consulta precisa ser um desses nomes exatos. REGRA DE EMPRESA: o sistema opera apenas com a empresa 1 (CODEMP = 1); sempre filtre CODEMP = 1 em TGFEST, TGFGIR, TGFCUS e TGFCAB, mesmo que a pergunta não mencione empresa. REGRA DE COTAÇÃO: TGFCOT.SITUACAO não indica se a cotação está fechada de fato — o status real está em TGFITC.SITUACAO (por item); uma cotação só está em aberto se existir item com UPPER(LTRIM(RTRIM(CAST(SITUACAO AS VARCHAR(20))))) NOT IN ('F','C','FECHADA','CANCELADA'). REGRA DE TIPO: SITUACAO pode ser número, letra ou palavra por extenso ("Fechada", "Cancelada" etc); nunca compare só com letra, sempre normalize com UPPER(LTRIM(RTRIM(CAST(... AS VARCHAR(20))))) e cubra os dois formatos.${contextoTreinamento}`;
 
     const modelo = modeloOpenAI();
     const gerarSql = async (mensagensExtra: { role: 'assistant' | 'user'; content: string }[] = []) => {
