@@ -46,7 +46,8 @@ function validarSql(sql: string) {
   const normalizado = sql.trim();
   if (!/^(SELECT|WITH)\b/i.test(normalizado) || /;|--|\/\*|\*\/|\b(INSERT|UPDATE|DELETE|DROP|ALTER|CREATE|EXEC|MERGE|TRUNCATE|GRANT|REVOKE|INTO)\b/i.test(normalizado)) throw new Error('A IA gerou uma consulta não permitida.');
   const tabelas = [...normalizado.matchAll(/\b(?:FROM|JOIN)\s+([A-Z][A-Z0-9_]*)/gi)].map((item) => item[1].toUpperCase());
-  if (!tabelas.length || tabelas.some((tabela) => !TABELAS_PERMITIDAS.has(tabela))) throw new Error('A consulta tentou usar uma tabela fora do módulo de estoque.');
+  const foraDaLista = tabelas.filter((tabela) => !TABELAS_PERMITIDAS.has(tabela));
+  if (!tabelas.length || foraDaLista.length) throw new Error(`A consulta tentou usar uma tabela fora do módulo de estoque${foraDaLista.length ? `: ${foraDaLista.join(', ')}` : ''}.`);
   return normalizado;
 }
 
@@ -78,18 +79,20 @@ export async function pesquisarEstoque(req: VercelRequest, res: VercelResponse) 
     };
 
     const atalho = consultaAtalho(pergunta);
-    let sql = atalho ? validarSql(normalizarSituacao(atalho)) : await gerarSql();
+    let sql: string | undefined;
     let linhas: Record<string, unknown>[];
     try {
+      sql = atalho ? validarSql(normalizarSituacao(atalho)) : await gerarSql();
       linhas = await consultarSankhya(sql);
     } catch (erroSql) {
-      // Autocorreção de 1 tentativa: a IA pode alucinar um nome de coluna que não existe (ex.:
-      // misturar coluna de uma tabela do contexto de treinamento com outra tabela) — o gateway
-      // do Sankhya rejeita na hora. Manda o erro de volta pra IA corrigir, tenta mais uma vez.
-      const mensagemErro = erroSql instanceof Error ? erroSql.message : 'Erro desconhecido do Sankhya.';
+      // Autocorreção de 1 tentativa — cobre tanto a IA alucinar uma tabela/coluna fora do
+      // schema (rejeitado por validarSql antes de chegar no banco) quanto o Sankhya rejeitar a
+      // consulta em si (ex.: coluna que só existe em outra tabela do contexto de treinamento).
+      // Manda o erro de volta pra IA corrigir, tenta mais uma vez, e só aí desiste.
+      const mensagemErro = erroSql instanceof Error ? erroSql.message : 'Erro desconhecido.';
       sql = await gerarSql([
-        { role: 'assistant', content: JSON.stringify({ sql }) },
-        { role: 'user', content: `Essa consulta falhou no banco com o erro: "${mensagemErro}". Gere novamente, usando apenas as tabelas/colunas exatas do schema oficial (ignore qualquer coluna do contexto adicional do administrador que não esteja nesse schema).` },
+        ...(sql ? [{ role: 'assistant' as const, content: JSON.stringify({ sql }) }] : []),
+        { role: 'user', content: `Essa consulta falhou com o erro: "${mensagemErro}". Gere novamente, usando apenas as tabelas/colunas exatas do schema oficial (ignore qualquer coluna do contexto adicional do administrador que não esteja nesse schema).` },
       ]);
       linhas = await consultarSankhya(sql);
     }
