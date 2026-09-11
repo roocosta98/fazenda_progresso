@@ -5,6 +5,7 @@ import { FILTRO_TIPO_CAMINHAO_LIKE } from '../_lib/tipoEquipamento.js';
 import { exigirAcessoCustos } from '../_lib/custosAuth.js';
 import { painelEstoque } from '../_lib/estoquePainel.js';
 import { pesquisarEstoque } from '../_lib/estoquePesquisa.js';
+import { pesquisarLogistica } from '../_lib/logisticaPesquisa.js';
 import { detalheEstoque } from '../_lib/estoqueDetalhe.js';
 import { insightEstoque } from '../_lib/estoqueInsight.js';
 import { configuracaoIA } from '../_lib/iaConhecimento.js';
@@ -55,6 +56,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.query.modo === 'producao-batata') return producaoBatata(req, res);
   if (req.query.modo === 'manutencao') return manutencao(req, res);
   if (req.query.modo === 'estoque-pesquisar') return pesquisarEstoque(req, res);
+  if (req.query.modo === 'logistica-pesquisar') return pesquisarLogistica(req, res);
   if (req.query.modo === 'estoque-detalhe') return detalheEstoque(req, res);
   if (req.query.modo === 'estoque-insight') return insightEstoque(req, res);
   if (req.query.modo === 'ia-conhecimento') return configuracaoIA(req, res);

@@ -9,6 +9,10 @@
       "destination": "/api/gastos/resumo?modo=estoque-pesquisar"
     },
     {
+      "source": "/api/logistica/pesquisar",
+      "destination": "/api/gastos/resumo?modo=logistica-pesquisar"
+    },
+    {
       "source": "/api/estoque/detalhe",
       "destination": "/api/gastos/resumo?modo=estoque-detalhe"
     },

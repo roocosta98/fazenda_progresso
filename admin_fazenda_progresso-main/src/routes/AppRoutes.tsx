@@ -13,6 +13,7 @@ import { MetasOrfas } from '../pages/logistica/MetasOrfas';
 import { AvaliacaoConducao } from '../pages/logistica/AvaliacaoConducao';
 import { MapaMonitoramento } from '../pages/logistica/MapaMonitoramento';
 import { TelaTVMonitor } from '../pages/logistica/TelaTVMonitor';
+import { PesquisaIA } from '../pages/logistica/PesquisaIA';
 import { Estoque } from '../pages/estoque/Estoque';
 import { DashboardEstoque } from '../pages/estoque/DashboardEstoque';
 import { ProducaoBatata } from '../pages/producao/ProducaoBatata';
@@ -85,6 +86,10 @@ export const AppRoutes = () => {
         <Route
           path="/logistica/monitoramento"
           element={<ProtectedRoute allowedRoles={['logistica']}><MapaMonitoramento /></ProtectedRoute>}
+        />
+        <Route
+          path="/logistica/pesquisa-ia"
+          element={<ProtectedRoute allowedRoles={['logistica']}><PesquisaIA /></ProtectedRoute>}
         />
         <Route
           path="/logistica/estoque"

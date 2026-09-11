@@ -28,6 +28,7 @@ import {
   ClipboardList,
   X,
   BrainCircuit,
+  Sparkles,
 } from 'lucide-react';
 import logoFp from '../../assets/logo.png';
 import type { ModuloSistema } from '../../types';
@@ -103,11 +104,12 @@ export const Sidebar = ({ mobileAberto = false, onFechar }: SidebarProps) => {
           { to: '/logistica/metas', icon: <Trophy size={18} />, label: 'Metas & Ranking' },
           { to: '/logistica/avaliacao-conducao', icon: <ClipboardCheck size={18} />, label: 'Avaliação de Condução' },
           { to: '/logistica/monitoramento', icon: <MapIcon size={18} />, label: 'Telemetria & Mapa' },
+          { to: '/logistica/pesquisa-ia', icon: <Sparkles size={18} />, label: 'Pergunte à IA' },
           { to: '/logistica/monitor-tv', icon: <MonitorPlay size={18} />, label: 'Monitor TV' },
         ];
   const itensPorModulo: Record<ModuloSistema, (LinkItem | GrupoItem)[]> = {
     logistica_frota: itensLogistica,
-    estoque: [{ to: '/logistica/estoque/dashboard', icon: <BarChart3 size={18} />, label: 'Dashboard' }, { to: '/logistica/estoque', icon: <Boxes size={18} />, label: 'Painel de Estoque' }],
+    estoque: [{ to: '/logistica/estoque/dashboard', icon: <BarChart3 size={18} />, label: 'Dashboard' }, { to: '/logistica/estoque', icon: <Boxes size={18} />, label: 'Painel de Estoque' }, { to: '/logistica/estoque#pesquisa-ia', icon: <Sparkles size={18} />, label: 'Pergunte à IA' }],
     producao_batata: [
       { to: '/producao/batata', icon: <LayoutDashboard size={18} />, label: 'Painel de Produção' },
       { to: '/producao/batata/safras', icon: <Trophy size={18} />, label: 'Safras' },
