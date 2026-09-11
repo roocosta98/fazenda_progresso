@@ -367,10 +367,10 @@ export const PainelMetasDiario: React.FC<PainelMetasDiarioProps> = ({ dataDe, da
     <div className={`space-y-5 pb-12 transition-opacity ${carregando ? 'opacity-60' : 'opacity-100'}`}>
       {/* Filtros locais desta aba — o período (De/Até) é compartilhado e fica na barra acima das abas */}
       <div className="bg-white p-4 rounded-2xl border border-slate-200/80 flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-1.5">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-1.5 w-full sm:w-auto">
           <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Veículo</span>
           <select value={veiculoSelecionado} onChange={(e) => setVeiculoSelecionado(e.target.value)}
-            className="px-3 py-1.5 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl text-slate-700 min-w-[200px]">
+            className="px-3 py-1.5 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl text-slate-700 w-full sm:w-auto sm:min-w-[200px] max-w-full">
             <option value="todos">Todos os veículos</option>
             {veiculos.map((v) => (
               <option key={v.EquipamentoId} value={String(v.EquipamentoId)}>
@@ -379,16 +379,16 @@ export const PainelMetasDiario: React.FC<PainelMetasDiarioProps> = ({ dataDe, da
             ))}
           </select>
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-1.5 w-full sm:w-auto">
           <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Motorista</span>
           <select value={motoristaSelecionado} onChange={(e) => setMotoristaSelecionado(e.target.value)}
-            className="px-3 py-1.5 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl text-slate-700 min-w-[200px]">
+            className="px-3 py-1.5 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl text-slate-700 w-full sm:w-auto sm:min-w-[200px] max-w-full">
             <option value="todos">Todos os motoristas</option>
             {motoristas.map((m) => <option key={m} value={m}>{m}</option>)}
           </select>
         </div>
         <button onClick={carregar}
-          className="ml-auto inline-flex items-center px-3 py-1.5 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 text-xs">
+          className="sm:ml-auto w-full sm:w-auto inline-flex items-center justify-center px-3 py-1.5 bg-slate-100 text-slate-700 rounded-xl font-bold hover:bg-slate-200 text-xs">
           <RefreshCw size={13} className="mr-1.5" /> Atualizar
         </button>
       </div>
