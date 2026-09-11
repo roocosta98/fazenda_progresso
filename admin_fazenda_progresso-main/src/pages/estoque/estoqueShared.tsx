@@ -22,9 +22,9 @@ export type DadosEstoque = {
 export const moeda = (valor: unknown) => Number(valor ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 export const numero = (valor: unknown, casas = 0) => Number(valor ?? 0).toLocaleString('pt-BR', { maximumFractionDigits: casas });
 // O gateway do Sankhya (DbExplorerSP) não normaliza data: já veio como epoch em ms, como
-// "/Date(169...)/ " (formato clássico ASP.NET) e como "AAAA-MM-DD HH:mm:ss" (sem "T", que
-// alguns navegadores não interpretam) — sem cobrir os três formatos, new Date(...) direto
-// falha silenciosamente e mostra o texto "Invalid Date" pro usuário.
+// "/Date(169...)/ " (formato clássico ASP.NET) e — confirmado direto no banco (TGFCAB.DTNEG) —
+// como "DDMMAAAA HH:mm:ss" SEM separador nenhum ("20062018 15:28:42" = 20/06/2018). Nenhum
+// desses é interpretado por um new Date(texto) ingênuo.
 export const data = (valor: unknown) => {
   if (valor === null || valor === undefined || valor === '') return '—';
   if (typeof valor === 'number') {
@@ -33,7 +33,17 @@ export const data = (valor: unknown) => {
   }
   const texto = String(valor);
   const aspNet = texto.match(/\/Date\((-?\d+)/);
-  const d = aspNet ? new Date(Number(aspNet[1])) : new Date(texto.includes(' ') && !texto.includes('T') ? texto.replace(' ', 'T') : texto);
+  if (aspNet) {
+    const d = new Date(Number(aspNet[1]));
+    return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('pt-BR');
+  }
+  const ddmmaaaa = texto.match(/^(\d{2})(\d{2})(\d{4})(?:\s+(\d{2}):(\d{2}):(\d{2}))?$/);
+  if (ddmmaaaa) {
+    const [, dia, mes, ano, hora = '0', min = '0', seg = '0'] = ddmmaaaa;
+    const d = new Date(Number(ano), Number(mes) - 1, Number(dia), Number(hora), Number(min), Number(seg));
+    return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('pt-BR');
+  }
+  const d = new Date(texto.includes(' ') && !texto.includes('T') ? texto.replace(' ', 'T') : texto);
   return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('pt-BR');
 };
 
@@ -48,6 +58,9 @@ export const ROTULOS_COLUNAS: Record<string, string> = {
   QTD_COMPRA: 'Qtd. compra', QTD_DEV_COMPRA: 'Qtd. devolução', COMPRA_LIQUIDA: 'Compra líquida',
   CONSUMO: 'Consumo', ESTOQUE_ATUAL: 'Estoque atual', ESTMIN: 'Estoque mínimo', ESTMAX: 'Estoque máximo',
   GIRO_ESTOQUE: 'Giro de estoque', DIAS_COBERTURA: 'Dias de cobertura',
+  MARCA: 'Marca', ATIVO: 'Ativo', CODLOCAL: 'Cód. local', NUNOTA: 'Nº nota (interno)', NUMNOTA: 'Nota fiscal',
+  DTNEG: 'Data', TIPMOV: 'Tipo mov.', TIPO: 'Tipo', PARCEIRO: 'Parceiro', QTDNEG: 'Quantidade',
+  CUSTOUNITARIO: 'Custo unitário', SITUACAO: 'Situação', PRAZOENTREGA: 'Prazo entrega (dias)', MELHORPRECO: 'Melhor preço',
 };
 export const rotuloColuna = (chave: string) => ROTULOS_COLUNAS[chave]
   ?? chave.replace(/_/g, ' ').toLowerCase().replace(/^\p{L}/u, (letra) => letra.toUpperCase());
@@ -71,6 +84,7 @@ export function useEstoquePainel() {
   const [dados, setDados] = useState<DadosEstoque | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(true);
+  const [insights, setInsights] = useState<Record<string, string>>({});
   const carregar = useCallback(async () => {
     setCarregando(true); setErro(null);
     try {
@@ -83,7 +97,24 @@ export function useEstoquePainel() {
     finally { setCarregando(false); }
   }, [usuario?.perfil, dataDe, dataAte]);
   useEffect(() => { carregar(); }, [carregar]);
-  return { dados, erro, carregando, carregar, dataDe, setDataDe, dataAte, setDataAte };
+
+  // Um insight por seção, gerado numa chamada só depois que o painel carrega — não bloqueia a
+  // tela (falha em silêncio, sem "insight" nenhum é melhor que travar a tela por causa disso).
+  useEffect(() => {
+    if (!dados) return;
+    setInsights({});
+    const secoes = {
+      ruptura: dados.ruptura, semMovimentacao: dados.semMovimentacao, valor: dados.valor, curvaAbc: dados.curvaAbc,
+      fornecedores: dados.fornecedores, cotacoes: dados.cotacoes, giroProdutos: dados.giroProdutos,
+    };
+    fetch(`${API_URL}/api/estoque/insight`, { method: 'POST', headers: { 'Content-Type': 'application/json', ...cabecalhoPerfil(usuario?.perfil) }, body: JSON.stringify({ secoes }) })
+      .then((resp) => resp.ok ? resp.json() : null)
+      .then((corpo) => { if (corpo?.insights) setInsights(corpo.insights); })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dados]);
+
+  return { dados, erro, carregando, carregar, dataDe, setDataDe, dataAte, setDataAte, insights };
 }
 
 export function FiltroDataEstoque({ dataDe, setDataDe, dataAte, setDataAte, carregando, carregar }: {

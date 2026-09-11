@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Bar, BarChart, Cell, LabelList, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { BarChart3 } from 'lucide-react';
+import { BarChart3, Sparkles } from 'lucide-react';
 import { FiltroDataEstoque, KpiCardsEstoque, moeda, numero, useEstoquePainel } from './estoqueShared';
 import { Carregando, SemDado } from '../../components/common/viz';
 
@@ -17,7 +17,7 @@ function truncar(texto: string, tamanho: number) {
 }
 
 export function DashboardEstoque() {
-  const { dados, erro, carregando, carregar, dataDe, setDataDe, dataAte, setDataAte } = useEstoquePainel();
+  const { dados, erro, carregando, carregar, dataDe, setDataDe, dataAte, setDataAte, insights } = useEstoquePainel();
 
   // dados.curvaAbc já vem agregado sobre a base INTEIRA de produtos (não só os 100 de
   // dados.valor, que é só a listagem dos itens de maior valor) — ver comentário na query.
@@ -64,7 +64,7 @@ export function DashboardEstoque() {
     <KpiCardsEstoque kpis={dados?.kpis ?? {}} />
     {carregando && !dados ? <div className="p-12 bg-white border rounded-2xl"><Carregando mensagem="Carregando dados do Sankhya…" /></div> : <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
 
-      <Grafico titulo="Valor por Curva ABC">
+      <Grafico titulo="Valor por Curva ABC" insight={insights.curvaAbc}>
         {curvaAbc.every((c) => c.valor === 0) ? <SemDado mensagem="Nenhum valor de estoque classificado por curva ABC." /> : (
           <div className="flex flex-col sm:flex-row items-center gap-4">
             <ResponsiveContainer width="100%" height={200} className="sm:!w-[55%]">
@@ -94,6 +94,7 @@ export function DashboardEstoque() {
       <Grafico
         titulo="Itens mais críticos"
         bigNumber={piorRuptura ? { rotulo: 'Maior déficit vs. mínimo', valor: truncar(piorRuptura.produto, 34), apoio: `faltam ${numero(piorRuptura.minimo - piorRuptura.estoque)} un.` } : undefined}
+        insight={insights.ruptura}
       >
         {ruptura.length === 0 ? <SemDado mensagem="Nenhum item em ruptura no cadastro atual." /> : (
           <>
@@ -119,6 +120,7 @@ export function DashboardEstoque() {
       <Grafico
         titulo="Maior consumo por requisição (período filtrado)"
         bigNumber={maiorConsumo ? { rotulo: 'Maior consumo no período', valor: truncar(maiorConsumo.produto, 34), apoio: `${numero(maiorConsumo.consumo)} un.` } : undefined}
+        insight={insights.giroProdutos}
       >
         {giro.length === 0 ? <SemDado mensagem="Nenhum consumo por requisição no período filtrado." /> : (
           <ResponsiveContainer width="100%" height={280}>
@@ -138,6 +140,7 @@ export function DashboardEstoque() {
       <Grafico
         titulo="Produtos parados há mais tempo"
         bigNumber={maisParado ? { rotulo: 'Parado há mais tempo', valor: truncar(maisParado.produto, 34), apoio: `${numero(maisParado.dias)} dias` } : undefined}
+        insight={insights.semMovimentacao}
       >
         {parados.length === 0 ? <SemDado mensagem="Nenhum produto sem movimentação no cadastro atual." /> : (
           <ResponsiveContainer width="100%" height={280}>
@@ -171,17 +174,21 @@ function Legenda({ itens }: { itens: { cor: string; rotulo: string }[] }) {
   );
 }
 
-function Grafico({ titulo, bigNumber, children }: {
+function Grafico({ titulo, bigNumber, insight, children }: {
   titulo: string;
   bigNumber?: { rotulo: string; valor: string; apoio: string };
+  insight?: string;
   children: React.ReactNode;
 }) {
   return (
     <section className="bg-white border rounded-2xl p-5">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-        <h2 className="font-bold text-slate-800 flex gap-2 items-center shrink-0">
-          <BarChart3 size={17} className="text-emerald-600" />{titulo}
-        </h2>
+        <div>
+          <h2 className="font-bold text-slate-800 flex gap-2 items-center shrink-0">
+            <BarChart3 size={17} className="text-emerald-600" />{titulo}
+          </h2>
+          {insight && <p className="text-xs text-emerald-700 mt-1.5 flex items-start gap-1.5"><Sparkles size={13} className="shrink-0 mt-0.5" />{insight}</p>}
+        </div>
         {bigNumber && (
           <div className="sm:text-right">
             <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{bigNumber.rotulo}</p>
