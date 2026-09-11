@@ -136,12 +136,12 @@ export const Dashboard = () => {
   return (
     <div className="space-y-6 pb-12">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex bg-slate-100 p-1.5 rounded-2xl w-fit border border-slate-200/60 shadow-2xs">
+        <div className="flex bg-slate-100 p-1.5 rounded-2xl border border-slate-200/60 shadow-2xs max-w-full overflow-x-auto">
           {abas.map((a) => (
             <button
               key={a.id}
               onClick={() => setAba(a.id)}
-              className={`flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl transition-all ${
+              className={`flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl transition-all whitespace-nowrap shrink-0 ${
                 aba === a.id ? 'bg-white text-emerald-700 shadow-xs' : 'text-slate-500 hover:text-slate-800'
               }`}
             >
@@ -149,7 +149,7 @@ export const Dashboard = () => {
             </button>
           ))}
         </div>
-        <Link to="/logistica/pesquisa-ia" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-950 text-white text-xs font-bold hover:bg-emerald-900 transition-colors">
+        <Link to="/logistica/pesquisa-ia" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-950 text-white text-xs font-bold hover:bg-emerald-900 transition-colors shrink-0">
           <Sparkles size={15} className="text-emerald-300" /> Pergunte à IA
         </Link>
       </div>

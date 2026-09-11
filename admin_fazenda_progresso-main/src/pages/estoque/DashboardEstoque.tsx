@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { Bar, BarChart, Cell, LabelList, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { BarChart3, Sparkles } from 'lucide-react';
 import { FiltroDataEstoque, KpiCardsEstoque, moeda, numero, useEstoquePainel } from './estoqueShared';
@@ -54,10 +55,15 @@ export function DashboardEstoque() {
   const maisParado = parados[0];
 
   return <div className="space-y-5 pb-12">
-    <div>
-      <p className="text-xs uppercase font-bold tracking-wider text-emerald-700">Estoque</p>
-      <h1 className="text-2xl font-bold text-slate-800">Dashboard de Estoque</h1>
-      <p className="text-sm text-slate-500 mt-1">Visão geral e gráfica dos níveis, valor, giro e itens parados (empresa 01).</p>
+    <div className="flex flex-wrap items-start justify-between gap-3">
+      <div>
+        <p className="text-xs uppercase font-bold tracking-wider text-emerald-700">Estoque</p>
+        <h1 className="text-2xl font-bold text-slate-800">Dashboard de Estoque</h1>
+        <p className="text-sm text-slate-500 mt-1">Visão geral e gráfica dos níveis, valor, giro e itens parados (empresa 01).</p>
+      </div>
+      <Link to="/logistica/estoque#pesquisa-ia" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-950 text-white text-xs font-bold hover:bg-emerald-900 transition-colors shrink-0">
+        <Sparkles size={15} className="text-emerald-300" /> Pergunte à IA
+      </Link>
     </div>
     <FiltroDataEstoque dataDe={dataDe} setDataDe={setDataDe} dataAte={dataAte} setDataAte={setDataAte} carregando={carregando} carregar={carregar} />
     {erro && <div className="p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-sm">{erro}</div>}
