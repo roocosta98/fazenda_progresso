@@ -24,8 +24,9 @@ function validarSql(sqlTexto: string) {
     throw new Error('A IA gerou uma consulta não permitida.');
   }
   const objetos = [...normalizado.matchAll(/\b(?:FROM|JOIN)\s+(?:dbo\.)?([A-Za-z][A-Za-z0-9_]*)/gi)].map((item) => item[1].toUpperCase());
-  if (!objetos.length || objetos.some((objeto) => !OBJETOS_PERMITIDOS.has(objeto))) {
-    throw new Error('A consulta tentou usar uma tabela/view fora do módulo de logística.');
+  const foraDaLista = objetos.filter((objeto) => !OBJETOS_PERMITIDOS.has(objeto));
+  if (!objetos.length || foraDaLista.length) {
+    throw new Error(`A consulta tentou usar uma tabela/view fora do módulo de logística${foraDaLista.length ? `: ${foraDaLista.join(', ')}` : ''}.`);
   }
   if (/\bTOP\s+(\d+)/i.test(normalizado) && Number(normalizado.match(/\bTOP\s+(\d+)/i)?.[1]) > 500) {
     throw new Error('A consulta pediu um limite de linhas grande demais.');
@@ -56,20 +57,21 @@ export async function pesquisarLogistica(req: VercelRequest, res: VercelResponse
       return validarSql(String(gerado.sql ?? ''));
     };
 
-    let sqlTexto = await gerarSql();
     const pool = await getMssqlPool();
+    let sqlTexto: string | undefined;
     let linhas: Record<string, unknown>[];
     try {
+      sqlTexto = await gerarSql();
       linhas = (await pool.request().query(sqlTexto)).recordset ?? [];
     } catch (erroSql) {
-      // Autocorreção de 1 tentativa: a IA pode alucinar um nome de coluna que não existe
-      // (mistura de tabelas do contexto de treinamento, por exemplo) — nesse caso o SQL Server
-      // rejeita na hora ("Invalid column name") em vez de rodar errado. Manda o erro de volta
-      // pra IA corrigir usando só o schema oficial, tenta mais uma vez, e só aí desiste.
-      const mensagemErro = erroSql instanceof Error ? erroSql.message : 'Erro desconhecido do SQL Server.';
+      // Autocorreção de 1 tentativa — cobre tanto a IA alucinar uma tabela/coluna fora do
+      // schema (rejeitado por validarSql antes de chegar no banco) quanto o SQL Server rejeitar
+      // a consulta em si (ex.: "Invalid column name", coluna que só existe em outra tabela do
+      // contexto de treinamento). Manda o erro de volta pra IA corrigir, tenta mais uma vez.
+      const mensagemErro = erroSql instanceof Error ? erroSql.message : 'Erro desconhecido.';
       sqlTexto = await gerarSql([
-        { role: 'assistant', content: JSON.stringify({ sql: sqlTexto }) },
-        { role: 'user', content: `Essa consulta falhou no SQL Server com o erro: "${mensagemErro}". Gere novamente, usando apenas as tabelas/colunas exatas do schema oficial (ignore qualquer coluna do contexto adicional do administrador que não esteja nesse schema).` },
+        ...(sqlTexto ? [{ role: 'assistant' as const, content: JSON.stringify({ sql: sqlTexto }) }] : []),
+        { role: 'user', content: `Essa consulta falhou com o erro: "${mensagemErro}". Gere novamente, usando apenas as tabelas/colunas exatas do schema oficial (ignore qualquer coluna do contexto adicional do administrador que não esteja nesse schema).` },
       ]);
       linhas = (await pool.request().query(sqlTexto)).recordset ?? [];
     }
