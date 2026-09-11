@@ -493,12 +493,10 @@ export const PainelMetasDiario: React.FC<PainelMetasDiarioProps> = ({ dataDe, da
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* Motivos de parada — agora com o rótulo real (Estado/Operação), não "Outros" */}
         <CardViz titulo="Principais motivos de parada e operação">
-          {carregandoDetalhes ? (
-            <Carregando mensagem="Carregando motivos de parada…" />
-          ) : motivosErro ? (
+          {motivosErro ? (
             <ErroCarregamento mensagem={motivosErro} />
-          ) : motivosGrafico.length === 0 ? (
-            <SemDado mensagem="Nenhum registro de estado/operação no período." />
+          ) : carregandoDetalhes || motivosGrafico.length === 0 ? (
+            <Carregando mensagem="Carregando motivos de parada…" />
           ) : (
             <div className="space-y-3">
               {(() => {
@@ -524,12 +522,10 @@ export const PainelMetasDiario: React.FC<PainelMetasDiarioProps> = ({ dataDe, da
 
         {/* Motor: produtivo x ocioso — pizza (preferência do usuário sobre a barra 100%) */}
         <CardViz titulo="Uso do motor: produtivo x ocioso">
-          {carregandoDetalhes ? (
-            <Carregando mensagem="Carregando uso do motor…" />
-          ) : motorErro ? (
+          {motorErro ? (
             <ErroCarregamento mensagem={motorErro} />
-          ) : minutosLigado === 0 ? (
-            <SemDado mensagem="Sem leitura de motor no período." />
+          ) : carregandoDetalhes || minutosLigado === 0 ? (
+            <Carregando mensagem="Carregando uso do motor…" />
           ) : (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
