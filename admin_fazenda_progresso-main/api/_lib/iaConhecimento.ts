@@ -12,14 +12,16 @@ function exigirAdmin(req: VercelRequest, res: VercelResponse) {
 // Concatena o conteúdo ativo de um módulo (+ o que for marcado "geral") pra injetar como
 // contexto extra no prompt da IA. Chamada direta, servidor-a-servidor — nunca exposta por
 // rota HTTP própria, então não precisa (nem deve) do gate de admin acima.
+const RUBRICA_TIPO: Record<string, string> = { schema: 'Esquema de banco de dados', prompt: 'Instrução de prompt', texto: 'Conteúdo/observação' };
+
 export async function treinamentoAtivo(modulo: string): Promise<string> {
   try {
     const pool = await getMssqlPool();
     const resultado = await pool.request()
       .input('modulo', sql.NVarChar, modulo)
-      .query(`SELECT Titulo, Conteudo FROM dbo.ConfiguracaoIA WHERE Ativo=1 AND (Modulo=@modulo OR Modulo='geral') ORDER BY AtualizadoEm DESC`);
+      .query(`SELECT Titulo, Conteudo, Tipo FROM dbo.ConfiguracaoIA WHERE Ativo=1 AND (Modulo=@modulo OR Modulo='geral') ORDER BY CASE Tipo WHEN 'schema' THEN 0 WHEN 'prompt' THEN 1 ELSE 2 END, AtualizadoEm DESC`);
     if (!resultado.recordset.length) return '';
-    return resultado.recordset.map((linha) => `### ${linha.Titulo}\n${linha.Conteudo}`).join('\n\n');
+    return resultado.recordset.map((linha) => `### [${RUBRICA_TIPO[linha.Tipo] ?? 'Conteúdo'}] ${linha.Titulo}\n${linha.Conteudo}`).join('\n\n');
   } catch (error) {
     // Treinamento é só contexto extra: se a tabela ainda não existe nesta instalação ou a
     // consulta falhar por qualquer motivo, a IA segue funcionando normalmente sem ele.
@@ -34,32 +36,34 @@ export async function configuracaoIA(req: VercelRequest, res: VercelResponse) {
   try {
     const pool = await getMssqlPool();
     if (req.method === 'GET') {
-      const resultado = await pool.request().query(`SELECT ConfiguracaoIAId, Titulo, Conteudo, Modulo, Ativo, CriadoEm, AtualizadoEm, CriadoPor FROM dbo.ConfiguracaoIA ORDER BY AtualizadoEm DESC`);
+      const resultado = await pool.request().query(`SELECT ConfiguracaoIAId, Titulo, Conteudo, Modulo, Tipo, Ativo, CriadoEm, AtualizadoEm, CriadoPor FROM dbo.ConfiguracaoIA ORDER BY AtualizadoEm DESC`);
       return res.status(200).json(resultado.recordset);
     }
     if (req.method === 'POST') {
-      const { titulo, conteudo, modulo, criadoPor } = req.body ?? {};
+      const { titulo, conteudo, modulo, tipo, criadoPor } = req.body ?? {};
       if (!String(titulo ?? '').trim() || !String(conteudo ?? '').trim()) return res.status(400).json({ error: 'Informe título e conteúdo.' });
       const criado = await pool.request()
         .input('titulo', sql.NVarChar, String(titulo).trim())
         .input('conteudo', sql.NVarChar(sql.MAX), String(conteudo))
         .input('modulo', sql.NVarChar, String(modulo ?? 'estoque').trim() || 'estoque')
+        .input('tipo', sql.NVarChar, String(tipo ?? 'texto').trim() || 'texto')
         .input('criadoPor', sql.NVarChar, criadoPor ? String(criadoPor) : null)
-        .query(`INSERT INTO dbo.ConfiguracaoIA(Titulo,Conteudo,Modulo,CriadoPor) OUTPUT INSERTED.ConfiguracaoIAId VALUES(@titulo,@conteudo,@modulo,@criadoPor)`);
+        .query(`INSERT INTO dbo.ConfiguracaoIA(Titulo,Conteudo,Modulo,Tipo,CriadoPor) OUTPUT INSERTED.ConfiguracaoIAId VALUES(@titulo,@conteudo,@modulo,@tipo,@criadoPor)`);
       return res.status(201).json({ configuracaoIAId: criado.recordset[0].ConfiguracaoIAId });
     }
     if (req.method === 'PUT') {
       const id = Number(req.body?.id);
       if (!Number.isInteger(id)) return res.status(400).json({ error: 'id inválido.' });
-      const { titulo, conteudo, modulo, ativo } = req.body ?? {};
+      const { titulo, conteudo, modulo, tipo, ativo } = req.body ?? {};
       if (!String(titulo ?? '').trim() || !String(conteudo ?? '').trim()) return res.status(400).json({ error: 'Informe título e conteúdo.' });
       await pool.request()
         .input('id', sql.Int, id)
         .input('titulo', sql.NVarChar, String(titulo).trim())
         .input('conteudo', sql.NVarChar(sql.MAX), String(conteudo))
         .input('modulo', sql.NVarChar, String(modulo ?? 'estoque').trim() || 'estoque')
+        .input('tipo', sql.NVarChar, String(tipo ?? 'texto').trim() || 'texto')
         .input('ativo', sql.Bit, ativo ? 1 : 0)
-        .query(`UPDATE dbo.ConfiguracaoIA SET Titulo=@titulo, Conteudo=@conteudo, Modulo=@modulo, Ativo=@ativo, AtualizadoEm=SYSUTCDATETIME() WHERE ConfiguracaoIAId=@id`);
+        .query(`UPDATE dbo.ConfiguracaoIA SET Titulo=@titulo, Conteudo=@conteudo, Modulo=@modulo, Tipo=@tipo, Ativo=@ativo, AtualizadoEm=SYSUTCDATETIME() WHERE ConfiguracaoIAId=@id`);
       return res.status(200).json({ ok: true });
     }
     if (req.method === 'DELETE') {
