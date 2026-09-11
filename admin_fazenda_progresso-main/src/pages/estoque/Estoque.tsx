@@ -19,7 +19,7 @@ function tipoDetalheDaLinha(linha: Linha): TipoDetalhe | null {
   return null;
 }
 
-function Secao({ titulo, subtitulo, linhas, erro, insight }: { titulo: string; subtitulo: string; linhas: Linha[]; erro?: string; insight?: string }) {
+function Secao({ titulo, subtitulo, linhas, erro, insight, nota }: { titulo: string; subtitulo: string; linhas: Linha[]; erro?: string; insight?: string; nota?: string }) {
   const [aberta, setAberta] = useState(true);
   const [busca, setBusca] = useState('');
   const [ordenarPor, setOrdenarPor] = useState<string | null>(null);
@@ -69,6 +69,7 @@ function Secao({ titulo, subtitulo, linhas, erro, insight }: { titulo: string; s
       </div>
       {aberta ? <ChevronUp size={18} className="text-slate-400" /> : <ChevronDown size={18} className="text-slate-400" />}
     </button>
+    {aberta && nota && <div className="px-5 pb-3 -mt-2"><pre className="text-xs text-slate-500 whitespace-pre-wrap font-sans bg-slate-50 border border-slate-200/80 rounded-xl p-3">{nota}</pre></div>}
     {aberta && <div className="px-5 pb-5">
       {erro ? <p className="text-xs bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-3">Esta seção não pôde ser carregada: {erro}</p>
         : linhas.length === 0 ? <p className="text-sm text-slate-400 border border-dashed rounded-xl p-6 text-center">Nenhum dado encontrado.</p>
@@ -158,7 +159,8 @@ export function Estoque() {
     {carregando && !dados ? <div className="bg-white border rounded-2xl p-12"><Carregando mensagem="Carregando dados do estoque…" /></div> : dados && <div className="space-y-4">
       <Secao titulo="Ruptura e estoque mínimo/máximo" subtitulo="Itens sinalizados para reposição ou abaixo do mínimo configurado." linhas={dados.ruptura} erro={dados.erros.ruptura} insight={insights.ruptura}/>
       <Secao titulo="Itens sem movimentação" subtitulo="Produtos sem venda por 90 dias ou mais." linhas={dados.semMovimentacao} erro={dados.erros.semMovimentacao} insight={insights.semMovimentacao}/>
-      <Secao titulo="Maior valor em estoque · Curva ABC" subtitulo="Valor calculado por estoque × custo gerencial mais recente." linhas={dados.valor} erro={dados.erros.valor} insight={insights.valor}/>
+      <Secao titulo="Maior valor em estoque · Curva ABC" subtitulo="Valor calculado por estoque × custo gerencial mais recente." linhas={dados.valor} erro={dados.erros.valor} insight={insights.valor}
+        nota={'Classe A: ~20% dos itens concentram ~80% do valor total — exigem controle rígido e inventários frequentes.\nClasse B: ~30% dos itens, ~15% do valor total — importância intermediária, monitoramento moderado.\nClasse C: ~50% dos itens, apenas ~5% do valor total — baixo valor unitário ou baixa movimentação, controle mais simples.'}/>
       <Secao titulo="Giro por produto" subtitulo="Consumo por requisição no período filtrado, giro e dias de cobertura do estoque atual." linhas={dados.giroProdutos} erro={dados.erros.giroProdutos} insight={insights.giroProdutos}/>
       <Secao titulo="Ranking de fornecedores" subtitulo="Histórico de cotações: prazo, vitórias e produtos distintos cotados." linhas={dados.fornecedores} erro={dados.erros.fornecedores} insight={insights.fornecedores}/>
       <Secao titulo="Cotações em aberto" subtitulo="Cotações com pelo menos um item ainda não fechado ou cancelado." linhas={dados.cotacoes} erro={dados.erros.cotacoes} insight={insights.cotacoes}/>

@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Truck, Boxes, Factory, Wrench, ShoppingCart, Wallet, Handshake, Calculator, Users, HardHat, ClipboardList } from 'lucide-react';
+import { Truck, Boxes, Factory, Wrench, ShoppingCart, Wallet, Handshake, Calculator, Users, HardHat, ClipboardList, Receipt } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import type { ModuloSistema } from '../../types';
 
@@ -111,6 +111,15 @@ const CARDS: CardModulo[] = [
     icone: <ClipboardList size={28} />,
     to: '/controladoria',
     cor: 'bg-slate-100 text-slate-600 border-slate-200',
+    ativo: false,
+  },
+  {
+    modulo: 'fiscal',
+    titulo: 'Fiscal',
+    descricao: 'Notas fiscais e obrigações tributárias.',
+    icone: <Receipt size={28} />,
+    to: '/fiscal',
+    cor: 'bg-indigo-50 text-indigo-600 border-indigo-200',
     ativo: false,
   },
 ];

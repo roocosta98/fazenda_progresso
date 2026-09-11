@@ -10,7 +10,8 @@ export type ModuloSistema =
   | 'custos'
   | 'rh'
   | 'seguranca_trabalho'
-  | 'controladoria';
+  | 'controladoria'
+  | 'fiscal';
 export type TipoUsuarioSistema = 'admin' | 'comum';
 
 export interface Usuario {

@@ -101,8 +101,12 @@ export function DetalheDrawer({ aberto, onFechar, tipo, linha }: DetalheDrawerPr
                   <TabelaGenerica linhas={(detalhe.estoquePorLocal as Linha[]) ?? []} vazio="Sem estoque em nenhum local." />
                 </section>
                 <section>
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2.5">Últimas movimentações (entradas e saídas)</h3>
-                  <TabelaGenerica linhas={(detalhe.movimentos as Linha[]) ?? []} vazio="Nenhuma movimentação encontrada pra este produto." />
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2.5">Entradas</h3>
+                  <TabelaGenerica linhas={((detalhe.movimentos as Linha[]) ?? []).filter((m) => String(m.TIPO ?? '').startsWith('Entrada'))} vazio="Nenhuma entrada encontrada pra este produto." />
+                </section>
+                <section>
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2.5">Saídas</h3>
+                  <TabelaGenerica linhas={((detalhe.movimentos as Linha[]) ?? []).filter((m) => String(m.TIPO ?? '').startsWith('Saída'))} vazio="Nenhuma saída encontrada pra este produto." />
                 </section>
               </>
             )}
