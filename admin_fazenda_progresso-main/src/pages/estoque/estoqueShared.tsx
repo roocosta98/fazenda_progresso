@@ -11,6 +11,7 @@ export type DadosEstoque = {
   ruptura: Linha[];
   semMovimentacao: Linha[];
   valor: Linha[];
+  curvaAbc: Linha[];
   fornecedores: Linha[];
   cotacoes: Linha[];
   giroProdutos: Linha[];
@@ -41,8 +42,8 @@ export const ROTULOS_COLUNAS: Record<string, string> = {
   ESTOQUE: 'Estoque', MINIMO: 'Mínimo', MAXIMO: 'Máximo', MINIMOSUGERIDO: 'Mínimo sugerido', DIASRUPTURA: 'Dias p/ ruptura',
   PRODFALTA: 'Em falta', PONTOPEDIDO: 'Ponto de pedido', GIRODIARIO: 'Giro diário', DIASSEMVENDA: 'Dias sem venda',
   VALORESTOQUE: 'Valor em estoque', CUSTO: 'Custo', VALORTOTAL: 'Valor total', CLASSEABC: 'ABC', FORNECEDOR: 'Fornecedor',
-  CONFIABILIDADE: 'Confiabilidade', QUALIDADEATENDIMENTO: 'Qualidade de atendimento', QUALIDADEPRODUTO: 'Qualidade do produto',
-  PRAZOMEDIO: 'Prazo médio', TOTALCOTACOES: 'Total de cotações', TOTALVENCIDAS: 'Total vencidas', NUMCOTACAO: 'Nº cotação',
+  PRAZOMEDIO: 'Prazo médio (dias)', TOTALCOTACOES: 'Total de cotações', TOTALVENCIDAS: 'Cotações vencidas', TAXAVITORIA: 'Taxa de vitória',
+  PRODUTOSDISTINTOS: 'Produtos distintos', NUMCOTACAO: 'Nº cotação',
   DHINIC: 'Início', DHFINAL: 'Prazo final', COMPRADOR: 'Comprador', TOTALITENS: 'Total de itens', ITENSEMABERTO: 'Itens em aberto',
   QTD_COMPRA: 'Qtd. compra', QTD_DEV_COMPRA: 'Qtd. devolução', COMPRA_LIQUIDA: 'Compra líquida',
   CONSUMO: 'Consumo', ESTOQUE_ATUAL: 'Estoque atual', ESTMIN: 'Estoque mínimo', ESTMAX: 'Estoque máximo',
@@ -53,8 +54,12 @@ export const rotuloColuna = (chave: string) => ROTULOS_COLUNAS[chave]
 
 export const valorCelula = (chave: string, valor: unknown) => {
   if (valor === null || valor === undefined || valor === '') return '—';
-  if (/VALOR|CUSTO|CONFIAB|QUALIDADE|PRAZO|PONTO/i.test(chave)) return moeda(valor);
+  if (/^TAXAVITORIA$/i.test(chave)) return `${numero(valor, 1)}%`;
+  // PRAZOMEDIO/PONTOPEDIDO são contagem (dias/quantidade), não dinheiro — só VALOR/CUSTO/
+  // CONFIAB/QUALIDADE são de fato monetários ou percentuais tratados como moeda aqui.
+  if (/VALOR|CUSTO|CONFIAB|QUALIDADE/i.test(chave)) return moeda(valor);
   if (/DATA|DHINIC|DHFINAL/i.test(chave)) return data(valor);
+  if (/PRAZO/i.test(chave)) return numero(valor, 1);
   if (typeof valor === 'number') return numero(valor, /GIRO/i.test(chave) ? 3 : 0);
   return String(valor);
 };

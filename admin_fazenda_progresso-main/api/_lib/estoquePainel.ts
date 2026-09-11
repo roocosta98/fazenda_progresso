@@ -96,12 +96,34 @@ function montarConsultas(dataInicio: string, dataFim: string, dias: number) {
     ) SELECT TOP 100 CODPROD, DESCRPROD, ESTOQUE, CUSTO, VALORTOTAL,
       CASE WHEN ACUMULADO<=.80 THEN 'A' WHEN ACUMULADO<=.95 THEN 'B' ELSE 'C' END AS CLASSEABC
     FROM Pareto ORDER BY VALORTOTAL DESC`,
-  fornecedores: `SELECT TOP 100 PAR.NOMEPARC AS FORNECEDOR, AVG(CAST(ITC.CONFIABFORN AS DECIMAL(18,2))) AS CONFIABILIDADE,
-      AVG(CAST(ITC.QUALATEND AS DECIMAL(18,2))) AS QUALIDADEATENDIMENTO, AVG(CAST(ITC.QUALPROD AS DECIMAL(18,2))) AS QUALIDADEPRODUTO,
-      AVG(CAST(ITC.PRAZOENTREGA AS DECIMAL(18,2))) AS PRAZOMEDIO, COUNT(*) AS TOTALCOTACOES,
-      SUM(CASE WHEN ITC.MELHOR='S' THEN 1 ELSE 0 END) AS TOTALVENCIDAS
-    FROM TGFITC ITC LEFT JOIN TGFPAR PAR ON PAR.CODPARC=ITC.CODPARC GROUP BY PAR.NOMEPARC
-    ORDER BY TOTALVENCIDAS DESC, CONFIABILIDADE DESC`,
+  // Curva ABC agregada sobre a base INTEIRA (não só os 100 produtos de maior valor da consulta
+  // "valor" acima) — com ~22 mil produtos ativos precificados, o top 100 por valor já ultrapassa
+  // 80% do valor total sozinho, então toda consulta limitada dava 100% Curva A e nada em B/C.
+  curvaAbc: `WITH Base AS (
+      SELECT ISNULL(EST.ESTOQUE, 0)*CUS.CUSTO AS VALORTOTAL
+      FROM TGFPRO P
+      CROSS APPLY (SELECT SUM(E.ESTOQUE) AS ESTOQUE FROM TGFEST E WHERE E.CODPROD=P.CODPROD AND E.CODEMP=1) EST
+      CROSS APPLY (SELECT TOP 1 COALESCE(C.CUSMEDICM,C.CUSSEMICM) AS CUSTO FROM TGFCUS C WHERE C.CODPROD=P.CODPROD AND C.CODEMP=1 ORDER BY C.DTATUAL DESC,C.NUNOTA DESC) CUS
+      WHERE P.ATIVO='S' AND CUS.CUSTO IS NOT NULL
+    ), Pareto AS (
+      SELECT VALORTOTAL, SUM(VALORTOTAL) OVER(ORDER BY VALORTOTAL DESC ROWS UNBOUNDED PRECEDING) / NULLIF(SUM(VALORTOTAL) OVER(),0) AS ACUMULADO FROM Base
+    ) SELECT
+        CASE WHEN ACUMULADO<=.80 THEN 'A' WHEN ACUMULADO<=.95 THEN 'B' ELSE 'C' END AS CLASSEABC,
+        COUNT(*) AS QTDPRODUTOS, SUM(VALORTOTAL) AS VALORTOTAL
+      FROM Pareto GROUP BY CASE WHEN ACUMULADO<=.80 THEN 'A' WHEN ACUMULADO<=.95 THEN 'B' ELSE 'C' END`,
+  // CONFIABFORN/QUALATEND/QUALPROD ficam com valor 0 em praticamente 100% das linhas
+  // (nunca são de fato preenchidos nesta instalação do Sankhya) — mostrar essas colunas
+  // é ruído. PRAZOENTREGA e MELHOR (vitória de cotação) são os campos com dado real.
+  fornecedores: `SELECT TOP 100 PAR.NOMEPARC AS FORNECEDOR,
+      COUNT(*) AS TOTALCOTACOES,
+      SUM(CASE WHEN ITC.MELHOR='S' THEN 1 ELSE 0 END) AS TOTALVENCIDAS,
+      ROUND(100.0 * SUM(CASE WHEN ITC.MELHOR='S' THEN 1 ELSE 0 END) / NULLIF(COUNT(*),0), 1) AS TAXAVITORIA,
+      AVG(CAST(ITC.PRAZOENTREGA AS DECIMAL(18,2))) AS PRAZOMEDIO,
+      COUNT(DISTINCT ITC.CODPROD) AS PRODUTOSDISTINTOS
+    FROM TGFITC ITC LEFT JOIN TGFPAR PAR ON PAR.CODPARC=ITC.CODPARC
+    WHERE ITC.CODPARC <> 0
+    GROUP BY PAR.NOMEPARC
+    ORDER BY TOTALVENCIDAS DESC, TOTALCOTACOES DESC`,
   // O status da cotação em si (TGFCOT.SITUACAO) não reflete o fechamento real -
   // cada item tem sua própria situação (TGFITC.SITUACAO), e uma cotação só está
   // de fato "em aberto" se ainda tiver algum item não Fechado/Cancelado.
@@ -165,12 +187,12 @@ export async function painelEstoque(req: VercelRequest, res: VercelResponse) {
       try { return await consultarSankhya(consultas[nome]); }
       catch (error) { erros[nome] = error instanceof Error ? error.message : 'Falha na consulta'; return []; }
     };
-    const [ruptura, semMovimentacao, valor, fornecedores, cotacoes, giroProdutos, kpiRows] = await Promise.all([
-      executar('ruptura'), executar('semMovimentacao'), executar('valor'), executar('fornecedores'), executar('cotacoes'), executar('giroProdutos'), executar('kpis'),
+    const [ruptura, semMovimentacao, valor, curvaAbc, fornecedores, cotacoes, giroProdutos, kpiRows] = await Promise.all([
+      executar('ruptura'), executar('semMovimentacao'), executar('valor'), executar('curvaAbc'), executar('fornecedores'), executar('cotacoes'), executar('giroProdutos'), executar('kpis'),
     ]);
     const kpis = kpiRows[0] ?? {};
     const giroEstoque = Number(kpis.CONSUMOPERIODO ?? 0) / Number(kpis.ESTOQUETOTALGIRO ?? 0) || null;
-    res.status(200).json({ ruptura, semMovimentacao, valor, fornecedores, cotacoes, giroProdutos, kpis: { ...kpis, giroEstoque }, periodo: { dataInicio, dataFim }, erros });
+    res.status(200).json({ ruptura, semMovimentacao, valor, curvaAbc, fornecedores, cotacoes, giroProdutos, kpis: { ...kpis, giroEstoque }, periodo: { dataInicio, dataFim }, erros });
   } catch (error) {
     res.status(502).json({ error: 'Não foi possível conectar ao banco de dados de estoque.', detalhe: error instanceof Error ? error.message : undefined });
   }

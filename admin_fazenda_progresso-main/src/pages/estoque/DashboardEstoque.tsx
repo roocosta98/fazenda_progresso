@@ -19,11 +19,13 @@ function truncar(texto: string, tamanho: number) {
 export function DashboardEstoque() {
   const { dados, erro, carregando, carregar, dataDe, setDataDe, dataAte, setDataAte } = useEstoquePainel();
 
+  // dados.curvaAbc já vem agregado sobre a base INTEIRA de produtos (não só os 100 de
+  // dados.valor, que é só a listagem dos itens de maior valor) — ver comentário na query.
   const curvaAbc = useMemo(() => {
-    const linhas = ['A', 'B', 'C'].map((classe) => ({
-      classe,
-      valor: (dados?.valor ?? []).filter((l) => l.CLASSEABC === classe).reduce((s, l) => s + Number(l.VALORTOTAL ?? 0), 0),
-    }));
+    const linhas = ['A', 'B', 'C'].map((classe) => {
+      const linha = (dados?.curvaAbc ?? []).find((l) => l.CLASSEABC === classe);
+      return { classe, valor: Number(linha?.VALORTOTAL ?? 0), qtdProdutos: Number(linha?.QTDPRODUTOS ?? 0) };
+    });
     const total = linhas.reduce((s, l) => s + l.valor, 0);
     return linhas.map((l) => ({ ...l, percentual: total > 0 ? (l.valor / total) * 100 : 0 }));
   }, [dados]);
@@ -79,7 +81,7 @@ export function DashboardEstoque() {
                   <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ backgroundColor: COR_CATEGORICA[i] }} />
                   <div className="min-w-0 flex-1">
                     <p className="text-xs font-bold text-slate-700">Curva {c.classe}</p>
-                    <p className="text-[11px] text-slate-500">{moeda(c.valor)}</p>
+                    <p className="text-[11px] text-slate-500">{moeda(c.valor)} · {numero(c.qtdProdutos)} produtos</p>
                   </div>
                   <span className="text-sm font-bold text-slate-800 tabular-nums shrink-0">{numero(c.percentual, 1)}%</span>
                 </div>

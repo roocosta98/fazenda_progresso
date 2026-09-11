@@ -19,14 +19,23 @@ function normalizarSituacao(sql: string) {
 }
 
 function consultaAtalho(pergunta: string) {
-  const texto = pergunta.toLocaleLowerCase();
-  if (/fornecedor/.test(texto) && /prazo/.test(texto)) return `SELECT TOP 100 PAR.NOMEPARC AS FORNECEDOR, AVG(TRY_CONVERT(DECIMAL(18,2), ITC.PRAZOENTREGA)) AS PRAZOMEDIO, COUNT(*) AS TOTALCOTACOES
+  // Normaliza acento (mínimo -> minimo) pra não precisar duplicar cada regex.
+  const texto = pergunta.toLocaleLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  // Os atalhos existem só pra responder rápido e sem custo de IA os 3 botões de sugestão
+  // fixos da tela ("Produtos com estoque abaixo do mínimo", "fornecedores... melhor prazo",
+  // "Cotações em aberto..."). Um match por palavra solta (ex.: "produto" + "mínimo"
+  // aparecendo em qualquer pergunta analítica não relacionada, tipo "quantos produtos têm
+  // X, traga contagem mínimo e máximo") já sequestrou pergunta legítima e devolveu a query
+  // errada — silenciosamente, sem erro. Por isso agora exige a frase inteira, não palavras
+  // soltas, e só considera perguntas curtas (perto do tamanho dos botões de sugestão).
+  if (texto.length > 80) return null;
+  if (/fornecedor(es)?/.test(texto) && /melhor\s+prazo/.test(texto)) return `SELECT TOP 100 PAR.NOMEPARC AS FORNECEDOR, AVG(TRY_CONVERT(DECIMAL(18,2), ITC.PRAZOENTREGA)) AS PRAZOMEDIO, COUNT(*) AS TOTALCOTACOES
     FROM TGFITC ITC LEFT JOIN TGFPAR PAR ON PAR.CODPARC=ITC.CODPARC GROUP BY PAR.NOMEPARC ORDER BY PRAZOMEDIO ASC`;
-  if (/cota[cç][aã]o/.test(texto) && /(abert|prazo)/.test(texto)) return `SELECT TOP 100 COT.NUMCOTACAO, COT.DHINIC, COT.DHFINAL, USU.NOMEUSU AS COMPRADOR
+  if (/cota[cç][aã]o|cota[cç][oõ]es/.test(texto) && /em\s+abert/.test(texto)) return `SELECT TOP 100 COT.NUMCOTACAO, COT.DHINIC, COT.DHFINAL, USU.NOMEUSU AS COMPRADOR
     FROM TGFCOT COT LEFT JOIN TSIUSU USU ON USU.CODUSU=COT.CODUSUREQ
     WHERE EXISTS (SELECT 1 FROM TGFITC I WHERE I.NUMCOTACAO=COT.NUMCOTACAO AND UPPER(LTRIM(RTRIM(CAST(I.SITUACAO AS VARCHAR(20))))) NOT IN ('F','C','FECHADA','CANCELADA'))
     ORDER BY COT.DHFINAL ASC`;
-  if (/(abaixo|ruptura|mínimo|minimo)/.test(texto) && /(produto|estoque)/.test(texto)) return `SELECT TOP 100 P.CODPROD, P.DESCRPROD, E.ESTOQUE, P.ESTMIN AS MINIMO, L.DESCRLOCAL AS LOCAL
+  if (/estoque\s+abaixo\s+do\s+minimo|abaixo\s+do\s+minimo/.test(texto)) return `SELECT TOP 100 P.CODPROD, P.DESCRPROD, E.ESTOQUE, P.ESTMIN AS MINIMO, L.DESCRLOCAL AS LOCAL
     FROM TGFPRO P JOIN TGFEST E ON E.CODPROD=P.CODPROD AND E.CODEMP=1 LEFT JOIN TGFLOC L ON L.CODLOCAL=E.CODLOCAL WHERE P.ATIVO='S' AND P.ESTMIN IS NOT NULL AND E.ESTOQUE<=P.ESTMIN ORDER BY E.ESTOQUE ASC`;
   return null;
 }
