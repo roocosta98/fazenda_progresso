@@ -27,6 +27,7 @@ import {
   HardHat,
   ClipboardList,
   X,
+  BrainCircuit,
 } from 'lucide-react';
 import logoFp from '../../assets/logo.png';
 import type { ModuloSistema } from '../../types';
@@ -134,6 +135,7 @@ export const Sidebar = ({ mobileAberto = false, onFechar }: SidebarProps) => {
     label: 'Administração', icon: <Settings size={18} />,
     children: [
       { to: '/administracao/usuarios', icon: <Settings size={16} />, label: 'Usuários' },
+      { to: '/administracao/ia', icon: <BrainCircuit size={16} />, label: 'Configuração de IA' },
       { to: '/logistica/frota', icon: <Truck size={16} />, label: 'Gestão de Frota' },
       { to: '/logistica/metas-orfas', icon: <Link2 size={16} />, label: 'Metas Órfãs' },
     ],

@@ -17,6 +17,7 @@ import { Estoque } from '../pages/estoque/Estoque';
 import { DashboardEstoque } from '../pages/estoque/DashboardEstoque';
 import { ProducaoBatata } from '../pages/producao/ProducaoBatata';
 import { GestaoUsuarios } from '../pages/administracao/GestaoUsuarios';
+import { ConfiguracaoIA } from '../pages/administracao/ConfiguracaoIA';
 import { Manutencao } from '../pages/manutencao/Manutencao';
 import { Inicio } from '../pages/inicio/Inicio';
 import { Compras } from '../pages/compras/Compras';
@@ -107,6 +108,7 @@ export const AppRoutes = () => {
         <Route path="/seguranca-trabalho" element={<ProtectedRoute allowedRoles={['logistica']}><EmConstrucao titulo="Segurança do Trabalho" /></ProtectedRoute>} />
         <Route path="/controladoria" element={<ProtectedRoute allowedRoles={['logistica']}><EmConstrucao titulo="Controladoria" /></ProtectedRoute>} />
         <Route path="/administracao/usuarios" element={<ProtectedRoute allowedRoles={['logistica']}><GestaoUsuarios /></ProtectedRoute>} />
+        <Route path="/administracao/ia" element={<ProtectedRoute allowedRoles={['logistica']}><ConfiguracaoIA /></ProtectedRoute>} />
       </Route>
       
       <Route 
