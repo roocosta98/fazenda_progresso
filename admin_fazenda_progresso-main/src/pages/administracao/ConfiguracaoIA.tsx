@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { BrainCircuit, Database, MessageSquareText, Pencil, Plus, Sparkles, Trash2, X } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { BrainCircuit, Database, FileUp, MessageSquareText, Pencil, Plus, Sparkles, Trash2, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 const API_URL = import.meta.env.VITE_API_URL ?? '';
@@ -62,6 +62,9 @@ export function ConfiguracaoIA() {
   const [editandoId, setEditandoId] = useState<number | null>(null);
   const [form, setForm] = useState(FORM_VAZIO);
   const [filtroTipo, setFiltroTipo] = useState<TipoConteudo | 'todos'>('todos');
+  const [importando, setImportando] = useState(false);
+  const [avisoImportacao, setAvisoImportacao] = useState<string | null>(null);
+  const inputArquivoRef = useRef<HTMLInputElement>(null);
   const headers = { 'Content-Type': 'application/json', 'x-user-type': usuario?.tipoUsuario ?? '' };
 
   const carregar = useCallback(async () => {
@@ -82,7 +85,28 @@ export function ConfiguracaoIA() {
     setForm({ titulo: entrada.Titulo, conteudo: entrada.Conteudo, modulo: entrada.Modulo, tipo: entrada.Tipo ?? 'texto' });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
-  const cancelarEdicao = () => { setEditandoId(null); setForm(FORM_VAZIO); };
+  const cancelarEdicao = () => { setEditandoId(null); setForm(FORM_VAZIO); setAvisoImportacao(null); };
+
+  const importarArquivo = async (arquivo: File) => {
+    setImportando(true); setErro(null); setAvisoImportacao(null);
+    try {
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const leitor = new FileReader();
+        leitor.onload = () => resolve(String(leitor.result).split(',')[1] ?? '');
+        leitor.onerror = () => reject(new Error('Falha ao ler o arquivo.'));
+        leitor.readAsDataURL(arquivo);
+      });
+      const resposta = await fetch(`${API_URL}/api/administracao/ia-importar`, { method: 'POST', headers, body: JSON.stringify({ nomeArquivo: arquivo.name, conteudoBase64: base64 }) });
+      const corpo = await resposta.json();
+      if (!resposta.ok) throw new Error(corpo.error);
+      setEditandoId(null);
+      setForm({ titulo: corpo.titulo, conteudo: corpo.conteudo, modulo: corpo.modulo, tipo: corpo.tipo });
+      setAvisoImportacao(corpo.truncado
+        ? `Arquivo "${arquivo.name}" processado — ele é grande e o conteúdo foi cortado no que a IA conseguiu organizar. Revise antes de salvar.`
+        : `Arquivo "${arquivo.name}" processado. Revise o título, tipo e conteúdo sugeridos abaixo antes de salvar.`);
+    } catch (falha) { setErro(falha instanceof Error ? falha.message : 'Falha ao importar o arquivo.'); }
+    finally { setImportando(false); if (inputArquivoRef.current) inputArquivoRef.current.value = ''; }
+  };
 
   const salvar = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -134,10 +158,19 @@ export function ConfiguracaoIA() {
       {erro && <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{erro}</div>}
 
       <form onSubmit={salvar} className="bg-white border rounded-2xl p-5 space-y-4">
-        <div className="flex items-center gap-2 font-bold text-slate-800">
-          {editandoId ? <Pencil size={18} className="text-emerald-600" /> : <Plus size={18} className="text-emerald-600" />}
-          {editandoId ? 'Editando entrada' : 'Nova entrada de treinamento'}
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-2 font-bold text-slate-800">
+            {editandoId ? <Pencil size={18} className="text-emerald-600" /> : <Plus size={18} className="text-emerald-600" />}
+            {editandoId ? 'Editando entrada' : 'Nova entrada de treinamento'}
+          </div>
+          <div>
+            <input ref={inputArquivoRef} type="file" accept=".txt,.md,.csv,.pdf,.docx,.xlsx,.xls" className="hidden" onChange={(e) => { const arquivo = e.target.files?.[0]; if (arquivo) importarArquivo(arquivo); }} />
+            <button type="button" disabled={importando} onClick={() => inputArquivoRef.current?.click()} className="inline-flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3.5 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-100 disabled:opacity-50">
+              <FileUp size={15} />{importando ? 'Lendo arquivo…' : 'Importar de um arquivo (.pdf, .docx, .xlsx, .txt)'}
+            </button>
+          </div>
         </div>
+        {avisoImportacao && <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800">{avisoImportacao}</div>}
 
         <div>
           <p className="text-xs font-semibold text-slate-500 mb-2">1. Que tipo de conteúdo é este?</p>

@@ -29,6 +29,10 @@
       "destination": "/api/gastos/resumo?modo=ia-conhecimento"
     },
     {
+      "source": "/api/administracao/ia-importar",
+      "destination": "/api/gastos/resumo?modo=ia-importar"
+    },
+    {
       "source": "/api/producao/batata",
       "destination": "/api/gastos/resumo?modo=producao-batata"
     },
