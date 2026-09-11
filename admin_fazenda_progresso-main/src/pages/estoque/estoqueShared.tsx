@@ -20,7 +20,21 @@ export type DadosEstoque = {
 
 export const moeda = (valor: unknown) => Number(valor ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 export const numero = (valor: unknown, casas = 0) => Number(valor ?? 0).toLocaleString('pt-BR', { maximumFractionDigits: casas });
-export const data = (valor: unknown) => valor ? new Date(String(valor)).toLocaleDateString('pt-BR') : '—';
+// O gateway do Sankhya (DbExplorerSP) não normaliza data: já veio como epoch em ms, como
+// "/Date(169...)/ " (formato clássico ASP.NET) e como "AAAA-MM-DD HH:mm:ss" (sem "T", que
+// alguns navegadores não interpretam) — sem cobrir os três formatos, new Date(...) direto
+// falha silenciosamente e mostra o texto "Invalid Date" pro usuário.
+export const data = (valor: unknown) => {
+  if (valor === null || valor === undefined || valor === '') return '—';
+  if (typeof valor === 'number') {
+    const d = new Date(valor);
+    return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('pt-BR');
+  }
+  const texto = String(valor);
+  const aspNet = texto.match(/\/Date\((-?\d+)/);
+  const d = aspNet ? new Date(Number(aspNet[1])) : new Date(texto.includes(' ') && !texto.includes('T') ? texto.replace(' ', 'T') : texto);
+  return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('pt-BR');
+};
 
 export const ROTULOS_COLUNAS: Record<string, string> = {
   CODPROD: 'Código', DESCRPROD: 'Descrição', REFERENCIA: 'Referência', LOCAL: 'Local', LOTE: 'Lote',
