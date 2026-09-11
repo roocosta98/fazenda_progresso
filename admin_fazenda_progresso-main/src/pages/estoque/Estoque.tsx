@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown, Search, Sparkles } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { cabecalhoPerfil } from '../../utils/apiAuth';
@@ -122,6 +123,15 @@ export function Estoque() {
   const [pesquisando, setPesquisando] = useState(false);
   const [erroPesquisa, setErroPesquisa] = useState<string | null>(null);
   const [resultadoPesquisa, setResultadoPesquisa] = useState<{ resumo: string | null; sql: string; linhas: Linha[] } | null>(null);
+  // Link "Pergunte à IA" no menu aponta pra cá via #pesquisa-ia; o React Router não rola a
+  // página sozinho numa troca de hash (a rota em si não muda), então rola manualmente sempre
+  // que o hash mudar, inclusive clicando o link estando já na tela de Estoque.
+  const { hash } = useLocation();
+  useEffect(() => {
+    if (hash === '#pesquisa-ia') {
+      document.getElementById('pesquisa-ia')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [hash]);
   const pesquisar = async () => {
     if (!pergunta.trim()) return;
     setPesquisando(true); setErroPesquisa(null);
@@ -138,7 +148,7 @@ export function Estoque() {
     <FiltroDataEstoque dataDe={dataDe} setDataDe={setDataDe} dataAte={dataAte} setDataAte={setDataAte} carregando={carregando} carregar={carregar} />
     {(erro || erroPesquisa) && <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm">{erro ?? erroPesquisa}</div>}
     <KpiCardsEstoque kpis={dados?.kpis ?? {}} />
-    <section className="bg-emerald-950 rounded-2xl border border-emerald-800 p-5 text-white">
+    <section id="pesquisa-ia" className="bg-emerald-950 rounded-2xl border border-emerald-800 p-5 text-white scroll-mt-20">
       <h2 className="font-bold flex items-center gap-2"><Search size={18} className="text-emerald-300"/> Pergunte ao estoque</h2>
       <p className="text-sm text-emerald-100/80 mt-1">Faça uma pergunta em português. A IA consulta somente dados de estoque do Sankhya (empresa 01) e devolve a resposta com os registros encontrados.</p>
       <div className="mt-4 flex flex-col sm:flex-row gap-2"><input value={pergunta} onChange={(e) => setPergunta(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') pesquisar(); }} placeholder="Ex.: quais produtos de agroquímico vencem nos próximos 30 dias?" className="flex-1 rounded-xl bg-white px-4 py-3 text-sm !text-slate-950 caret-slate-950 placeholder:!text-slate-500 outline-none"/><button onClick={pesquisar} disabled={pesquisando || !pergunta.trim()} className="px-5 py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 font-bold text-sm">{pesquisando ? 'Consultando…' : 'Perguntar'}</button></div>
