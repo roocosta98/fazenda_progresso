@@ -61,6 +61,9 @@ export const ROTULOS_COLUNAS: Record<string, string> = {
   MARCA: 'Marca', ATIVO: 'Ativo', CODLOCAL: 'Cód. local', NUNOTA: 'Nº nota (interno)', NUMNOTA: 'Nota fiscal',
   DTNEG: 'Data', TIPMOV: 'Tipo mov.', TIPO: 'Tipo', PARCEIRO: 'Parceiro', QTDNEG: 'Quantidade',
   CUSTOUNITARIO: 'Custo unitário', SITUACAO: 'Situação', PRAZOENTREGA: 'Prazo entrega (dias)', MELHORPRECO: 'Melhor preço',
+  QTD_COMPRAR: 'Qtd. sugerida p/ compra', CODLOCALPADRAO: 'Estoque local padrão', DESCRLOCAL_PADRAO: 'Local padrão (detalhe)',
+  OUTROS_LOCAIS: 'Estoque outros locais', DESC_OUTROS_LOCAIS: 'Outros locais (detalhe)', TOTAL: 'Valor total',
+  UTILIZADO: 'Último ano utilizado', DIAS_SEM_USO: 'Dias sem uso', ULTIMA_MOV: 'Última movimentação',
 };
 export const rotuloColuna = (chave: string) => ROTULOS_COLUNAS[chave]
   ?? chave.replace(/_/g, ' ').toLowerCase().replace(/^\p{L}/u, (letra) => letra.toUpperCase());
@@ -70,8 +73,10 @@ export const valorCelula = (chave: string, valor: unknown) => {
   if (/^TAXAVITORIA$/i.test(chave)) return `${numero(valor, 1)}%`;
   // PRAZOMEDIO/PONTOPEDIDO são contagem (dias/quantidade), não dinheiro — só VALOR/CUSTO/
   // CONFIAB/QUALIDADE são de fato monetários ou percentuais tratados como moeda aqui.
-  if (/VALOR|CUSTO|CONFIAB|QUALIDADE/i.test(chave)) return moeda(valor);
-  if (/DATA|DHINIC|DHFINAL/i.test(chave)) return data(valor);
+  // TOTAL isolado (estoque parado x custo) também é dinheiro — mas TOTALCOTACOES/TOTALVENCIDAS/
+  // TOTALITENS/TOTALRUPTURA são contagem, então só o nome exato "TOTAL" entra aqui, não o prefixo.
+  if (/VALOR|CUSTO|CONFIAB|QUALIDADE/i.test(chave) || /^TOTAL$/i.test(chave)) return moeda(valor);
+  if (/DATA|DHINIC|DHFINAL|DTNEG|ULTIMA_MOV/i.test(chave)) return data(valor);
   if (/PRAZO/i.test(chave)) return numero(valor, 1);
   if (typeof valor === 'number') return numero(valor, /GIRO/i.test(chave) ? 3 : 0);
   return String(valor);

@@ -112,6 +112,7 @@ export const AppRoutes = () => {
         <Route path="/rh" element={<ProtectedRoute allowedRoles={['logistica']}><EmConstrucao titulo="DP / RH" /></ProtectedRoute>} />
         <Route path="/seguranca-trabalho" element={<ProtectedRoute allowedRoles={['logistica']}><EmConstrucao titulo="Segurança do Trabalho" /></ProtectedRoute>} />
         <Route path="/controladoria" element={<ProtectedRoute allowedRoles={['logistica']}><EmConstrucao titulo="Controladoria" /></ProtectedRoute>} />
+        <Route path="/fiscal" element={<ProtectedRoute allowedRoles={['logistica']}><EmConstrucao titulo="Fiscal" /></ProtectedRoute>} />
         <Route path="/administracao/usuarios" element={<ProtectedRoute allowedRoles={['logistica']}><GestaoUsuarios /></ProtectedRoute>} />
         <Route path="/administracao/ia" element={<ProtectedRoute allowedRoles={['logistica']}><ConfiguracaoIA /></ProtectedRoute>} />
       </Route>

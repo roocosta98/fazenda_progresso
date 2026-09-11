@@ -26,6 +26,7 @@ import {
   Users,
   HardHat,
   ClipboardList,
+  Receipt,
   X,
   BrainCircuit,
   Sparkles,
@@ -64,6 +65,7 @@ const moduloFromPath = (pathname: string): ModuloSistema | null => {
   if (pathname.startsWith('/rh')) return 'rh';
   if (pathname.startsWith('/seguranca-trabalho')) return 'seguranca_trabalho';
   if (pathname.startsWith('/controladoria')) return 'controladoria';
+  if (pathname.startsWith('/fiscal')) return 'fiscal';
   return null;
 };
 
@@ -79,7 +81,7 @@ export const Sidebar = ({ mobileAberto = false, onFechar }: SidebarProps) => {
   const [grupoAberto, setGrupoAberto] = useState(true);
   const [seletorAberto, setSeletorAberto] = useState(false);
   const modulosPermitidos: ModuloSistema[] = usuario?.tipoUsuario === 'admin'
-    ? ['logistica_frota', 'estoque', 'producao_batata', 'manutencao', 'compras', 'financeiro', 'comercial', 'custos', 'rh', 'seguranca_trabalho', 'controladoria']
+    ? ['logistica_frota', 'estoque', 'producao_batata', 'manutencao', 'compras', 'financeiro', 'comercial', 'custos', 'rh', 'seguranca_trabalho', 'controladoria', 'fiscal']
     : (usuario?.modulos?.length ? usuario.modulos : ['logistica_frota']);
   const modulosDisponiveis: SelecaoModulo[] = ['todos', ...modulosPermitidos];
   const [moduloAtual, setModuloAtual] = useState<SelecaoModulo>(() => moduloFromPath(location.pathname) ?? 'todos');
@@ -132,6 +134,7 @@ export const Sidebar = ({ mobileAberto = false, onFechar }: SidebarProps) => {
     rh: [{ to: '/rh', icon: <Users size={18} />, label: 'Painel de DP / RH' }],
     seguranca_trabalho: [{ to: '/seguranca-trabalho', icon: <HardHat size={18} />, label: 'Painel de Segurança' }],
     controladoria: [{ to: '/controladoria', icon: <ClipboardList size={18} />, label: 'Painel de Controladoria' }],
+    fiscal: [{ to: '/fiscal', icon: <Receipt size={18} />, label: 'Painel Fiscal' }],
   };
   const itensAdministracao: GrupoItem[] = usuario.tipoUsuario === 'admin' ? [{
     label: 'Administração', icon: <Settings size={18} />,
@@ -155,6 +158,7 @@ export const Sidebar = ({ mobileAberto = false, onFechar }: SidebarProps) => {
     rh: { nome: 'DP / RH', icone: <Users size={16} /> },
     seguranca_trabalho: { nome: 'Segurança do Trabalho', icone: <HardHat size={16} /> },
     controladoria: { nome: 'Controladoria', icone: <ClipboardList size={16} /> },
+    fiscal: { nome: 'Fiscal', icone: <Receipt size={16} /> },
   };
   const items: (LinkItem | GrupoItem)[] = [
     ...(moduloAtual === 'todos'
@@ -175,6 +179,7 @@ export const Sidebar = ({ mobileAberto = false, onFechar }: SidebarProps) => {
     rh: '/rh',
     seguranca_trabalho: '/seguranca-trabalho',
     controladoria: '/controladoria',
+    fiscal: '/fiscal',
   };
 
   const linkClasses = (isActive: boolean) =>
