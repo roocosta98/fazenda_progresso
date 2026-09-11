@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import OpenAI from 'openai';
-import { PDFParse } from 'pdf-parse';
+import pdfParse from 'pdf-parse';
 import mammoth from 'mammoth';
 import * as XLSX from 'xlsx';
 
@@ -18,8 +18,7 @@ const CARACTERES_MAXIMOS_PARA_IA = 40000;
 async function extrairTexto(nomeArquivo: string, buffer: Buffer): Promise<string> {
   const extensao = (nomeArquivo.split('.').pop() ?? '').toLowerCase();
   if (extensao === 'pdf') {
-    const parser = new PDFParse({ data: buffer });
-    const resultado = await parser.getText();
+    const resultado = await pdfParse(buffer);
     return resultado.text;
   }
   if (extensao === 'docx') {
