@@ -6,6 +6,14 @@ export type EntradaChangelog = { data: string; itens: string[] };
 
 export const CHANGELOG: EntradaChangelog[] = [
   {
+    data: '13/09/2026 (acesso facilitado)',
+    itens: [
+      'Estoque: a lista completa (com todas as tabelas) voltou pro menu, com o nome "Lista completa" — tinha ficado escondida, só acessível clicando num botão pequeno no Dashboard.',
+      'Dashboard de Estoque ganhou botões "Lista completa" e "Pergunte à IA" bem visíveis no topo, inclusive no celular.',
+      'Botão pra voltar ao Dashboard adicionado na tela de Lista completa.',
+    ],
+  },
+  {
     data: '13/09/2026 (visual v2)',
     itens: [
       'Identidade visual refeita puxando as cores REAIS da Fazenda Progresso (o verde-oliva e o verde-limão do site institucional da empresa) e a fonte usada lá, no lugar do dourado provisório da versão anterior.',

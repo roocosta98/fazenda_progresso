@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
-import { ChevronDown, ChevronUp, Search, Sparkles } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { BarChart3, ChevronDown, ChevronUp, Search, Sparkles } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { cabecalhoPerfil } from '../../utils/apiAuth';
 import { FiltroDataEstoque, KpiCardsEstoque, rotuloColuna, TabelaInterativa, useEstoquePainel, valorCelula, type FiltroSituacaoTabela, type Linha } from './estoqueShared';
@@ -55,7 +55,12 @@ export function Estoque() {
     finally { setPesquisando(false); }
   };
   return <div className="space-y-5 pb-12">
-    <div><p className="text-xs font-bold tracking-wider uppercase text-emerald-700">Controle de estoque</p><h1 className="text-2xl font-bold text-slate-800">Estoque inteligente</h1><p className="text-sm text-slate-500 mt-1">Dados operacionais do Sankhya (empresa 01): níveis, giro, fornecedores e cotações.</p></div>
+    <div className="flex flex-wrap items-start justify-between gap-3">
+      <div><p className="text-xs font-bold tracking-wider uppercase text-emerald-700">Controle de estoque</p><h1 className="text-2xl font-bold text-slate-800">Estoque inteligente</h1><p className="text-sm text-slate-500 mt-1">Dados operacionais do Sankhya (empresa 01): níveis, giro, fornecedores e cotações.</p></div>
+      <Link to="/logistica/estoque/dashboard" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-50 transition-colors shrink-0">
+        <BarChart3 size={15} className="text-emerald-700" /> Ver Dashboard
+      </Link>
+    </div>
     <FiltroDataEstoque dataDe={dataDe} setDataDe={setDataDe} dataAte={dataAte} setDataAte={setDataAte} carregando={carregando} carregar={carregar} />
     {(erro || erroPesquisa) && <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm">{erro ?? erroPesquisa}</div>}
     <KpiCardsEstoque kpis={dados?.kpis ?? {}} cotacoesPorSituacao={dados?.cotacoesPorSituacao} />
