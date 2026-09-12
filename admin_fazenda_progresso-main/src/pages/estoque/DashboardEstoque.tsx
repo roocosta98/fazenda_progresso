@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Bar, BarChart, Cell, LabelList, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { BarChart3, Maximize2, Sparkles } from 'lucide-react';
+import { BarChart3, List, Maximize2, Sparkles } from 'lucide-react';
 import { FiltroDataEstoque, KpiCardsEstoque, ModalExpandido, TabelaInterativa, moeda, numero, useEstoquePainel } from './estoqueShared';
 import { Carregando, SemDado } from '../../components/common/viz';
 
@@ -73,9 +73,14 @@ export function DashboardEstoque() {
         <h1 className="text-2xl font-bold text-slate-800">Dashboard de Estoque</h1>
         <p className="text-sm text-slate-500 mt-1">Visão geral e gráfica dos níveis, valor, giro e itens parados (empresa 01). Clique num card ou gráfico pra ver o detalhe completo.</p>
       </div>
-      <Link to="/logistica/estoque#pesquisa-ia" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-950 text-white text-xs font-bold hover:bg-emerald-900 transition-colors shrink-0">
-        <Sparkles size={15} className="text-emerald-300" /> Pergunte à IA
-      </Link>
+      <div className="flex flex-wrap items-center gap-2 shrink-0 w-full sm:w-auto">
+        <Link to="/logistica/estoque" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-50 transition-colors">
+          <List size={15} className="text-emerald-700" /> Lista completa
+        </Link>
+        <Link to="/logistica/estoque#pesquisa-ia" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-950 text-white text-xs font-bold hover:bg-emerald-900 transition-colors">
+          <Sparkles size={15} className="text-emerald-300" /> Pergunte à IA
+        </Link>
+      </div>
     </div>
     <FiltroDataEstoque dataDe={dataDe} setDataDe={setDataDe} dataAte={dataAte} setDataAte={setDataAte} carregando={carregando} carregar={carregar} />
     {erro && <div className="p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-sm">{erro}</div>}
