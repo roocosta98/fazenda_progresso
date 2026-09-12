@@ -6,6 +6,14 @@ export type EntradaChangelog = { data: string; itens: string[] };
 
 export const CHANGELOG: EntradaChangelog[] = [
   {
+    data: '13/09/2026',
+    itens: [
+      'Dashboard de Estoque virou a porta de entrada única do estoque — o item "Painel de Estoque" saiu do menu.',
+      'Todo card e todo gráfico do Dashboard de Estoque agora pode ser clicado pra abrir uma tela cheia com o gráfico completo e a tabela detalhada.',
+      'Novos gráficos no Dashboard de Estoque: Ranking de fornecedores (taxa de vitória) e Cotações em aberto por situação.',
+    ],
+  },
+  {
     data: '12/09/2026',
     itens: [
       'Novo: Painel Geral (BI) — uma tela só com um painel de gráficos por módulo (Estoque e Logística já com dados reais). Acesse pelo botão na tela Início ou pelo atalho "Visão Geral (BI)" no menu de qualquer módulo.',

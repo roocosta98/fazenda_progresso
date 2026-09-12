@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from 'react';
-import { AlertTriangle, Boxes, RefreshCw, TrendingUp } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown, Boxes, ChevronLeft, ChevronRight, RefreshCw, Search, TrendingUp, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { cabecalhoPerfil } from '../../utils/apiAuth';
 import { hojeISO, primeiroDiaMesISO } from '../../components/common/vizTokens';
+import { DetalheDrawer, type TipoDetalhe } from './DetalheDrawer';
 
 const API_URL = import.meta.env.VITE_API_URL ?? '';
 
@@ -149,31 +150,36 @@ export function FiltroDataEstoque({ dataDe, setDataDe, dataAte, setDataAte, carr
   );
 }
 
-export function KpiCardsEstoque({ kpis, cotacoesPorSituacao }: { kpis: Linha; cotacoesPorSituacao?: Linha[] }) {
+export function KpiCardsEstoque({ kpis, cotacoesPorSituacao, aoClicarCard }: { kpis: Linha; cotacoesPorSituacao?: Linha[]; aoClicarCard?: (chave: string) => void }) {
   const [mostrarQuebra, setMostrarQuebra] = useState(false);
-  const cards: { rotulo: string; valor: string; Icon: typeof Boxes; onClick?: () => void }[] = [
-    { rotulo: 'Valor total em estoque', valor: moeda(kpis.VALORTOTALESTOQUE), Icon: Boxes },
-    { rotulo: 'Itens em ruptura', valor: numero(kpis.TOTALRUPTURA), Icon: AlertTriangle },
-    { rotulo: 'Sem venda há 90+ dias', valor: numero(kpis.TOTALSEMMOVIMENTACAO), Icon: AlertTriangle },
-    {
-      rotulo: 'Cotações em aberto', valor: numero(kpis.TOTALCOTACOES), Icon: Boxes,
-      onClick: cotacoesPorSituacao?.length ? () => setMostrarQuebra((atual) => !atual) : undefined,
-    },
-    { rotulo: 'Giro de estoque (período)', valor: kpis.giroEstoque == null ? '—' : `${numero(kpis.giroEstoque, 2)}x`, Icon: TrendingUp },
+  const cards: { chave: string; rotulo: string; valor: string; Icon: typeof Boxes }[] = [
+    { chave: 'valor', rotulo: 'Valor total em estoque', valor: moeda(kpis.VALORTOTALESTOQUE), Icon: Boxes },
+    { chave: 'ruptura', rotulo: 'Itens em ruptura', valor: numero(kpis.TOTALRUPTURA), Icon: AlertTriangle },
+    { chave: 'semMovimentacao', rotulo: 'Sem venda há 90+ dias', valor: numero(kpis.TOTALSEMMOVIMENTACAO), Icon: AlertTriangle },
+    { chave: 'cotacoes', rotulo: 'Cotações em aberto', valor: numero(kpis.TOTALCOTACOES), Icon: Boxes },
+    { chave: 'giro', rotulo: 'Giro de estoque (período)', valor: kpis.giroEstoque == null ? '—' : `${numero(kpis.giroEstoque, 2)}x`, Icon: TrendingUp },
   ];
   return (
     <div>
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3">
-        {cards.map(({ rotulo, valor, Icon, onClick }) => (
-          <div key={rotulo} onClick={onClick} className={`bg-white border rounded-2xl p-4 ${onClick ? 'cursor-pointer hover:border-emerald-300' : ''}`}>
-            <Icon size={17} className="text-emerald-600 mb-3" />
-            <p className="text-[11px] uppercase font-bold text-slate-400">{rotulo}{onClick && ' · clique p/ detalhar'}</p>
-            <p className="text-xl font-bold text-slate-800 mt-1">{valor}</p>
-          </div>
-        ))}
+        {cards.map(({ chave, rotulo, valor, Icon }) => {
+          // No Dashboard (aoClicarCard definido) todo card expande numa tela dedicada; no Painel
+          // de Estoque (sem aoClicarCard) só "Cotações em aberto" mantém o comportamento antigo
+          // de abrir a quebra por situação embutida.
+          const onClick = aoClicarCard
+            ? () => aoClicarCard(chave)
+            : (chave === 'cotacoes' && cotacoesPorSituacao?.length ? () => setMostrarQuebra((atual) => !atual) : undefined);
+          return (
+            <div key={rotulo} onClick={onClick} className={`bg-white border rounded-2xl p-4 ${onClick ? 'cursor-pointer hover:border-emerald-300' : ''}`}>
+              <Icon size={17} className="text-emerald-600 mb-3" />
+              <p className="text-[11px] uppercase font-bold text-slate-400">{rotulo}{onClick && ' · clique p/ detalhar'}</p>
+              <p className="text-xl font-bold text-slate-800 mt-1">{valor}</p>
+            </div>
+          );
+        })}
       </div>
-      {/* Sugestão do Eder: quebra por situação (itens, não cotações) ao clicar no card. */}
-      {mostrarQuebra && cotacoesPorSituacao?.length && (
+      {/* Sugestão do Eder: quebra por situação (itens, não cotações) ao clicar no card — só no Painel de Estoque. */}
+      {!aoClicarCard && mostrarQuebra && cotacoesPorSituacao?.length && (
         <div className="mt-3 bg-white border rounded-2xl p-4 flex flex-wrap gap-4">
           {cotacoesPorSituacao.map((linha) => (
             <div key={String(linha.SITUACAO)}>
@@ -183,6 +189,146 @@ export function KpiCardsEstoque({ kpis, cotacoesPorSituacao }: { kpis: Linha; co
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+// Toda linha que tenha um desses campos pode ser clicada pra abrir o drawer de detalhe —
+// a ordem decide a prioridade quando mais de um campo aparecer na mesma linha.
+export function tipoDetalheDaLinha(linha: Linha): TipoDetalhe | null {
+  if (linha.CODPROD !== undefined) return 'produto';
+  if (linha.NUMCOTACAO !== undefined) return 'cotacao';
+  if (linha.FORNECEDOR !== undefined) return 'fornecedor';
+  return null;
+}
+
+export interface FiltroSituacaoTabela { coluna: string; rotuloSim: string; rotuloNao: string }
+
+const ITENS_POR_PAGINA = 25;
+
+// Tabela de busca + ordenação + paginação + drawer de detalhe, reutilizada tanto no Painel de
+// Estoque (dentro da seção colapsável) quanto nas telas expandidas do Dashboard.
+export function TabelaInterativa({ linhas, filtroSituacao }: { linhas: Linha[]; filtroSituacao?: FiltroSituacaoTabela }) {
+  const [busca, setBusca] = useState('');
+  const [situacaoFiltro, setSituacaoFiltro] = useState<'todos' | 'S' | 'N'>('todos');
+  const [ordenarPor, setOrdenarPor] = useState<string | null>(null);
+  const [ordemDesc, setOrdemDesc] = useState(false);
+  const [pagina, setPagina] = useState(1);
+  const [detalheAberto, setDetalheAberto] = useState<{ tipo: TipoDetalhe; linha: Linha } | null>(null);
+  const colunas = useMemo(() => linhas.length ? Object.keys(linhas[0]) : [], [linhas]);
+
+  const porSituacao = useMemo(() => {
+    if (!filtroSituacao || situacaoFiltro === 'todos') return linhas;
+    return linhas.filter((linha) => String(linha[filtroSituacao.coluna]) === situacaoFiltro);
+  }, [linhas, filtroSituacao, situacaoFiltro]);
+
+  const filtradas = useMemo(() => porSituacao.filter((linha) => Object.values(linha).some((valor) => String(valor ?? '').toLocaleLowerCase().includes(busca.toLocaleLowerCase()))), [porSituacao, busca]);
+
+  const ordenadas = useMemo(() => {
+    if (!ordenarPor) return filtradas;
+    const copia = [...filtradas];
+    copia.sort((a, b) => {
+      const va = a[ordenarPor];
+      const vb = b[ordenarPor];
+      const na = Number(va);
+      const nb = Number(vb);
+      const cmp = !isNaN(na) && !isNaN(nb) && va !== null && vb !== null
+        ? na - nb
+        : String(va ?? '').localeCompare(String(vb ?? ''), 'pt-BR');
+      return ordemDesc ? -cmp : cmp;
+    });
+    return copia;
+  }, [filtradas, ordenarPor, ordemDesc]);
+
+  const totalPaginas = Math.max(Math.ceil(ordenadas.length / ITENS_POR_PAGINA), 1);
+  const paginaAtual = Math.min(pagina, totalPaginas);
+  const pagina0 = (paginaAtual - 1) * ITENS_POR_PAGINA;
+  const visiveis = ordenadas.slice(pagina0, pagina0 + ITENS_POR_PAGINA);
+
+  const alternarOrdenacao = (coluna: string) => {
+    setPagina(1);
+    if (ordenarPor !== coluna) { setOrdenarPor(coluna); setOrdemDesc(false); return; }
+    if (!ordemDesc) { setOrdemDesc(true); return; }
+    setOrdenarPor(null);
+  };
+
+  const clicavel = linhas.length > 0 && tipoDetalheDaLinha(linhas[0]) !== null;
+
+  if (linhas.length === 0) return <p className="text-sm text-slate-400 border border-dashed rounded-xl p-6 text-center">Nenhum dado encontrado.</p>;
+
+  return (
+    <>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <label className="flex items-center gap-2 border rounded-xl px-3 py-2 max-w-sm text-slate-500 flex-1 min-w-[200px]">
+          <Search size={14}/><input value={busca} onChange={(e) => { setBusca(e.target.value); setPagina(1); }} placeholder="Buscar nesta lista" className="w-full outline-none text-xs" />
+        </label>
+        {filtroSituacao && (
+          <div className="flex items-center gap-1 border rounded-xl p-1 text-xs">
+            {([['todos', 'Todos'], ['S', filtroSituacao.rotuloSim], ['N', filtroSituacao.rotuloNao]] as const).map(([valor, rotulo]) => (
+              <button key={valor} onClick={() => { setSituacaoFiltro(valor); setPagina(1); }}
+                className={`px-2.5 py-1 rounded-lg font-semibold ${situacaoFiltro === valor ? 'bg-emerald-600 text-white' : 'text-slate-500 hover:bg-slate-50'}`}>
+                {rotulo}
+              </button>
+            ))}
+          </div>
+        )}
+        {clicavel && <p className="text-[11px] text-slate-400">Clique numa linha pra ver o detalhe</p>}
+      </div>
+      <div className="overflow-auto max-h-[420px] border rounded-xl">
+        <table className="w-full text-xs text-left">
+          <thead className="sticky top-0 bg-slate-50 text-slate-500">
+            <tr>{colunas.map((coluna) => (
+              <th key={coluna} className="p-3 font-semibold whitespace-nowrap select-none">
+                <button onClick={() => alternarOrdenacao(coluna)} className="flex items-center gap-1 hover:text-slate-700">
+                  {rotuloColuna(coluna)}
+                  {ordenarPor === coluna ? (ordemDesc ? <ArrowDown size={12} /> : <ArrowUp size={12} />) : <ArrowUpDown size={11} className="text-slate-300" />}
+                </button>
+              </th>
+            ))}</tr>
+          </thead>
+          <tbody className="divide-y">
+            {visiveis.map((linha, indice) => {
+              const tipo = tipoDetalheDaLinha(linha);
+              return (
+                <tr key={indice} onClick={() => tipo && setDetalheAberto({ tipo, linha })} className={`hover:bg-slate-50 ${tipo ? 'cursor-pointer' : ''}`}>
+                  {colunas.map((coluna) => <td key={coluna} className="p-3 whitespace-nowrap text-slate-700">{valorCelula(coluna, linha[coluna])}</td>)}
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      <div className="flex flex-wrap items-center justify-between gap-2 mt-2">
+        <p className="text-[11px] text-slate-400">Exibindo {visiveis.length} de {ordenadas.length} registro(s) — página {paginaAtual} de {totalPaginas}</p>
+        <div className="flex items-center gap-1">
+          <button onClick={() => setPagina((p) => Math.max(p - 1, 1))} disabled={paginaAtual <= 1} className="p-1.5 rounded-lg border disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-50"><ChevronLeft size={14} /></button>
+          <button onClick={() => setPagina((p) => Math.min(p + 1, totalPaginas))} disabled={paginaAtual >= totalPaginas} className="p-1.5 rounded-lg border disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-50"><ChevronRight size={14} /></button>
+        </div>
+      </div>
+      {detalheAberto && <DetalheDrawer aberto onFechar={() => setDetalheAberto(null)} tipo={detalheAberto.tipo} linha={detalheAberto.linha} />}
+    </>
+  );
+}
+
+// Tela cheia sobreposta pra "expandir" um card do Dashboard (gráfico + tabela completa).
+export function ModalExpandido({ aberto, titulo, subtitulo, onFechar, children }: {
+  aberto: boolean; titulo: string; subtitulo?: string; onFechar: () => void; children: React.ReactNode;
+}) {
+  if (!aberto) return null;
+  return (
+    <div className="fixed inset-0 z-[60] bg-black/50 flex items-center justify-center p-3 sm:p-6" onClick={onFechar}>
+      <div className="bg-white rounded-2xl w-full max-w-6xl max-h-[92vh] overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="sticky top-0 bg-white border-b border-slate-100 p-4 sm:p-5 flex items-start justify-between gap-3 z-10 rounded-t-2xl">
+          <div>
+            <h2 className="font-bold text-slate-800 text-lg">{titulo}</h2>
+            {subtitulo && <p className="text-xs text-slate-500 mt-1">{subtitulo}</p>}
+          </div>
+          <button onClick={onFechar} className="p-1.5 rounded-md hover:bg-slate-100 text-slate-400 hover:text-slate-700 shrink-0" aria-label="Fechar">
+            <X size={18} />
+          </button>
+        </div>
+        <div className="p-4 sm:p-5">{children}</div>
+      </div>
     </div>
   );
 }

@@ -115,7 +115,10 @@ export const Sidebar = ({ mobileAberto = false, onFechar }: SidebarProps) => {
   const itemVisaoGeral: LinkItem = { to: '/visao-geral', icon: <PieChart size={18} />, label: 'Visão Geral (BI)' };
   const itensPorModuloBase: Record<ModuloSistema, (LinkItem | GrupoItem)[]> = {
     logistica_frota: itensLogistica,
-    estoque: [{ to: '/logistica/estoque/dashboard', icon: <BarChart3 size={18} />, label: 'Dashboard' }, { to: '/logistica/estoque', icon: <Boxes size={18} />, label: 'Painel de Estoque' }, { to: '/logistica/estoque#pesquisa-ia', icon: <Sparkles size={18} />, label: 'Pergunte à IA' }],
+    // "Painel de Estoque" (lista antiga por seção) saiu do menu — o Dashboard agora é a porta
+    // de entrada única, com clique-pra-expandir em cada card/gráfico levando ao detalhe
+    // completo (a rota /logistica/estoque continua ativa só pelo link direto do "Pergunte à IA").
+    estoque: [{ to: '/logistica/estoque/dashboard', icon: <BarChart3 size={18} />, label: 'Dashboard' }, { to: '/logistica/estoque#pesquisa-ia', icon: <Sparkles size={18} />, label: 'Pergunte à IA' }],
     producao_batata: [
       { to: '/producao/batata', icon: <LayoutDashboard size={18} />, label: 'Painel de Produção' },
       { to: '/producao/batata/safras', icon: <Trophy size={18} />, label: 'Safras' },
