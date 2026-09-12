@@ -40,13 +40,18 @@ async function detalheProduto(codprod: number) {
   return { produto: produtoRows[0] ?? null, estoquePorLocal, custo: custoRows[0] ?? null, giro: giroRows[0] ?? null, movimentos };
 }
 
-// A "situação" que o usuário vê no Sankhya (tela Cotação, coluna "Situação do produto") é
-// TGFITC.STATUSPRODCOT, não TGFITC.SITUACAO (outro campo, ligado a envio/coleta de preço) —
-// confirmado com o Eder comparando a contagem por STATUSPRODCOT direto no Sankhya com o painel.
-const SITUACAO_PRODUTO = `CASE ITC.STATUSPRODCOT WHEN 'O' THEN 'Aberta' WHEN 'A' THEN 'Aprovada' WHEN 'C' THEN 'Cancelada' WHEN 'E' THEN 'Enviada' WHEN 'F' THEN 'Fechada' WHEN 'P' THEN 'Precificada' ELSE ITC.STATUSPRODCOT END`;
+// A "situação" que o usuário vê no Sankhya (tela Cotação, coluna "Situação do produto") vem de
+// TGFITC.STATUSPRODCOT — mas só a linha "resumo" por produto (CABECALHO='S', sem fornecedor)
+// carrega o valor confiável; a linha de cada fornecedor cotado (CABECALHO='N', CODPARC<>0) tem
+// seu próprio STATUSPRODCOT, que fica desatualizado (ex.: continua 'Aberta' mesmo depois do
+// produto já estar Fechado na linha resumo) — confirmado com o Eder (cotação 62). Por isso a
+// situação exibida aqui sempre busca a linha resumo correspondente, nunca a própria linha do
+// fornecedor.
+const SITUACAO_PRODUTO_RESUMO = `(SELECT TOP 1 CASE H.STATUSPRODCOT WHEN 'O' THEN 'Aberta' WHEN 'A' THEN 'Aprovada' WHEN 'C' THEN 'Cancelada' WHEN 'E' THEN 'Enviada' WHEN 'F' THEN 'Fechada' WHEN 'P' THEN 'Precificada' ELSE H.STATUSPRODCOT END
+  FROM TGFITC H WHERE H.CABECALHO='S' AND H.NUMCOTACAO=ITC.NUMCOTACAO AND H.CODPROD=ITC.CODPROD AND H.CODLOCAL=ITC.CODLOCAL AND H.CONTROLE=ITC.CONTROLE AND H.DIFERENCIADOR=ITC.DIFERENCIADOR)`;
 
 async function detalheCotacao(numcotacao: number) {
-  const itens = await consultarSankhya(`SELECT ITC.CODPROD, PRO.DESCRPROD, PAR.NOMEPARC AS FORNECEDOR, ${SITUACAO_PRODUTO} AS SITUACAO, ITC.PRAZOENTREGA,
+  const itens = await consultarSankhya(`SELECT ITC.CODPROD, PRO.DESCRPROD, PAR.NOMEPARC AS FORNECEDOR, ${SITUACAO_PRODUTO_RESUMO} AS SITUACAO, ITC.PRAZOENTREGA,
       CASE WHEN ITC.MELHOR='S' THEN 'Sim' ELSE 'Não' END AS MELHORPRECO
     FROM TGFITC ITC LEFT JOIN TGFPRO PRO ON PRO.CODPROD=ITC.CODPROD LEFT JOIN TGFPAR PAR ON PAR.CODPARC=ITC.CODPARC
     WHERE ITC.NUMCOTACAO=${numcotacao} AND ITC.CODPARC<>0
@@ -55,10 +60,11 @@ async function detalheCotacao(numcotacao: number) {
 }
 
 async function detalheFornecedor(nomeparc: string) {
-  const cotacoes = await consultarSankhya(`SELECT TOP 50 ITC.NUMCOTACAO, PRO.DESCRPROD, ${SITUACAO_PRODUTO} AS SITUACAO, ITC.PRAZOENTREGA,
+  const cotacoes = await consultarSankhya(`SELECT TOP 50 ITC.NUMCOTACAO, PRO.DESCRPROD, ${SITUACAO_PRODUTO_RESUMO} AS SITUACAO, ITC.PRAZOENTREGA,
       CASE WHEN ITC.MELHOR='S' THEN 'Sim' ELSE 'Não' END AS MELHORPRECO
     FROM TGFITC ITC LEFT JOIN TGFPAR PAR ON PAR.CODPARC=ITC.CODPARC LEFT JOIN TGFPRO PRO ON PRO.CODPROD=ITC.CODPROD
-    WHERE PAR.NOMEPARC='${nomeparc}' AND ITC.STATUSPRODCOT <> 'C'
+    WHERE PAR.NOMEPARC='${nomeparc}'
+      AND NOT EXISTS (SELECT 1 FROM TGFITC H WHERE H.CABECALHO='S' AND H.NUMCOTACAO=ITC.NUMCOTACAO AND H.CODPROD=ITC.CODPROD AND H.CODLOCAL=ITC.CODLOCAL AND H.CONTROLE=ITC.CONTROLE AND H.DIFERENCIADOR=ITC.DIFERENCIADOR AND H.STATUSPRODCOT='C')
     ORDER BY ITC.NUMCOTACAO DESC`);
   return { cotacoes };
 }

@@ -53,16 +53,6 @@ function competenciaAtualYYYYMM(): string {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.query.modo === 'diag-cotacao62') {
-    if (!exigirAcessoCustos(req, res)) return;
-    const { consultarSankhya } = await import('../_lib/estoquePainel.js');
-    try {
-      const linhas = await consultarSankhya(`SELECT NUMCOTACAO, CODPROD, CODPARC, CABECALHO, CONTROLE, DIFERENCIADOR, SITUACAO, STATUSPRODCOT, NUNOTACPA, MELHOR FROM TGFITC WHERE NUMCOTACAO=62 ORDER BY CODPROD, CODPARC, CABECALHO`);
-      return res.status(200).json({ linhas });
-    } catch (error) {
-      return res.status(502).json({ error: error instanceof Error ? error.message : 'Falha no diagnóstico.' });
-    }
-  }
   if (req.query.modo === 'usuarios') return usuariosSistema(req, res);
   if (req.query.modo === 'producao-batata') return producaoBatata(req, res);
   if (req.query.modo === 'manutencao') return manutencao(req, res);
