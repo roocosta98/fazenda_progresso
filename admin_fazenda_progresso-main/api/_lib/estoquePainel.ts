@@ -187,6 +187,16 @@ function montarConsultas(dataInicio: string, dataFim: string, dias: number) {
     FROM TGFCOT COT LEFT JOIN TSIUSU USU ON USU.CODUSU=COT.CODUSUREQ
     WHERE EXISTS (SELECT 1 FROM TGFITC I INNER JOIN TGFPRO PRO ON PRO.CODPROD=I.CODPROD INNER JOIN TGFGRU GRU ON GRU.CODGRUPOPROD=PRO.CODGRUPOPROD WHERE I.NUMCOTACAO=COT.NUMCOTACAO AND I.CABECALHO='S' AND I.STATUSPRODCOT='O' AND ${filtroGrupo})
     ORDER BY COT.DHFINAL ASC`,
+  // Sugestão do Eder: mostrar essa quebra por situação ao clicar no card "Cotações em aberto" —
+  // conta ITENS de cotação (linha resumo, CABECALHO='S'), não cotações, igual ao agrupamento que
+  // ele mostrou direto no Sankhya (ex.: Fechada 350, Aberta 23, Cancelada 16, Aprovada 1, Precificada 4).
+  cotacoesPorSituacao: `SELECT
+      CASE I.STATUSPRODCOT WHEN 'O' THEN 'Aberta' WHEN 'A' THEN 'Aprovada' WHEN 'C' THEN 'Cancelada' WHEN 'E' THEN 'Enviada' WHEN 'F' THEN 'Fechada' WHEN 'P' THEN 'Precificada' ELSE I.STATUSPRODCOT END AS SITUACAO,
+      COUNT(*) AS TOTALITENS
+    FROM TGFITC I INNER JOIN TGFPRO PRO ON PRO.CODPROD=I.CODPROD INNER JOIN TGFGRU GRU ON GRU.CODGRUPOPROD=PRO.CODGRUPOPROD
+    WHERE I.CABECALHO='S' AND ${filtroGrupo}
+    GROUP BY I.STATUSPRODCOT
+    ORDER BY TOTALITENS DESC`,
   giroProdutos: `WITH MOVIMENTOS AS (
       SELECT CAB.CODEMP, ITE.CODPROD,
         SUM(CASE WHEN CAB.TIPMOV IN('C','F') THEN ITE.QTDNEG ELSE 0 END) AS QTD_COMPRA,
@@ -243,12 +253,12 @@ export async function painelEstoque(req: VercelRequest, res: VercelResponse) {
       try { return await consultarSankhya(consultas[nome]); }
       catch (error) { erros[nome] = error instanceof Error ? error.message : 'Falha na consulta'; return []; }
     };
-    const [ruptura, semMovimentacao, valor, curvaAbc, fornecedores, cotacoes, giroProdutos, kpiRows] = await Promise.all([
-      executar('ruptura'), executar('semMovimentacao'), executar('valor'), executar('curvaAbc'), executar('fornecedores'), executar('cotacoes'), executar('giroProdutos'), executar('kpis'),
+    const [ruptura, semMovimentacao, valor, curvaAbc, fornecedores, cotacoes, cotacoesPorSituacao, giroProdutos, kpiRows] = await Promise.all([
+      executar('ruptura'), executar('semMovimentacao'), executar('valor'), executar('curvaAbc'), executar('fornecedores'), executar('cotacoes'), executar('cotacoesPorSituacao'), executar('giroProdutos'), executar('kpis'),
     ]);
     const kpis = kpiRows[0] ?? {};
     const giroEstoque = Number(kpis.CONSUMOPERIODO ?? 0) / Number(kpis.ESTOQUETOTALGIRO ?? 0) || null;
-    res.status(200).json({ ruptura, semMovimentacao, valor, curvaAbc, fornecedores, cotacoes, giroProdutos, kpis: { ...kpis, giroEstoque }, periodo: { dataInicio, dataFim }, erros });
+    res.status(200).json({ ruptura, semMovimentacao, valor, curvaAbc, fornecedores, cotacoes, cotacoesPorSituacao, giroProdutos, kpis: { ...kpis, giroEstoque }, periodo: { dataInicio, dataFim }, erros });
   } catch (error) {
     res.status(502).json({ error: 'Não foi possível conectar ao banco de dados de estoque.', detalhe: error instanceof Error ? error.message : undefined });
   }

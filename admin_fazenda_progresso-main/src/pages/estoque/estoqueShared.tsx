@@ -14,6 +14,7 @@ export type DadosEstoque = {
   curvaAbc: Linha[];
   fornecedores: Linha[];
   cotacoes: Linha[];
+  cotacoesPorSituacao: Linha[];
   giroProdutos: Linha[];
   kpis: Linha;
   erros: Record<string, string>;
@@ -148,23 +149,40 @@ export function FiltroDataEstoque({ dataDe, setDataDe, dataAte, setDataAte, carr
   );
 }
 
-export function KpiCardsEstoque({ kpis }: { kpis: Linha }) {
-  const cards: { rotulo: string; valor: string; Icon: typeof Boxes }[] = [
+export function KpiCardsEstoque({ kpis, cotacoesPorSituacao }: { kpis: Linha; cotacoesPorSituacao?: Linha[] }) {
+  const [mostrarQuebra, setMostrarQuebra] = useState(false);
+  const cards: { rotulo: string; valor: string; Icon: typeof Boxes; onClick?: () => void }[] = [
     { rotulo: 'Valor total em estoque', valor: moeda(kpis.VALORTOTALESTOQUE), Icon: Boxes },
     { rotulo: 'Itens em ruptura', valor: numero(kpis.TOTALRUPTURA), Icon: AlertTriangle },
     { rotulo: 'Sem venda há 90+ dias', valor: numero(kpis.TOTALSEMMOVIMENTACAO), Icon: AlertTriangle },
-    { rotulo: 'Cotações em aberto', valor: numero(kpis.TOTALCOTACOES), Icon: Boxes },
+    {
+      rotulo: 'Cotações em aberto', valor: numero(kpis.TOTALCOTACOES), Icon: Boxes,
+      onClick: cotacoesPorSituacao?.length ? () => setMostrarQuebra((atual) => !atual) : undefined,
+    },
     { rotulo: 'Giro de estoque (período)', valor: kpis.giroEstoque == null ? '—' : `${numero(kpis.giroEstoque, 2)}x`, Icon: TrendingUp },
   ];
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3">
-      {cards.map(({ rotulo, valor, Icon }) => (
-        <div key={rotulo} className="bg-white border rounded-2xl p-4">
-          <Icon size={17} className="text-emerald-600 mb-3" />
-          <p className="text-[11px] uppercase font-bold text-slate-400">{rotulo}</p>
-          <p className="text-xl font-bold text-slate-800 mt-1">{valor}</p>
+    <div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3">
+        {cards.map(({ rotulo, valor, Icon, onClick }) => (
+          <div key={rotulo} onClick={onClick} className={`bg-white border rounded-2xl p-4 ${onClick ? 'cursor-pointer hover:border-emerald-300' : ''}`}>
+            <Icon size={17} className="text-emerald-600 mb-3" />
+            <p className="text-[11px] uppercase font-bold text-slate-400">{rotulo}{onClick && ' · clique p/ detalhar'}</p>
+            <p className="text-xl font-bold text-slate-800 mt-1">{valor}</p>
+          </div>
+        ))}
+      </div>
+      {/* Sugestão do Eder: quebra por situação (itens, não cotações) ao clicar no card. */}
+      {mostrarQuebra && cotacoesPorSituacao?.length && (
+        <div className="mt-3 bg-white border rounded-2xl p-4 flex flex-wrap gap-4">
+          {cotacoesPorSituacao.map((linha) => (
+            <div key={String(linha.SITUACAO)}>
+              <p className="text-[11px] uppercase font-bold text-slate-400">{String(linha.SITUACAO)}</p>
+              <p className="text-lg font-bold text-slate-800">{numero(linha.TOTALITENS)} <span className="text-xs font-normal text-slate-400">itens</span></p>
+            </div>
+          ))}
         </div>
-      ))}
+      )}
     </div>
   );
 }

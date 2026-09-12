@@ -67,7 +67,7 @@ export function DashboardEstoque() {
     </div>
     <FiltroDataEstoque dataDe={dataDe} setDataDe={setDataDe} dataAte={dataAte} setDataAte={setDataAte} carregando={carregando} carregar={carregar} />
     {erro && <div className="p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-sm">{erro}</div>}
-    <KpiCardsEstoque kpis={dados?.kpis ?? {}} />
+    <KpiCardsEstoque kpis={dados?.kpis ?? {}} cotacoesPorSituacao={dados?.cotacoesPorSituacao} />
     {carregando && !dados ? <div className="p-12 bg-white border rounded-2xl"><Carregando mensagem="Carregando dados do Sankhya…" /></div> : <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
 
       <Grafico titulo="Valor por Curva ABC" insight={insights.curvaAbc}>

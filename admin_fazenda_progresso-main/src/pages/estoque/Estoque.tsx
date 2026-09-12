@@ -19,16 +19,24 @@ function tipoDetalheDaLinha(linha: Linha): TipoDetalhe | null {
   return null;
 }
 
-function Secao({ titulo, subtitulo, linhas, erro, insight, nota }: { titulo: string; subtitulo: string; linhas: Linha[]; erro?: string; insight?: string; nota?: string }) {
+interface FiltroSituacao { coluna: string; rotuloSim: string; rotuloNao: string }
+
+function Secao({ titulo, subtitulo, linhas, erro, insight, nota, filtroSituacao }: { titulo: string; subtitulo: string; linhas: Linha[]; erro?: string; insight?: string; nota?: string; filtroSituacao?: FiltroSituacao }) {
   const [aberta, setAberta] = useState(true);
   const [busca, setBusca] = useState('');
+  const [situacaoFiltro, setSituacaoFiltro] = useState<'todos' | 'S' | 'N'>('todos');
   const [ordenarPor, setOrdenarPor] = useState<string | null>(null);
   const [ordemDesc, setOrdemDesc] = useState(false);
   const [pagina, setPagina] = useState(1);
   const [detalheAberto, setDetalheAberto] = useState<{ tipo: TipoDetalhe; linha: Linha } | null>(null);
   const colunas = useMemo(() => linhas.length ? Object.keys(linhas[0]) : [], [linhas]);
 
-  const filtradas = useMemo(() => linhas.filter((linha) => Object.values(linha).some((valor) => String(valor ?? '').toLocaleLowerCase().includes(busca.toLocaleLowerCase()))), [linhas, busca]);
+  const porSituacao = useMemo(() => {
+    if (!filtroSituacao || situacaoFiltro === 'todos') return linhas;
+    return linhas.filter((linha) => String(linha[filtroSituacao.coluna]) === situacaoFiltro);
+  }, [linhas, filtroSituacao, situacaoFiltro]);
+
+  const filtradas = useMemo(() => porSituacao.filter((linha) => Object.values(linha).some((valor) => String(valor ?? '').toLocaleLowerCase().includes(busca.toLocaleLowerCase()))), [porSituacao, busca]);
 
   const ordenadas = useMemo(() => {
     if (!ordenarPor) return filtradas;
@@ -78,6 +86,16 @@ function Secao({ titulo, subtitulo, linhas, erro, insight, nota }: { titulo: str
               <label className="flex items-center gap-2 border rounded-xl px-3 py-2 max-w-sm text-slate-500 flex-1 min-w-[200px]">
                 <Search size={14}/><input value={busca} onChange={(e) => { setBusca(e.target.value); setPagina(1); }} placeholder="Buscar nesta lista" className="w-full outline-none text-xs" />
               </label>
+              {filtroSituacao && (
+                <div className="flex items-center gap-1 border rounded-xl p-1 text-xs">
+                  {([['todos', 'Todos'], ['S', filtroSituacao.rotuloSim], ['N', filtroSituacao.rotuloNao]] as const).map(([valor, rotulo]) => (
+                    <button key={valor} onClick={() => { setSituacaoFiltro(valor); setPagina(1); }}
+                      className={`px-2.5 py-1 rounded-lg font-semibold ${situacaoFiltro === valor ? 'bg-emerald-600 text-white' : 'text-slate-500 hover:bg-slate-50'}`}>
+                      {rotulo}
+                    </button>
+                  ))}
+                </div>
+              )}
               {clicavel && <p className="text-[11px] text-slate-400">Clique numa linha pra ver o detalhe</p>}
             </div>
             <div className="overflow-auto max-h-[420px] border rounded-xl">
@@ -148,7 +166,7 @@ export function Estoque() {
     <div><p className="text-xs font-bold tracking-wider uppercase text-emerald-700">Controle de estoque</p><h1 className="text-2xl font-bold text-slate-800">Estoque inteligente</h1><p className="text-sm text-slate-500 mt-1">Dados operacionais do Sankhya (empresa 01): níveis, giro, fornecedores e cotações.</p></div>
     <FiltroDataEstoque dataDe={dataDe} setDataDe={setDataDe} dataAte={dataAte} setDataAte={setDataAte} carregando={carregando} carregar={carregar} />
     {(erro || erroPesquisa) && <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm">{erro ?? erroPesquisa}</div>}
-    <KpiCardsEstoque kpis={dados?.kpis ?? {}} />
+    <KpiCardsEstoque kpis={dados?.kpis ?? {}} cotacoesPorSituacao={dados?.cotacoesPorSituacao} />
     <section id="pesquisa-ia" className="bg-emerald-950 rounded-2xl border border-emerald-800 p-5 text-white scroll-mt-20">
       <h2 className="font-bold flex items-center gap-2"><Search size={18} className="text-emerald-300"/> Pergunte ao estoque</h2>
       <p className="text-sm text-emerald-100/80 mt-1">Faça uma pergunta em português. A IA consulta somente dados de estoque do Sankhya (empresa 01) e devolve a resposta com os registros encontrados.</p>
@@ -158,7 +176,8 @@ export function Estoque() {
     </section>
     {carregando && !dados ? <div className="bg-white border rounded-2xl p-12"><Carregando mensagem="Carregando dados do estoque…" /></div> : dados && <div className="space-y-4">
       <Secao titulo="Ruptura e estoque mínimo/máximo" subtitulo="Itens sinalizados para reposição ou abaixo do mínimo configurado." linhas={dados.ruptura} erro={dados.erros.ruptura} insight={insights.ruptura}/>
-      <Secao titulo="Itens sem movimentação" subtitulo="Produtos sem venda por 90 dias ou mais." linhas={dados.semMovimentacao} erro={dados.erros.semMovimentacao} insight={insights.semMovimentacao}/>
+      <Secao titulo="Itens sem movimentação" subtitulo="Produtos sem venda por 90 dias ou mais." linhas={dados.semMovimentacao} erro={dados.erros.semMovimentacao} insight={insights.semMovimentacao}
+        filtroSituacao={{ coluna: 'SITUACAO', rotuloSim: 'Com estoque', rotuloNao: 'Sem estoque' }}/>
       <Secao titulo="Maior valor em estoque · Curva ABC" subtitulo="Valor calculado por estoque × custo gerencial mais recente." linhas={dados.valor} erro={dados.erros.valor} insight={insights.valor}
         nota={'Classe A: ~20% dos itens concentram ~80% do valor total — exigem controle rígido e inventários frequentes.\nClasse B: ~30% dos itens, ~15% do valor total — importância intermediária, monitoramento moderado.\nClasse C: ~50% dos itens, apenas ~5% do valor total — baixo valor unitário ou baixa movimentação, controle mais simples.'}/>
       <Secao titulo="Giro por produto" subtitulo="Consumo por requisição no período filtrado, giro e dias de cobertura do estoque atual." linhas={dados.giroProdutos} erro={dados.erros.giroProdutos} insight={insights.giroProdutos}/>
