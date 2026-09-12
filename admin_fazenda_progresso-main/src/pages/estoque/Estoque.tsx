@@ -1,73 +1,15 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight, ArrowUpDown, ArrowUp, ArrowDown, Search, Sparkles } from 'lucide-react';
+import { ChevronDown, ChevronUp, Search, Sparkles } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { cabecalhoPerfil } from '../../utils/apiAuth';
-import { FiltroDataEstoque, KpiCardsEstoque, rotuloColuna, useEstoquePainel, valorCelula, type Linha } from './estoqueShared';
+import { FiltroDataEstoque, KpiCardsEstoque, rotuloColuna, TabelaInterativa, useEstoquePainel, valorCelula, type FiltroSituacaoTabela, type Linha } from './estoqueShared';
 import { Carregando } from '../../components/common/viz';
-import { DetalheDrawer, type TipoDetalhe } from './DetalheDrawer';
 
 const API_URL = import.meta.env.VITE_API_URL ?? '';
-const ITENS_POR_PAGINA = 25;
 
-// Toda linha que tenha um desses campos pode ser clicada pra abrir o drawer de detalhe —
-// a ordem decide a prioridade quando mais de um campo aparecer na mesma linha.
-function tipoDetalheDaLinha(linha: Linha): TipoDetalhe | null {
-  if (linha.CODPROD !== undefined) return 'produto';
-  if (linha.NUMCOTACAO !== undefined) return 'cotacao';
-  if (linha.FORNECEDOR !== undefined) return 'fornecedor';
-  return null;
-}
-
-interface FiltroSituacao { coluna: string; rotuloSim: string; rotuloNao: string }
-
-function Secao({ titulo, subtitulo, linhas, erro, insight, nota, filtroSituacao }: { titulo: string; subtitulo: string; linhas: Linha[]; erro?: string; insight?: string; nota?: string; filtroSituacao?: FiltroSituacao }) {
+function Secao({ titulo, subtitulo, linhas, erro, insight, nota, filtroSituacao }: { titulo: string; subtitulo: string; linhas: Linha[]; erro?: string; insight?: string; nota?: string; filtroSituacao?: FiltroSituacaoTabela }) {
   const [aberta, setAberta] = useState(true);
-  const [busca, setBusca] = useState('');
-  const [situacaoFiltro, setSituacaoFiltro] = useState<'todos' | 'S' | 'N'>('todos');
-  const [ordenarPor, setOrdenarPor] = useState<string | null>(null);
-  const [ordemDesc, setOrdemDesc] = useState(false);
-  const [pagina, setPagina] = useState(1);
-  const [detalheAberto, setDetalheAberto] = useState<{ tipo: TipoDetalhe; linha: Linha } | null>(null);
-  const colunas = useMemo(() => linhas.length ? Object.keys(linhas[0]) : [], [linhas]);
-
-  const porSituacao = useMemo(() => {
-    if (!filtroSituacao || situacaoFiltro === 'todos') return linhas;
-    return linhas.filter((linha) => String(linha[filtroSituacao.coluna]) === situacaoFiltro);
-  }, [linhas, filtroSituacao, situacaoFiltro]);
-
-  const filtradas = useMemo(() => porSituacao.filter((linha) => Object.values(linha).some((valor) => String(valor ?? '').toLocaleLowerCase().includes(busca.toLocaleLowerCase()))), [porSituacao, busca]);
-
-  const ordenadas = useMemo(() => {
-    if (!ordenarPor) return filtradas;
-    const copia = [...filtradas];
-    copia.sort((a, b) => {
-      const va = a[ordenarPor];
-      const vb = b[ordenarPor];
-      const na = Number(va);
-      const nb = Number(vb);
-      const cmp = !isNaN(na) && !isNaN(nb) && va !== null && vb !== null
-        ? na - nb
-        : String(va ?? '').localeCompare(String(vb ?? ''), 'pt-BR');
-      return ordemDesc ? -cmp : cmp;
-    });
-    return copia;
-  }, [filtradas, ordenarPor, ordemDesc]);
-
-  const totalPaginas = Math.max(Math.ceil(ordenadas.length / ITENS_POR_PAGINA), 1);
-  const paginaAtual = Math.min(pagina, totalPaginas);
-  const pagina0 = (paginaAtual - 1) * ITENS_POR_PAGINA;
-  const visiveis = ordenadas.slice(pagina0, pagina0 + ITENS_POR_PAGINA);
-
-  const alternarOrdenacao = (coluna: string) => {
-    setPagina(1);
-    if (ordenarPor !== coluna) { setOrdenarPor(coluna); setOrdemDesc(false); return; }
-    if (!ordemDesc) { setOrdemDesc(true); return; }
-    setOrdenarPor(null);
-  };
-
-  const clicavel = linhas.length > 0 && tipoDetalheDaLinha(linhas[0]) !== null;
-
   return <section className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden">
     <button onClick={() => setAberta((atual) => !atual)} className="w-full p-5 flex items-start justify-between text-left hover:bg-slate-50">
       <div>
@@ -80,58 +22,8 @@ function Secao({ titulo, subtitulo, linhas, erro, insight, nota, filtroSituacao 
     {aberta && nota && <div className="px-5 pb-3 -mt-2"><pre className="text-xs text-slate-500 whitespace-pre-wrap font-sans bg-slate-50 border border-slate-200/80 rounded-xl p-3">{nota}</pre></div>}
     {aberta && <div className="px-5 pb-5">
       {erro ? <p className="text-xs bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-3">Esta seção não pôde ser carregada: {erro}</p>
-        : linhas.length === 0 ? <p className="text-sm text-slate-400 border border-dashed rounded-xl p-6 text-center">Nenhum dado encontrado.</p>
-          : <>
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-              <label className="flex items-center gap-2 border rounded-xl px-3 py-2 max-w-sm text-slate-500 flex-1 min-w-[200px]">
-                <Search size={14}/><input value={busca} onChange={(e) => { setBusca(e.target.value); setPagina(1); }} placeholder="Buscar nesta lista" className="w-full outline-none text-xs" />
-              </label>
-              {filtroSituacao && (
-                <div className="flex items-center gap-1 border rounded-xl p-1 text-xs">
-                  {([['todos', 'Todos'], ['S', filtroSituacao.rotuloSim], ['N', filtroSituacao.rotuloNao]] as const).map(([valor, rotulo]) => (
-                    <button key={valor} onClick={() => { setSituacaoFiltro(valor); setPagina(1); }}
-                      className={`px-2.5 py-1 rounded-lg font-semibold ${situacaoFiltro === valor ? 'bg-emerald-600 text-white' : 'text-slate-500 hover:bg-slate-50'}`}>
-                      {rotulo}
-                    </button>
-                  ))}
-                </div>
-              )}
-              {clicavel && <p className="text-[11px] text-slate-400">Clique numa linha pra ver o detalhe</p>}
-            </div>
-            <div className="overflow-auto max-h-[420px] border rounded-xl">
-              <table className="w-full text-xs text-left">
-                <thead className="sticky top-0 bg-slate-50 text-slate-500">
-                  <tr>{colunas.map((coluna) => (
-                    <th key={coluna} className="p-3 font-semibold whitespace-nowrap select-none">
-                      <button onClick={() => alternarOrdenacao(coluna)} className="flex items-center gap-1 hover:text-slate-700">
-                        {rotuloColuna(coluna)}
-                        {ordenarPor === coluna ? (ordemDesc ? <ArrowDown size={12} /> : <ArrowUp size={12} />) : <ArrowUpDown size={11} className="text-slate-300" />}
-                      </button>
-                    </th>
-                  ))}</tr>
-                </thead>
-                <tbody className="divide-y">
-                  {visiveis.map((linha, indice) => {
-                    const tipo = tipoDetalheDaLinha(linha);
-                    return (
-                      <tr key={indice} onClick={() => tipo && setDetalheAberto({ tipo, linha })} className={`hover:bg-slate-50 ${tipo ? 'cursor-pointer' : ''}`}>
-                        {colunas.map((coluna) => <td key={coluna} className="p-3 whitespace-nowrap text-slate-700">{valorCelula(coluna, linha[coluna])}</td>)}
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-            <div className="flex flex-wrap items-center justify-between gap-2 mt-2">
-              <p className="text-[11px] text-slate-400">Exibindo {visiveis.length} de {ordenadas.length} registro(s) — página {paginaAtual} de {totalPaginas}</p>
-              <div className="flex items-center gap-1">
-                <button onClick={() => setPagina((p) => Math.max(p - 1, 1))} disabled={paginaAtual <= 1} className="p-1.5 rounded-lg border disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-50"><ChevronLeft size={14} /></button>
-                <button onClick={() => setPagina((p) => Math.min(p + 1, totalPaginas))} disabled={paginaAtual >= totalPaginas} className="p-1.5 rounded-lg border disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-50"><ChevronRight size={14} /></button>
-              </div>
-            </div>
-          </>}
+        : <TabelaInterativa linhas={linhas} filtroSituacao={filtroSituacao} />}
     </div>}
-    {detalheAberto && <DetalheDrawer aberto onFechar={() => setDetalheAberto(null)} tipo={detalheAberto.tipo} linha={detalheAberto.linha} />}
   </section>;
 }
 
