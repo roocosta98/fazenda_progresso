@@ -21,6 +21,7 @@ import { GestaoUsuarios } from '../pages/administracao/GestaoUsuarios';
 import { ConfiguracaoIA } from '../pages/administracao/ConfiguracaoIA';
 import { Manutencao } from '../pages/manutencao/Manutencao';
 import { Inicio } from '../pages/inicio/Inicio';
+import { VisaoGeral } from '../pages/bi/VisaoGeral';
 import { Compras } from '../pages/compras/Compras';
 import { EmConstrucao } from '../pages/em-construcao/EmConstrucao';
 
@@ -113,6 +114,7 @@ export const AppRoutes = () => {
         <Route path="/seguranca-trabalho" element={<ProtectedRoute allowedRoles={['logistica']}><EmConstrucao titulo="Segurança do Trabalho" /></ProtectedRoute>} />
         <Route path="/controladoria" element={<ProtectedRoute allowedRoles={['logistica']}><EmConstrucao titulo="Controladoria" /></ProtectedRoute>} />
         <Route path="/fiscal" element={<ProtectedRoute allowedRoles={['logistica']}><EmConstrucao titulo="Fiscal" /></ProtectedRoute>} />
+        <Route path="/visao-geral" element={<ProtectedRoute allowedRoles={['logistica']}><VisaoGeral /></ProtectedRoute>} />
         <Route path="/administracao/usuarios" element={<ProtectedRoute allowedRoles={['logistica']}><GestaoUsuarios /></ProtectedRoute>} />
         <Route path="/administracao/ia" element={<ProtectedRoute allowedRoles={['logistica']}><ConfiguracaoIA /></ProtectedRoute>} />
       </Route>
