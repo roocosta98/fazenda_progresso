@@ -52,7 +52,7 @@ export const data = (valor: unknown) => {
 export const ROTULOS_COLUNAS: Record<string, string> = {
   CODPROD: 'Código', DESCRPROD: 'Descrição', REFERENCIA: 'Referência', LOCAL: 'Local', LOTE: 'Lote',
   ESTOQUE: 'Estoque', MINIMO: 'Mínimo', MAXIMO: 'Máximo', MINIMOSUGERIDO: 'Mínimo sugerido', DIASRUPTURA: 'Dias p/ ruptura',
-  PRODFALTA: 'Em falta', PONTOPEDIDO: 'Ponto de pedido', GIRODIARIO: 'Giro diário', DIASSEMVENDA: 'Dias sem venda',
+  PRODFALTA: 'Em falta', PONTOPEDIDO: 'Ponto de pedido', GIRODIARIO: 'Giro diário', DIASSEMVENDA: 'Dias sem saída',
   VALORESTOQUE: 'Valor em estoque', CUSTO: 'Custo', VALORTOTAL: 'Valor total', CLASSEABC: 'ABC', FORNECEDOR: 'Fornecedor',
   PRAZOMEDIO: 'Prazo médio (dias)', TOTALCOTACOES: 'Total de cotações', TOTALVENCIDAS: 'Cotações vencidas', TAXAVITORIA: 'Taxa de vitória',
   PRODUTOSDISTINTOS: 'Produtos distintos', NUMCOTACAO: 'Nº cotação',
@@ -155,7 +155,7 @@ export function KpiCardsEstoque({ kpis, cotacoesPorSituacao, aoClicarCard }: { k
   const cards: { chave: string; rotulo: string; valor: string; Icon: typeof Boxes }[] = [
     { chave: 'valor', rotulo: 'Valor total em estoque', valor: moeda(kpis.VALORTOTALESTOQUE), Icon: Boxes },
     { chave: 'ruptura', rotulo: 'Itens em ruptura', valor: numero(kpis.TOTALRUPTURA), Icon: AlertTriangle },
-    { chave: 'semMovimentacao', rotulo: 'Sem venda há 90+ dias', valor: numero(kpis.TOTALSEMMOVIMENTACAO), Icon: AlertTriangle },
+    { chave: 'semMovimentacao', rotulo: 'Sem saída há 90+ dias', valor: numero(kpis.TOTALSEMMOVIMENTACAO), Icon: AlertTriangle },
     { chave: 'cotacoes', rotulo: 'Cotações em aberto', valor: numero(kpis.TOTALCOTACOES), Icon: Boxes },
     { chave: 'giro', rotulo: 'Giro de estoque (período)', valor: kpis.giroEstoque == null ? '—' : `${numero(kpis.giroEstoque, 2)}x`, Icon: TrendingUp },
   ];

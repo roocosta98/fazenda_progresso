@@ -32,7 +32,7 @@ export async function insightEstoque(req: VercelRequest, res: VercelResponse) {
       model: modelo, ...parametrosDeterministicos(modelo),
       response_format: { type: 'json_object' },
       messages: [
-        { role: 'system', content: `Você é um analista de estoque agrícola. Para cada seção recebida no JSON, escreva UMA frase curta (máximo 20 palavras) em português com o achado mais relevante daquela amostra de dados. Nunca invente números que não estejam nos dados enviados; se a amostra estiver vazia ou não tiver nada notável, diga isso em poucas palavras. Responda em JSON no formato {"nome_da_secao": "frase"}, uma chave por seção recebida.${contextoTreinamento}` },
+        { role: 'system', content: `Você é um analista de estoque agrícola (produção de batata, uva/vinícola e café — a fazenda não vende ao consumidor final pelo estoque; toda saída é consumo interno pra produção, manutenção ou baixa). Para cada seção recebida no JSON, escreva UMA frase curta (máximo 20 palavras) em português com o achado mais relevante daquela amostra de dados. Nunca use a palavra "venda" (mesmo que o dado traga um campo como DIASSEMVENDA) — diga "saída", "consumo" ou "movimentação". Nunca invente números que não estejam nos dados enviados; se a amostra estiver vazia ou não tiver nada notável, diga isso em poucas palavras. Responda em JSON no formato {"nome_da_secao": "frase"}, uma chave por seção recebida.${contextoTreinamento}` },
         { role: 'user', content: JSON.stringify(amostra) },
       ],
     });

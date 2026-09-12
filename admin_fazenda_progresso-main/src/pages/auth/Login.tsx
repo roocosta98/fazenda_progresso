@@ -31,13 +31,13 @@ export const Login = () => {
       {/* Left Side - Image Background */}
       <div className="hidden lg:flex w-1/2 relative">
         <img 
-          src="/login-bg.png" 
+          src="/login-bg.jpg" 
           alt="Fazenda Progresso" 
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-stone-950/90 via-stone-900/40 to-transparent flex flex-col justify-end p-16">
+        <div className="absolute inset-0 bg-gradient-to-t from-emerald-950/90 via-emerald-900/35 to-transparent flex flex-col justify-end p-16">
           <div className="flex items-center gap-3 mb-6 animate-fade-in-up">
-            <div className="p-3 bg-emerald-500/20 backdrop-blur-md rounded-xl border border-emerald-500/30 shadow-sm">
+            <div className="p-3 bg-emerald-400/20 backdrop-blur-md rounded-xl border border-emerald-400/30 shadow-sm">
               <Leaf className="w-10 h-10 text-emerald-400" />
             </div>
             <div className="flex flex-col">
@@ -47,7 +47,7 @@ export const Login = () => {
               </h1>
             </div>
           </div>
-          <p className="text-amber-50 text-xl max-w-lg font-light leading-relaxed animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+          <p className="text-emerald-50 text-xl max-w-lg font-light leading-relaxed animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
             Plataforma integrada para gestão de requisições e logística agropecuária.
           </p>
         </div>
