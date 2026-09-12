@@ -53,21 +53,6 @@ function competenciaAtualYYYYMM(): string {
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.query.modo === 'diag-statusprodcot') {
-    if (!exigirAcessoCustos(req, res)) return;
-    const { consultarSankhya } = await import('../_lib/estoquePainel.js');
-    try {
-      const [mapa, porStatus, totalCotacoes, cotacoesComAberto] = await Promise.all([
-        consultarSankhya(`SELECT OPC.VALOR, OPC.OPCAO FROM TDDOPC OPC WHERE OPC.NUCAMPO = 7363 ORDER BY OPC.VALOR`),
-        consultarSankhya(`SELECT STATUSPRODCOT, COUNT(*) AS TOTAL FROM TGFITC GROUP BY STATUSPRODCOT ORDER BY TOTAL DESC`),
-        consultarSankhya(`SELECT COUNT(DISTINCT NUMCOTACAO) AS TOTAL FROM TGFCOT`),
-        consultarSankhya(`SELECT COUNT(DISTINCT COT.NUMCOTACAO) AS TOTAL FROM TGFCOT COT WHERE EXISTS (SELECT 1 FROM TGFITC I WHERE I.NUMCOTACAO=COT.NUMCOTACAO AND I.STATUSPRODCOT='O')`),
-      ]);
-      return res.status(200).json({ mapa, porStatus, totalCotacoes, cotacoesComAberto });
-    } catch (error) {
-      return res.status(502).json({ error: error instanceof Error ? error.message : 'Falha no diagnóstico.' });
-    }
-  }
   if (req.query.modo === 'usuarios') return usuariosSistema(req, res);
   if (req.query.modo === 'producao-batata') return producaoBatata(req, res);
   if (req.query.modo === 'manutencao') return manutencao(req, res);
