@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Truck, Boxes, Factory, Wrench, ShoppingCart, Wallet, Handshake, Calculator, Users, HardHat, ClipboardList, Receipt } from 'lucide-react';
+import { Truck, Boxes, Factory, Wrench, ShoppingCart, Wallet, Handshake, Calculator, Users, HardHat, ClipboardList, Receipt, PieChart } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import type { ModuloSistema } from '../../types';
 
@@ -162,6 +162,15 @@ export function Inicio() {
             <p className="text-sm text-slate-500 mt-1">{card.descricao}</p>
           </button>
         ))}
+      </div>
+      <div className="mt-8 flex justify-center">
+        <button
+          onClick={() => navigate('/visao-geral')}
+          className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-2xl bg-emerald-950 text-white font-bold hover:bg-emerald-900 transition-colors shadow-sm"
+        >
+          <PieChart size={19} className="text-emerald-300" />
+          Visão Geral (BI) — todos os módulos num só painel
+        </button>
       </div>
     </div>
   );

@@ -30,6 +30,7 @@ import {
   X,
   BrainCircuit,
   Sparkles,
+  PieChart,
 } from 'lucide-react';
 import logoFp from '../../assets/logo.png';
 import type { ModuloSistema } from '../../types';
@@ -109,7 +110,10 @@ export const Sidebar = ({ mobileAberto = false, onFechar }: SidebarProps) => {
           { to: '/logistica/pesquisa-ia', icon: <Sparkles size={18} />, label: 'Pergunte à IA' },
           { to: '/logistica/monitor-tv', icon: <MonitorPlay size={18} />, label: 'Monitor TV' },
         ];
-  const itensPorModulo: Record<ModuloSistema, (LinkItem | GrupoItem)[]> = {
+  // Atalho pro painel geral (BI) em todo módulo — pedido explícito do Marcos, pra não precisar
+  // voltar pra "Início" toda vez que quiser ver a visão consolidada.
+  const itemVisaoGeral: LinkItem = { to: '/visao-geral', icon: <PieChart size={18} />, label: 'Visão Geral (BI)' };
+  const itensPorModuloBase: Record<ModuloSistema, (LinkItem | GrupoItem)[]> = {
     logistica_frota: itensLogistica,
     estoque: [{ to: '/logistica/estoque/dashboard', icon: <BarChart3 size={18} />, label: 'Dashboard' }, { to: '/logistica/estoque', icon: <Boxes size={18} />, label: 'Painel de Estoque' }, { to: '/logistica/estoque#pesquisa-ia', icon: <Sparkles size={18} />, label: 'Pergunte à IA' }],
     producao_batata: [
@@ -136,6 +140,9 @@ export const Sidebar = ({ mobileAberto = false, onFechar }: SidebarProps) => {
     controladoria: [{ to: '/controladoria', icon: <ClipboardList size={18} />, label: 'Painel de Controladoria' }],
     fiscal: [{ to: '/fiscal', icon: <Receipt size={18} />, label: 'Painel Fiscal' }],
   };
+  const itensPorModulo = Object.fromEntries(
+    Object.entries(itensPorModuloBase).map(([modulo, itens]) => [modulo, [...itens, itemVisaoGeral]]),
+  ) as Record<ModuloSistema, (LinkItem | GrupoItem)[]>;
   const itensAdministracao: GrupoItem[] = usuario.tipoUsuario === 'admin' ? [{
     label: 'Administração', icon: <Settings size={18} />,
     children: [
