@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
-import { LogOut, Bell, Settings, Wifi, Search, CheckCircle2, ChevronDown, Menu } from 'lucide-react';
+import { LogOut, Settings, Wifi, Search, CheckCircle2, ChevronDown, Menu } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { Novidades } from './Novidades';
 
 interface HeaderProps {
   onAbrirMenu?: () => void;
@@ -64,14 +65,8 @@ export const Header = ({ onAbrirMenu }: HeaderProps) => {
 
         <div className="h-4 w-px bg-slate-200 hidden lg:block" />
 
-        {/* Notificações */}
-        <button
-          className="relative p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-md transition-colors"
-          title="Notificações do Sistema"
-        >
-          <Bell size={16} />
-          <span className="absolute top-1 right-1 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-white" />
-        </button>
+        {/* Novidades do sistema (changelog) */}
+        <Novidades />
 
         {/* Perfil & Menu Dropdown */}
         <div className="relative" ref={dropdownRef}>
