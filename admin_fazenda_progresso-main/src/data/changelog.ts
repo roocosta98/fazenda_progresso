@@ -6,6 +6,13 @@ export type EntradaChangelog = { data: string; itens: string[] };
 
 export const CHANGELOG: EntradaChangelog[] = [
   {
+    data: '13/09/2026 (visual)',
+    itens: [
+      'Identidade visual do sistema modernizada: dourado no lugar do verde, tons mais quentes, títulos com fonte serifada, menu lateral redesenhado.',
+      'Tela de login com novo visual.',
+    ],
+  },
+  {
     data: '13/09/2026',
     itens: [
       'Dashboard de Estoque virou a porta de entrada única do estoque — o item "Painel de Estoque" saiu do menu.',
