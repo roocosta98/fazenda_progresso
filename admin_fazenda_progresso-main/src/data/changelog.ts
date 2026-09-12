@@ -1,12 +1,22 @@
 // Changelog exibido no sino de notificações (Header.tsx) — em linguagem simples, sem termos
 // técnicos, pra quem usa o sistema no dia a dia. Ordem: mais recente primeiro. Ao adicionar uma
-// entrada nova, o sino mostra o indicador de "não lido" de novo automaticamente (compara a data
-// mais recente aqui com a última vista, guardada no navegador de cada usuário).
-export type EntradaChangelog = { data: string; itens: string[] };
+// entrada nova, o sino mostra o indicador de "não lido" de novo automaticamente (compara a
+// entrada mais recente aqui com a última vista, guardada no navegador de cada usuário).
+// "hora" é o horário local da fazenda (Bahia, UTC-3) do deploy — só preenchido quando o horário
+// real é conhecido (a partir de 12/09/2026); antes disso, entradas só têm a data.
+export type EntradaChangelog = { data: string; hora?: string; itens: string[] };
 
 export const CHANGELOG: EntradaChangelog[] = [
   {
-    data: '13/09/2026 (acesso facilitado)',
+    data: '12/09/2026',
+    hora: '12:10:08',
+    itens: [
+      'Sino de novidades agora mostra a hora exata (além da data) de cada atualização, pra dar pra acompanhar quando cada mudança entrou no ar.',
+    ],
+  },
+  {
+    data: '12/09/2026',
+    hora: '12:06:27',
     itens: [
       'Estoque: a lista completa (com todas as tabelas) voltou pro menu, com o nome "Lista completa" — tinha ficado escondida, só acessível clicando num botão pequeno no Dashboard.',
       'Dashboard de Estoque ganhou botões "Lista completa" e "Pergunte à IA" bem visíveis no topo, inclusive no celular.',
@@ -14,7 +24,8 @@ export const CHANGELOG: EntradaChangelog[] = [
     ],
   },
   {
-    data: '13/09/2026 (visual v2)',
+    data: '12/09/2026',
+    hora: '11:54:19',
     itens: [
       'Identidade visual refeita puxando as cores REAIS da Fazenda Progresso (o verde-oliva e o verde-limão do site institucional da empresa) e a fonte usada lá, no lugar do dourado provisório da versão anterior.',
       'Logo e foto da tela de login trocados pelos originais da Fazenda Progresso (Chapada Diamantina/Mucugê-BA) — antes eram imagens genéricas de banco de imagens.',
@@ -22,14 +33,16 @@ export const CHANGELOG: EntradaChangelog[] = [
     ],
   },
   {
-    data: '13/09/2026 (visual)',
+    data: '12/09/2026',
+    hora: '11:39:20',
     itens: [
       'Identidade visual do sistema modernizada: dourado no lugar do verde, tons mais quentes, títulos com fonte serifada, menu lateral redesenhado.',
       'Tela de login com novo visual.',
     ],
   },
   {
-    data: '13/09/2026',
+    data: '12/09/2026',
+    hora: '11:21:59',
     itens: [
       'Dashboard de Estoque virou a porta de entrada única do estoque — o item "Painel de Estoque" saiu do menu.',
       'Todo card e todo gráfico do Dashboard de Estoque agora pode ser clicado pra abrir uma tela cheia com o gráfico completo e a tabela detalhada.',

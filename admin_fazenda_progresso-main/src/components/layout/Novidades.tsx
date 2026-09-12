@@ -3,6 +3,9 @@ import { Bell, Sparkles } from 'lucide-react';
 import { CHANGELOG } from '../../data/changelog';
 
 const CHAVE_ULTIMA_VISTA = 'fazendaProgresso.changelogVisto';
+// Identificador único de uma entrada — várias entradas podem cair no mesmo dia, então "data"
+// sozinha não basta mais pra distinguir/marcar como vista; combina com a hora quando existir.
+const idEntrada = (entrada: { data: string; hora?: string }) => `${entrada.data} ${entrada.hora ?? ''}`;
 
 export function Novidades() {
   const [aberto, setAberto] = useState(false);
@@ -12,7 +15,7 @@ export function Novidades() {
   useEffect(() => {
     try {
       const ultimaVista = localStorage.getItem(CHAVE_ULTIMA_VISTA);
-      setNaoLido(ultimaVista !== CHANGELOG[0]?.data);
+      setNaoLido(!!CHANGELOG[0] && ultimaVista !== idEntrada(CHANGELOG[0]));
     } catch { /* localStorage indisponível (modo privado etc.) — sem indicador, sem quebrar a tela */ }
   }, []);
 
@@ -27,7 +30,7 @@ export function Novidades() {
   const alternar = () => {
     setAberto((atual) => !atual);
     if (!aberto && CHANGELOG[0]) {
-      try { localStorage.setItem(CHAVE_ULTIMA_VISTA, CHANGELOG[0].data); } catch { /* ignora */ }
+      try { localStorage.setItem(CHAVE_ULTIMA_VISTA, idEntrada(CHANGELOG[0])); } catch { /* ignora */ }
       setNaoLido(false);
     }
   };
@@ -50,8 +53,10 @@ export function Novidades() {
           </div>
           <div className="divide-y divide-slate-100">
             {CHANGELOG.map((entrada) => (
-              <div key={entrada.data} className="px-3.5 py-3">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 mb-1.5">{entrada.data}</p>
+              <div key={idEntrada(entrada)} className="px-3.5 py-3">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 mb-1.5">
+                  {entrada.data}{entrada.hora && <span className="text-emerald-700/70 font-semibold"> · {entrada.hora}</span>}
+                </p>
                 <ul className="space-y-1.5">
                   {entrada.itens.map((item, indice) => (
                     <li key={indice} className="text-xs text-slate-600 leading-snug flex gap-1.5">
