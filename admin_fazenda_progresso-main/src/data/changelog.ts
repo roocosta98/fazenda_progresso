@@ -6,6 +6,14 @@ export type EntradaChangelog = { data: string; itens: string[] };
 
 export const CHANGELOG: EntradaChangelog[] = [
   {
+    data: '13/09/2026 (visual v2)',
+    itens: [
+      'Identidade visual refeita puxando as cores REAIS da Fazenda Progresso (o verde-oliva e o verde-limão do site institucional da empresa) e a fonte usada lá, no lugar do dourado provisório da versão anterior.',
+      'Logo e foto da tela de login trocados pelos originais da Fazenda Progresso (Chapada Diamantina/Mucugê-BA) — antes eram imagens genéricas de banco de imagens.',
+      'Estoque: corrigida a palavra "venda" onde na verdade é saída de estoque (consumo pra produção, manutenção ou baixa) — a fazenda não vende pelo estoque. Ajustado em "Itens sem movimentação", nos gráficos do Dashboard e no comportamento da IA (busca e insights).',
+    ],
+  },
+  {
     data: '13/09/2026 (visual)',
     itens: [
       'Identidade visual do sistema modernizada: dourado no lugar do verde, tons mais quentes, títulos com fonte serifada, menu lateral redesenhado.',

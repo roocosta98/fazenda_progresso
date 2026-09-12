@@ -1,70 +1,60 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Playfair+Display:wght@600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:opsz,wght@6..12,400;6..12,600;6..12,700;6..12,800;6..12,900&display=swap');
 
-/* Identidade "Fazenda Progresso" repensada a partir do site da Vinícola UVVA (uvva.dev):
-   dourado quente no lugar do verde corporativo, neutros mornos (nunca cinza-azulado frio),
-   serifada nos títulos, sanserifa (Manrope) no corpo. Em vez de inventar uma rampa de cor do
-   zero, realocamos as rampas já testadas/acessíveis do próprio Tailwind (amber ~ dourado da
-   UVVA, stone ~ castanho/creme da UVVA) para os nomes "emerald"/"slate" já usados em todo o
-   app — o app inteiro herda a nova identidade sem precisar trocar classe por classe.
-   Cores de status (green/rose/amber-semântico/sky) continuam intactas, de propósito. */
+/* Identidade "Fazenda Progresso" — retirada DIRETO da marca real da empresa (fazendaprogresso.com,
+   Chapada Diamantina/Mucugê-BA, grupo que também é dono da Vinícola UVVA): verde-oliva escuro
+   (#2F3F31, cor primária do site institucional) + verde-limão vivo (#A6CE66, cor de destaque do
+   mesmo site) no lugar do verde corporativo genérico anterior, e Nunito Sans (a fonte usada no
+   site real) no lugar de um sans genérico. A rampa "emerald" (usada em ~43 arquivos do app) é
+   substituída por uma rampa própria ancorada exatamente nessas duas cores da marca real — não é
+   mais um "parecido", é a cor oficial da fazenda nos passos 400 e 900. Neutros continuam o slate
+   cinza-frio padrão do Tailwind (é o que o próprio site institucional usa pro texto). Cores de
+   status (green/rose/amber-semântico/sky) continuam intactas, de propósito. */
 @theme {
-  --color-emerald-50: var(--color-amber-50);
-  --color-emerald-100: var(--color-amber-100);
-  --color-emerald-200: var(--color-amber-200);
-  --color-emerald-300: var(--color-amber-300);
-  --color-emerald-400: var(--color-amber-400);
-  --color-emerald-500: var(--color-amber-500);
-  --color-emerald-600: var(--color-amber-600);
-  --color-emerald-700: var(--color-amber-700);
-  --color-emerald-800: var(--color-amber-800);
-  --color-emerald-900: var(--color-amber-900);
-  --color-emerald-950: var(--color-amber-950);
-
-  --color-slate-50: var(--color-stone-50);
-  --color-slate-100: var(--color-stone-100);
-  --color-slate-200: var(--color-stone-200);
-  --color-slate-300: var(--color-stone-300);
-  --color-slate-400: var(--color-stone-400);
-  --color-slate-500: var(--color-stone-500);
-  --color-slate-600: var(--color-stone-600);
-  --color-slate-700: var(--color-stone-700);
-  --color-slate-800: var(--color-stone-800);
-  --color-slate-900: var(--color-stone-900);
-  --color-slate-950: var(--color-stone-950);
+  --color-emerald-50: #f4f7ec;
+  --color-emerald-100: #e7efd6;
+  --color-emerald-200: #d1e0af;
+  --color-emerald-300: #b3cd7e;
+  --color-emerald-400: #a6ce66; /* cor de destaque oficial do site da Fazenda Progresso */
+  --color-emerald-500: #8fb84e;
+  --color-emerald-600: #729b3b;
+  --color-emerald-700: #56782f;
+  --color-emerald-800: #3f5a28;
+  --color-emerald-900: #2f3f31; /* cor primária oficial do site da Fazenda Progresso */
+  --color-emerald-950: #1b241d;
 
   /* Aliases usados em telas mais antigas (Login etc.) que ainda referenciavam tokens nunca
      definidos (agro-950/900/50, shadow-soft) — ficavam sem cor/sombra nenhuma em produção. */
-  --color-agro-50: var(--color-amber-50);
-  --color-agro-900: var(--color-stone-900);
-  --color-agro-950: var(--color-stone-950);
-  --shadow-soft: 0 8px 24px -8px rgba(28, 21, 20, 0.18);
+  --color-agro-50: var(--color-emerald-50);
+  --color-agro-900: var(--color-slate-900);
+  --color-agro-950: var(--color-emerald-950);
+  --shadow-soft: 0 8px 24px -8px rgba(27, 36, 29, 0.2);
 
   /* Identidade Corporativa Fazenda Progresso */
-  --color-brand-primary: var(--color-amber-700);
-  --color-brand-primary-hover: var(--color-amber-800);
-  --color-brand-secondary: var(--color-amber-600);
-  --color-brand-accent: var(--color-amber-500);
-  --color-brand-subtle: var(--color-amber-50);
+  --color-brand-primary: var(--color-emerald-900);
+  --color-brand-primary-hover: #253327;
+  --color-brand-secondary: var(--color-emerald-700);
+  --color-brand-accent: var(--color-emerald-400);
+  --color-brand-subtle: var(--color-emerald-50);
 
   /* Neutros e Superfícies B2B */
-  --color-sidebar-bg: #14100c;
-  --color-sidebar-border: #241c16;
-  --color-sidebar-hover: #221a13;
-  --color-sidebar-active: #3a2c1a;
+  --color-sidebar-bg: #17211a;
+  --color-sidebar-border: #24322a;
+  --color-sidebar-hover: #1e2b23;
+  --color-sidebar-active: #2c3f2f;
 
-  --color-canvas-bg: #faf8f5;
+  --color-canvas-bg: #f7f9f5;
   --color-card-bg: #ffffff;
-  --color-card-border: var(--color-stone-200);
+  --color-card-border: var(--color-slate-200);
 
   /* Tipografia Corporativa */
-  --color-text-primary: var(--color-stone-900);
-  --color-text-secondary: var(--color-stone-600);
-  --color-text-muted: var(--color-stone-500);
-  --color-text-subtle: var(--color-stone-400);
+  --color-text-primary: var(--color-slate-900);
+  --color-text-secondary: var(--color-slate-600);
+  --color-text-muted: var(--color-slate-500);
+  --color-text-subtle: var(--color-slate-400);
 
   /* Estados de Sistema (Sóbrios / Enterprise) — intencionalmente fora da rampa de marca,
-     pra sucesso/alerta/erro nunca se confundirem com o dourado de identidade. */
+     pra sucesso/alerta/erro nunca se confundirem com o verde de identidade. */
   --color-status-success: #059669;
   --color-status-success-bg: #f0fdf4;
   --color-status-success-border: #bbf7d0;
@@ -81,13 +71,13 @@
   --color-status-info-bg: #f0f9ff;
   --color-status-info-border: #bae6fd;
 
-  --font-sans: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  --font-display: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  --font-sans: 'Nunito Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-display: 'Nunito Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
-  --shadow-corporate-xs: 0 1px 2px 0 rgba(28, 21, 20, 0.04);
-  --shadow-corporate-sm: 0 1px 3px 0 rgba(28, 21, 20, 0.06), 0 1px 2px -1px rgba(28, 21, 20, 0.06);
-  --shadow-corporate-md: 0 4px 6px -1px rgba(28, 21, 20, 0.06), 0 2px 4px -2px rgba(28, 21, 20, 0.05);
-  --shadow-glow-brand: 0 0 0 1px rgba(180, 130, 60, 0.12), 0 4px 16px -4px rgba(180, 130, 60, 0.25);
+  --shadow-corporate-xs: 0 1px 2px 0 rgba(27, 36, 29, 0.04);
+  --shadow-corporate-sm: 0 1px 3px 0 rgba(27, 36, 29, 0.06), 0 1px 2px -1px rgba(27, 36, 29, 0.06);
+  --shadow-corporate-md: 0 4px 6px -1px rgba(27, 36, 29, 0.06), 0 2px 4px -2px rgba(27, 36, 29, 0.05);
+  --shadow-glow-brand: 0 0 0 1px rgba(166, 206, 102, 0.18), 0 4px 16px -4px rgba(166, 206, 102, 0.3);
 }
 
 html, body {
@@ -99,13 +89,14 @@ html, body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Títulos de página em serifada — a assinatura visual emprestada do site da vinícola (fontes
-   "Moneta"/"Avenir" ali; aqui usamos os equivalentes livres Playfair Display/Manrope). Como
-   toda tela do sistema usa <h1> pro título, essa regra sozinha já eleva a tipografia do app
-   inteiro sem precisar editar tela por tela. */
+/* Título de página em peso extra-bold e tracking fechado — a assinatura tipográfica do site
+   institucional real (Nunito Sans bem pesada nos títulos, sem serifa). Como toda tela do
+   sistema usa <h1> pro título, essa regra sozinha já eleva a tipografia do app inteiro sem
+   precisar editar tela por tela. */
 h1 {
   font-family: var(--font-display);
-  letter-spacing: -0.01em;
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
 
 /* Evita que `border` sem cor explícita herde a cor escura do texto. */

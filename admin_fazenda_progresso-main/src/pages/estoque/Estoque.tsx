@@ -68,7 +68,7 @@ export function Estoque() {
     </section>
     {carregando && !dados ? <div className="bg-white border rounded-2xl p-12"><Carregando mensagem="Carregando dados do estoque…" /></div> : dados && <div className="space-y-4">
       <Secao titulo="Ruptura e estoque mínimo/máximo" subtitulo="Itens sinalizados para reposição ou abaixo do mínimo configurado." linhas={dados.ruptura} erro={dados.erros.ruptura} insight={insights.ruptura}/>
-      <Secao titulo="Itens sem movimentação" subtitulo="Produtos sem venda por 90 dias ou mais." linhas={dados.semMovimentacao} erro={dados.erros.semMovimentacao} insight={insights.semMovimentacao}
+      <Secao titulo="Itens sem movimentação" subtitulo="Produtos sem saída (consumo, produção ou baixa) por 90 dias ou mais." linhas={dados.semMovimentacao} erro={dados.erros.semMovimentacao} insight={insights.semMovimentacao}
         filtroSituacao={{ coluna: 'SITUACAO', rotuloSim: 'Com estoque', rotuloNao: 'Sem estoque' }}/>
       <Secao titulo="Maior valor em estoque · Curva ABC" subtitulo="Valor calculado por estoque × custo gerencial mais recente." linhas={dados.valor} erro={dados.erros.valor} insight={insights.valor}
         nota={'Classe A: ~20% dos itens concentram ~80% do valor total — exigem controle rígido e inventários frequentes.\nClasse B: ~30% dos itens, ~15% do valor total — importância intermediária, monitoramento moderado.\nClasse C: ~50% dos itens, apenas ~5% do valor total — baixo valor unitário ou baixa movimentação, controle mais simples.'}/>

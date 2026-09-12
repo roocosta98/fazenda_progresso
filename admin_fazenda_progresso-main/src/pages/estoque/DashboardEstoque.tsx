@@ -170,7 +170,7 @@ export function DashboardEstoque() {
               <YAxis dataKey="produto" type="category" width={140} tick={{ fontSize: 10, fill: '#52514e' }} axisLine={false} tickLine={false}
                 tickFormatter={(v: string) => truncar(v, 20)} />
               <Tooltip formatter={(v) => `${numero(v)} dias`} labelFormatter={(v) => v} />
-              <Bar dataKey="dias" name="Dias sem venda" fill={COR_SEQ_2} radius={[0, 4, 4, 0]} barSize={14}>
+              <Bar dataKey="dias" name="Dias sem saída" fill={COR_SEQ_2} radius={[0, 4, 4, 0]} barSize={14}>
                 <LabelList dataKey="dias" position="right" style={{ fontSize: 10, fill: '#52514e' }} formatter={(v) => numero(v as number)} />
               </Bar>
             </BarChart>
@@ -235,7 +235,7 @@ export function DashboardEstoque() {
     <ModalExpandido aberto={modalAberto === 'giro'} onFechar={() => setModalAberto(null)} titulo="Giro por produto" subtitulo="Consumo por requisição no período filtrado, giro e dias de cobertura do estoque atual.">
       <TabelaInterativa linhas={dados?.giroProdutos ?? []} />
     </ModalExpandido>
-    <ModalExpandido aberto={modalAberto === 'parados'} onFechar={() => setModalAberto(null)} titulo="Itens sem movimentação" subtitulo="Produtos sem venda por 90 dias ou mais.">
+    <ModalExpandido aberto={modalAberto === 'parados'} onFechar={() => setModalAberto(null)} titulo="Itens sem movimentação" subtitulo="Produtos sem saída (consumo, produção ou baixa) por 90 dias ou mais.">
       <TabelaInterativa linhas={dados?.semMovimentacao ?? []} filtroSituacao={{ coluna: 'SITUACAO', rotuloSim: 'Com estoque', rotuloNao: 'Sem estoque' }} />
     </ModalExpandido>
     <ModalExpandido aberto={modalAberto === 'fornecedores'} onFechar={() => setModalAberto(null)} titulo="Ranking de fornecedores" subtitulo="Histórico de cotações: prazo, vitórias e produtos distintos cotados.">

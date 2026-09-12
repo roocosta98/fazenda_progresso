@@ -195,8 +195,8 @@ export const Sidebar = ({ mobileAberto = false, onFechar }: SidebarProps) => {
   const linkClasses = (isActive: boolean) =>
     `flex items-center justify-between text-xs tracking-tight transition-colors duration-150 group ${
       isActive
-        ? 'bg-[#3a2c1a] text-white font-semibold border-l-[3px] border-emerald-500 rounded-r-md pl-2.5 pr-3 py-2'
-        : 'text-slate-400 hover:text-slate-200 hover:bg-[#221a13] rounded-md px-3 py-2 font-medium'
+        ? 'bg-[#2c3f2f] text-white font-semibold border-l-[3px] border-emerald-500 rounded-r-md pl-2.5 pr-3 py-2'
+        : 'text-slate-400 hover:text-slate-200 hover:bg-[#1e2b23] rounded-md px-3 py-2 font-medium'
     }`;
 
   return (
@@ -209,14 +209,14 @@ export const Sidebar = ({ mobileAberto = false, onFechar }: SidebarProps) => {
         />
       )}
       <aside
-        className={`w-72 sm:w-64 bg-[#14100c] text-slate-300 flex flex-col z-50 shrink-0 h-full border-r border-[#241c16] select-none fixed inset-y-0 left-0 transition-all duration-200 overflow-hidden md:relative md:translate-x-0 ${
+        className={`w-72 sm:w-64 bg-[#17211a] text-slate-300 flex flex-col z-50 shrink-0 h-full border-r border-[#24322a] select-none fixed inset-y-0 left-0 transition-all duration-200 overflow-hidden md:relative md:translate-x-0 ${
           mobileAberto ? 'translate-x-0 md:w-64' : '-translate-x-full md:w-0 md:border-r-0'
         }`}
       >
       {/* 1. Branding Header */}
-      <div className="h-16 flex items-center justify-between px-4 border-b border-[#241c16] bg-[#100c09]/80 shrink-0">
+      <div className="h-16 flex items-center justify-between px-4 border-b border-[#24322a] bg-[#121a15]/80 shrink-0">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-9 h-9 rounded-md bg-[#1e1710] border border-[#362c1e] flex items-center justify-center shrink-0 overflow-hidden shadow-2xs">
+          <div className="w-9 h-9 rounded-md bg-[#1c2921] border border-[#2f4235] flex items-center justify-center shrink-0 overflow-hidden shadow-2xs">
             <img src={logoFp} alt="Logo FP" className="w-7 h-7 object-contain" />
           </div>
           <div className="flex flex-col min-w-0">
@@ -230,7 +230,7 @@ export const Sidebar = ({ mobileAberto = false, onFechar }: SidebarProps) => {
         </div>
         <button
           onClick={onFechar}
-          className="p-1.5 text-slate-400 hover:text-white hover:bg-[#221a13] rounded-md shrink-0"
+          className="p-1.5 text-slate-400 hover:text-white hover:bg-[#1e2b23] rounded-md shrink-0"
           aria-label="Fechar menu"
         >
           <X size={18} />
@@ -247,7 +247,7 @@ export const Sidebar = ({ mobileAberto = false, onFechar }: SidebarProps) => {
         {usuario.perfil !== 'solicitante' && (
           <NavLink
             to="/inicio"
-            className="flex items-center gap-2.5 px-3 py-2 mb-3 rounded-md text-xs font-semibold text-slate-300 border border-[#362c1e] hover:bg-[#221a13] hover:text-white transition-colors"
+            className="flex items-center gap-2.5 px-3 py-2 mb-3 rounded-md text-xs font-semibold text-slate-300 border border-[#2f4235] hover:bg-[#1e2b23] hover:text-white transition-colors"
           >
             <Home size={16} className="text-emerald-400" />
             Início
@@ -255,10 +255,10 @@ export const Sidebar = ({ mobileAberto = false, onFechar }: SidebarProps) => {
         )}
         <div className="mb-4 relative">
           <p className="px-3 text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Módulo atual</p>
-          <button onClick={() => setSeletorAberto((atual) => !atual)} className="w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-md bg-[#1e1710] border border-[#4a3c28] text-white text-xs font-semibold">
+          <button onClick={() => setSeletorAberto((atual) => !atual)} className="w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-md bg-[#1c2921] border border-[#3c5443] text-white text-xs font-semibold">
             <span className="flex items-center gap-2 min-w-0"><span className="text-emerald-400">{nomesModulos[moduloAtual].icone}</span><span className="truncate">{nomesModulos[moduloAtual].nome}</span></span><ChevronDown size={14} className={seletorAberto ? 'rotate-180 transition-transform' : 'transition-transform'} />
           </button>
-          {seletorAberto && <div className="absolute z-50 mt-1 w-full bg-[#1e1710] border border-[#4a3c28] rounded-md p-1 shadow-xl">{modulosDisponiveis.map((modulo) => <button key={modulo} onClick={() => { setModuloAtual(modulo); setFocoManual(modulo === 'todos'); setSeletorAberto(false); navigate(dashboardModulo[modulo]); }} className={`w-full flex items-center gap-2 px-3 py-2 rounded text-left text-xs ${moduloAtual === modulo ? 'bg-emerald-600 text-white' : 'text-slate-300 hover:bg-[#2e2518]'}`}><span>{nomesModulos[modulo].icone}</span>{nomesModulos[modulo].nome}</button>)}</div>}
+          {seletorAberto && <div className="absolute z-50 mt-1 w-full bg-[#1c2921] border border-[#3c5443] rounded-md p-1 shadow-xl">{modulosDisponiveis.map((modulo) => <button key={modulo} onClick={() => { setModuloAtual(modulo); setFocoManual(modulo === 'todos'); setSeletorAberto(false); navigate(dashboardModulo[modulo]); }} className={`w-full flex items-center gap-2 px-3 py-2 rounded text-left text-xs ${moduloAtual === modulo ? 'bg-emerald-600 text-white' : 'text-slate-300 hover:bg-[#253a2c]'}`}><span>{nomesModulos[modulo].icone}</span>{nomesModulos[modulo].nome}</button>)}</div>}
         </div>
         <p className="px-3 text-[10px] font-semibold text-slate-400 uppercase tracking-wider my-2.5">
           {nomesModulos[moduloAtual].nome}
@@ -270,7 +270,7 @@ export const Sidebar = ({ mobileAberto = false, onFechar }: SidebarProps) => {
               <div key={item.label} className="pt-2">
                 <button
                   onClick={() => setGrupoAberto((atual) => !atual)}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-md text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-[#221a13] transition-colors"
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-md text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-[#1e2b23] transition-colors"
                 >
                   <div className="flex items-center gap-2.5">
                     <span className="text-slate-400">{item.icon}</span>
@@ -285,7 +285,7 @@ export const Sidebar = ({ mobileAberto = false, onFechar }: SidebarProps) => {
                 </button>
 
                 {grupoAberto && (
-                  <div className="mt-1 ml-3.5 pl-2.5 border-l border-[#2c2318] space-y-1">
+                  <div className="mt-1 ml-3.5 pl-2.5 border-l border-[#24352b] space-y-1">
                     {item.children.map((child) => (
                       <NavLink
                         key={child.to}
@@ -294,8 +294,8 @@ export const Sidebar = ({ mobileAberto = false, onFechar }: SidebarProps) => {
                         className={({ isActive }) =>
                           `flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-xs transition-colors ${
                             isActive
-                              ? 'text-white bg-[#3a2c1a] font-semibold'
-                              : 'text-slate-400 hover:text-slate-200 hover:bg-[#221a13]'
+                              ? 'text-white bg-[#2c3f2f] font-semibold'
+                              : 'text-slate-400 hover:text-slate-200 hover:bg-[#1e2b23]'
                           }`
                         }
                       >
@@ -342,8 +342,8 @@ export const Sidebar = ({ mobileAberto = false, onFechar }: SidebarProps) => {
       </nav>
 
       {/* 3. User & Session Footer */}
-      <div className="p-3 border-t border-[#241c16] bg-[#100c09]/80">
-        <div className="flex items-center justify-between gap-2 p-2 rounded-md bg-[#1c150f] border border-[#2c2318]">
+      <div className="p-3 border-t border-[#24322a] bg-[#121a15]/80">
+        <div className="flex items-center justify-between gap-2 p-2 rounded-md bg-[#1a2620] border border-[#24352b]">
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-7 h-7 rounded-md bg-emerald-800/60 border border-emerald-600/40 flex items-center justify-center text-emerald-200 font-semibold text-xs shrink-0">
               {usuario?.nome.charAt(0)}
