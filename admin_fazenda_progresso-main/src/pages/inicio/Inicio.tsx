@@ -1,7 +1,12 @@
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Truck, Boxes, Factory, Wrench, ShoppingCart, Wallet, Handshake, Calculator, Users, HardHat, ClipboardList, Receipt, PieChart } from 'lucide-react';
+import { Truck, Boxes, Factory, Wrench, ShoppingCart, Wallet, Handshake, Calculator, Users, HardHat, ClipboardList, Receipt, PieChart, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { cabecalhoPerfil } from '../../utils/apiAuth';
+import { moeda, numero } from '../estoque/estoqueShared';
 import type { ModuloSistema } from '../../types';
+
+const API_URL = import.meta.env.VITE_API_URL ?? '';
 
 interface CardModulo {
   modulo: ModuloSistema;
@@ -132,6 +137,19 @@ export function Inicio() {
     : (usuario?.modulos?.length ? usuario.modulos : ['logistica_frota']);
   const cards = CARDS.filter((c) => modulosDisponiveis.includes(c.modulo));
 
+  // Só o Estoque tem dado real pronto pra virar métrica de resumo aqui na tela inicial — os
+  // demais módulos ativos (Logística etc.) ainda não têm esse resumo agregado implementado,
+  // então não mostramos número nenhum pra eles (nunca um valor fictício só pra preencher o card).
+  const [resumoEstoque, setResumoEstoque] = useState<{ valorTotal: number; ruptura: number } | null>(null);
+  useEffect(() => {
+    if (!modulosDisponiveis.includes('estoque')) return;
+    fetch(`${API_URL}/api/estoque/painel`, { headers: cabecalhoPerfil(usuario?.perfil) })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((corpo) => { if (corpo?.kpis) setResumoEstoque({ valorTotal: Number(corpo.kpis.VALORTOTALESTOQUE ?? 0), ruptura: Number(corpo.kpis.TOTALRUPTURA ?? 0) }); })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <div className="max-w-5xl mx-auto pt-8 pb-12">
       <div className="text-center mb-10">
@@ -144,11 +162,16 @@ export function Inicio() {
           <button
             key={card.modulo}
             onClick={() => navigate(card.to)}
-            className="group relative text-left bg-white border border-slate-200/80 rounded-2xl p-6 hover:shadow-lg hover:-translate-y-0.5 transition-all"
+            className={`group relative text-left border rounded-2xl p-6 transition-all ${
+              card.ativo ? 'bg-white border-slate-200/80 hover:shadow-lg hover:-translate-y-0.5' : 'border-slate-200/80 hover:shadow-md'
+            }`}
+            style={card.ativo ? undefined : {
+              backgroundImage: 'repeating-linear-gradient(135deg, #f8fafc, #f8fafc 8px, #f1f5f9 8px, #f1f5f9 16px)',
+            }}
           >
             <span
               className={`absolute top-4 right-4 text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${
-                card.ativo ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'
+                card.ativo ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200/80 text-slate-500'
               }`}
             >
               {card.ativo ? 'Ativo' : 'Em construção'}
@@ -160,6 +183,18 @@ export function Inicio() {
               {card.titulo}
             </h2>
             <p className="text-sm text-slate-500 mt-1">{card.descricao}</p>
+            {card.modulo === 'estoque' && resumoEstoque && (
+              <div className="flex items-center gap-4 mt-4 pt-4 border-t border-slate-100">
+                <div>
+                  <p className="text-[10px] font-bold uppercase text-slate-400">Valor total</p>
+                  <p className="text-sm font-bold text-slate-800">{moeda(resumoEstoque.valorTotal)}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase text-slate-400 flex items-center gap-1"><AlertTriangle size={11} className="text-rose-500" />Em ruptura</p>
+                  <p className="text-sm font-bold text-slate-800">{numero(resumoEstoque.ruptura)}</p>
+                </div>
+              </div>
+            )}
           </button>
         ))}
       </div>

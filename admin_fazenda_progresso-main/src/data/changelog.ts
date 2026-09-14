@@ -9,6 +9,14 @@ export type EntradaChangelog = { data: string; hora?: string; itens: string[] };
 export const CHANGELOG: EntradaChangelog[] = [
   {
     data: '14/09/2026',
+    hora: '16:26:25',
+    itens: [
+      'Tela Início: cards de módulo em construção ganharam textura visual diferenciada, e o card de Estoque mostra valor total e itens em ruptura em tempo real.',
+      'Inventário reformulado: novos indicadores (Total de SKUs, Abaixo do mínimo, Acima do máximo, Sem local padrão, Cobertura média), painel de distribuição de estoque por local e atalho pros itens parados há mais tempo.',
+    ],
+  },
+  {
+    data: '14/09/2026',
     hora: '16:09:56',
     itens: [
       'Ruptura de estoque corrigida: não compara mais o saldo de um lote isolado contra o mínimo do produto (gerava linhas repetidas do mesmo item, como o Éder identificou com o CARTAP BR 1KG) — agora soma o estoque de todos os locais/lotes antes de comparar.',

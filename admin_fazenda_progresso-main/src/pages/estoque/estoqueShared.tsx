@@ -17,6 +17,7 @@ export type DadosEstoque = {
   cotacoes: Linha[];
   cotacoesPorSituacao: Linha[];
   giroProdutos: Linha[];
+  distribuicaoLocal: Linha[];
   kpis: Linha;
   erros: Record<string, string>;
 };
