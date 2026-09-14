@@ -9,6 +9,14 @@ export type EntradaChangelog = { data: string; hora?: string; itens: string[] };
 export const CHANGELOG: EntradaChangelog[] = [
   {
     data: '14/09/2026',
+    hora: '16:32:41',
+    itens: [
+      'Fornecedores ganhou indicadores reais (melhor prazo médio, maior taxa de vitória, cotações no histórico) e um gráfico de Prazo × Taxa de vitória.',
+      'Cotações ganhou indicadores (atrasadas, sem prazo definido, prazo médio até o final) e a coluna "Situação" na lista, calculada a partir do prazo real de cada cotação.',
+    ],
+  },
+  {
+    data: '14/09/2026',
     hora: '16:26:25',
     itens: [
       'Tela Início: cards de módulo em construção ganharam textura visual diferenciada, e o card de Estoque mostra valor total e itens em ruptura em tempo real.',
