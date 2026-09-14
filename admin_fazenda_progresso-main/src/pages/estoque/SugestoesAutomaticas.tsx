@@ -107,7 +107,7 @@ export function SugestoesAutomaticas({ dados, limite = 6 }: { dados: DadosEstoqu
       <div className="flex items-start justify-between gap-3">
         <div>
           <h2 className="font-bold text-slate-800 flex items-center gap-2"><ListChecks size={16} className="text-emerald-600" />Sugestões automáticas</h2>
-          <p className="text-xs text-slate-500 mt-1">Regras de estoque mínimo/máximo, tempo parado e prazo de cotação — sem inteligência artificial.</p>
+          <p className="text-xs text-slate-500 mt-1">Por regra de negócio (estoque mínimo/máximo, tempo parado, prazo de cotação) — ainda estamos estudando como aplicar IA de verdade aqui.</p>
         </div>
         <Link to="/logistica/estoque/central-de-acoes" className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 hover:text-emerald-800 shrink-0 whitespace-nowrap">
           Ver todas <ArrowRight size={13} />

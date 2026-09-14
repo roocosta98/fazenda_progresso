@@ -58,7 +58,8 @@ export function Cotacoes() {
           <CardCotacoes Icon={CalendarClock} cor="bg-violet-50 text-violet-600" rotulo="Prazo médio até o final" valor={prazoMedioDias == null ? '—' : `${numero(prazoMedioDias, 0)} dias`} apoio="Só cotações dentro do prazo (exclui atrasadas)" />
         </div>
 
-        <SugestoesAutomaticas dados={dados} limite={4} />
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-5 items-start">
+        <div className="xl:col-span-2 space-y-5">
 
         {!!dados.cotacoesPorSituacao?.length && (
           <section className="bg-white border rounded-2xl p-4 flex flex-wrap gap-4">
@@ -76,6 +77,12 @@ export function Cotacoes() {
             ? <p className="text-xs bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-3">Esta seção não pôde ser carregada: {dados.erros.cotacoes}</p>
             : <TabelaInterativa linhas={cotacoesComSituacao} />}
         </section>
+
+        </div>
+        <div className="xl:col-span-1 xl:sticky xl:top-5">
+          <SugestoesAutomaticas dados={dados} limite={6} />
+        </div>
+        </div>
       </>
     )}
   </div>;
