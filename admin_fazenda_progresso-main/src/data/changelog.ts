@@ -9,6 +9,13 @@ export type EntradaChangelog = { data: string; hora?: string; itens: string[] };
 export const CHANGELOG: EntradaChangelog[] = [
   {
     data: '14/09/2026',
+    hora: '18:07:53',
+    itens: [
+      'Dashboard, Inventário, Fornecedores e Cotações (Estoque) ganharam um painel de "Sugestões automáticas": produtos com estoque zerado/abaixo do mínimo e cotações atrasadas/sem prazo, priorizados por regra de negócio real — sem inteligência artificial e sem número de economia inventado.',
+    ],
+  },
+  {
+    data: '14/09/2026',
     hora: '16:38:52',
     itens: [
       'Duas telas novas no menu de Estoque: "Central de Ações" (produtos e cotações que pedem atenção agora, priorizados por regra de negócio real — não por IA) e "Análises" (curva ABC, itens mais críticos, produtos parados e estoque por local, todos com resumo calculado a partir do cadastro atual).',

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Bar, BarChart, Cell, LabelList, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { BarChart3, List, Maximize2, Sparkles } from 'lucide-react';
 import { FiltroDataEstoque, KpiCardsEstoque, ModalExpandido, TabelaInterativa, comStatusEstoque, moeda, numero, useEstoquePainel } from './estoqueShared';
+import { SugestoesAutomaticas } from './SugestoesAutomaticas';
 import { Carregando, SemDado } from '../../components/common/viz';
 
 // Paleta categórica validada (dataviz skill): ordem fixa, nunca ciclar por rank.
@@ -88,6 +89,7 @@ export function DashboardEstoque() {
     <FiltroDataEstoque dataDe={dataDe} setDataDe={setDataDe} dataAte={dataAte} setDataAte={setDataAte} carregando={carregando} carregar={carregar} />
     {erro && <div className="p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-sm">{erro}</div>}
     <KpiCardsEstoque kpis={dados?.kpis ?? {}} cotacoesPorSituacao={dados?.cotacoesPorSituacao} aoClicarCard={abrirModal} />
+    <SugestoesAutomaticas dados={dados} />
     {carregando && !dados ? <div className="p-12 bg-white border rounded-2xl"><Carregando mensagem="Carregando dados do Sankhya…" /></div> : <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
 
       <Grafico titulo="Valor por Curva ABC" insight={insights.curvaAbc} onExpandir={() => setModalAberto('curvaAbc')}>
