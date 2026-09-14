@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown, Boxes, ChevronLeft, ChevronRight, RefreshCw, Search, TrendingUp, X } from 'lucide-react';
+import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown, Boxes, ChevronLeft, ChevronRight, Eye, RefreshCw, Search, TrendingUp, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { cabecalhoPerfil } from '../../utils/apiAuth';
 import { hojeISO, primeiroDiaMesISO } from '../../components/common/vizTokens';
@@ -260,11 +260,13 @@ export function KpiCardsEstoque({ kpis, cotacoesPorSituacao, aoClicarCard }: { k
             ? () => aoClicarCard(chave)
             : (chave === 'cotacoes' && cotacoesPorSituacao?.length ? () => setMostrarQuebra((atual) => !atual) : undefined);
           return (
-            <div key={rotulo} onClick={onClick} className={`bg-white border rounded-2xl p-4 ${onClick ? 'cursor-pointer hover:border-emerald-300' : ''}`}>
+            <div key={rotulo} onClick={onClick} title={onClick ? 'Clique p/ detalhar' : undefined}
+              className={`relative bg-white border rounded-2xl p-4 ${onClick ? 'cursor-pointer hover:border-emerald-300' : ''}`}>
+              {onClick && <Eye size={14} className="absolute top-3.5 right-3.5 text-slate-300" />}
               <span className={`inline-flex items-center justify-center w-9 h-9 rounded-xl mb-3 ${COR_ICONE_KPI[chave] ?? 'bg-slate-100 text-slate-600'}`}>
                 <Icon size={17} />
               </span>
-              <p className="text-[11px] uppercase font-bold text-slate-400">{rotulo}{onClick && ' · clique p/ detalhar'}</p>
+              <p className="text-[11px] uppercase font-bold text-slate-400 pr-4">{rotulo}</p>
               <p className="text-xl font-bold text-slate-800 mt-1">{valor}</p>
             </div>
           );

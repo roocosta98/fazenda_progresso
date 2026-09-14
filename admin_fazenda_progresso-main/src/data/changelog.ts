@@ -9,6 +9,15 @@ export type EntradaChangelog = { data: string; hora?: string; itens: string[] };
 export const CHANGELOG: EntradaChangelog[] = [
   {
     data: '14/09/2026',
+    hora: '18:22:32',
+    itens: [
+      'Dashboard de Estoque: "Sugestões automáticas" foi pra lateral direita e agora mistura vários tipos de alerta (estoque zerado/mínimo, excesso acima do máximo, parado há muito tempo, cotação atrasada/sem prazo) em vez de só ruptura.',
+      'Cards de indicador (KPI) trocaram o texto "clique p/ detalhar" por um ícone de olho no canto, menos poluído.',
+      'Painel de detalhe (produto/cotação/fornecedor) ganhou um botão de expandir pra tela cheia, sem deixar de ser um popup.',
+    ],
+  },
+  {
+    data: '14/09/2026',
     hora: '18:07:53',
     itens: [
       'Dashboard, Inventário, Fornecedores e Cotações (Estoque) ganharam um painel de "Sugestões automáticas": produtos com estoque zerado/abaixo do mínimo e cotações atrasadas/sem prazo, priorizados por regra de negócio real — sem inteligência artificial e sem número de economia inventado.',
