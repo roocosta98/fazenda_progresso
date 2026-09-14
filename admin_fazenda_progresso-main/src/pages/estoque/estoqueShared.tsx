@@ -70,7 +70,53 @@ export const ROTULOS_COLUNAS: Record<string, string> = {
 export const rotuloColuna = (chave: string) => ROTULOS_COLUNAS[chave]
   ?? chave.replace(/_/g, ' ').toLowerCase().replace(/^\p{L}/u, (letra) => letra.toUpperCase());
 
-export const valorCelula = (chave: string, valor: unknown) => {
+// Badge de classe ABC (Curva ABC) — cor só de identidade visual, não repete o semáforo de
+// status (que é sobre estoque em risco, não sobre concentração de valor).
+const CLASSE_ABC_ESTILO: Record<string, string> = {
+  A: 'bg-blue-50 text-blue-700 border-blue-200',
+  B: 'bg-amber-50 text-amber-700 border-amber-200',
+  C: 'bg-slate-100 text-slate-600 border-slate-200',
+};
+function BadgeClasseAbc({ classe }: { classe: string }) {
+  const estilo = CLASSE_ABC_ESTILO[classe] ?? CLASSE_ABC_ESTILO.C;
+  return <span className={`inline-flex items-center justify-center w-6 h-6 rounded-md border text-[11px] font-bold ${estilo}`}>{classe}</span>;
+}
+
+// Semáforo de status de estoque — computado no cliente a partir de ESTOQUE/MÍNIMO/MÁXIMO já
+// vindos do Sankhya (nunca inventa limite: some quando a linha não tem os três campos).
+export type StatusEstoque = 'Zerado' | 'Abaixo do mínimo' | 'Acima do máximo' | 'Normal';
+const STATUS_ESTILO: Record<StatusEstoque, string> = {
+  'Zerado': 'bg-rose-50 text-rose-700 border-rose-200',
+  'Abaixo do mínimo': 'bg-amber-50 text-amber-700 border-amber-200',
+  'Acima do máximo': 'bg-blue-50 text-blue-700 border-blue-200',
+  'Normal': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+};
+function BadgeStatusEstoque({ status }: { status: StatusEstoque }) {
+  return <span className={`inline-flex items-center px-2 py-0.5 rounded-md border text-[11px] font-bold whitespace-nowrap ${STATUS_ESTILO[status]}`}>{status}</span>;
+}
+function statusEstoque(estoque: number, minimo: number, maximo: number): StatusEstoque {
+  if (estoque <= 0) return 'Zerado';
+  if (minimo > 0 && estoque < minimo) return 'Abaixo do mínimo';
+  if (maximo > 0 && estoque > maximo) return 'Acima do máximo';
+  return 'Normal';
+}
+// Insere a coluna STATUS (calculada, nunca vinda do Sankhya) logo após o par estoque/mínimo/máximo
+// já presente na linha — usar só em tabelas cujas linhas tragam os três campos de verdade.
+export function comStatusEstoque<T extends Linha>(linhas: T[], campos: { estoque: string; minimo: string; maximo: string }): Linha[] {
+  return linhas.map((linha) => {
+    const estoque = Number(linha[campos.estoque] ?? 0);
+    const minimo = Number(linha[campos.minimo] ?? 0);
+    const maximo = Number(linha[campos.maximo] ?? 0);
+    const entradas = Object.entries(linha);
+    const indiceEstoque = entradas.findIndex(([chave]) => chave === campos.estoque);
+    entradas.splice(indiceEstoque + 1, 0, ['STATUS', statusEstoque(estoque, minimo, maximo)]);
+    return Object.fromEntries(entradas);
+  });
+}
+
+export const valorCelula = (chave: string, valor: unknown): React.ReactNode => {
+  if (chave === 'CLASSEABC' && typeof valor === 'string' && valor) return <BadgeClasseAbc classe={valor} />;
+  if (chave === 'STATUS' && typeof valor === 'string' && valor) return <BadgeStatusEstoque status={valor as StatusEstoque} />;
   if (valor === null || valor === undefined || valor === '') return '—';
   if (/^TAXAVITORIA$/i.test(chave)) return `${numero(valor, 1)}%`;
   // PRAZOMEDIO/PONTOPEDIDO são contagem (dias/quantidade), não dinheiro — só VALOR/CUSTO/
@@ -150,6 +196,16 @@ export function FiltroDataEstoque({ dataDe, setDataDe, dataAte, setDataAte, carr
   );
 }
 
+// Ícone com fundo colorido por natureza do indicador (neutro/valor, risco, alerta, ação) —
+// só estética, a cor não substitui o texto do rótulo em nenhum lugar.
+const COR_ICONE_KPI: Record<string, string> = {
+  valor: 'bg-blue-50 text-blue-600',
+  ruptura: 'bg-rose-50 text-rose-600',
+  semMovimentacao: 'bg-amber-50 text-amber-600',
+  cotacoes: 'bg-violet-50 text-violet-600',
+  giro: 'bg-emerald-50 text-emerald-600',
+};
+
 export function KpiCardsEstoque({ kpis, cotacoesPorSituacao, aoClicarCard }: { kpis: Linha; cotacoesPorSituacao?: Linha[]; aoClicarCard?: (chave: string) => void }) {
   const [mostrarQuebra, setMostrarQuebra] = useState(false);
   const cards: { chave: string; rotulo: string; valor: string; Icon: typeof Boxes }[] = [
@@ -171,7 +227,9 @@ export function KpiCardsEstoque({ kpis, cotacoesPorSituacao, aoClicarCard }: { k
             : (chave === 'cotacoes' && cotacoesPorSituacao?.length ? () => setMostrarQuebra((atual) => !atual) : undefined);
           return (
             <div key={rotulo} onClick={onClick} className={`bg-white border rounded-2xl p-4 ${onClick ? 'cursor-pointer hover:border-emerald-300' : ''}`}>
-              <Icon size={17} className="text-emerald-600 mb-3" />
+              <span className={`inline-flex items-center justify-center w-9 h-9 rounded-xl mb-3 ${COR_ICONE_KPI[chave] ?? 'bg-slate-100 text-slate-600'}`}>
+                <Icon size={17} />
+              </span>
               <p className="text-[11px] uppercase font-bold text-slate-400">{rotulo}{onClick && ' · clique p/ detalhar'}</p>
               <p className="text-xl font-bold text-slate-800 mt-1">{valor}</p>
             </div>
