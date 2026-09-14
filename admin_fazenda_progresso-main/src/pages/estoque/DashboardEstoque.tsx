@@ -89,8 +89,8 @@ export function DashboardEstoque() {
     <FiltroDataEstoque dataDe={dataDe} setDataDe={setDataDe} dataAte={dataAte} setDataAte={setDataAte} carregando={carregando} carregar={carregar} />
     {erro && <div className="p-4 bg-rose-50 border border-rose-200 text-rose-700 rounded-xl text-sm">{erro}</div>}
     <KpiCardsEstoque kpis={dados?.kpis ?? {}} cotacoesPorSituacao={dados?.cotacoesPorSituacao} aoClicarCard={abrirModal} />
-    <SugestoesAutomaticas dados={dados} />
-    {carregando && !dados ? <div className="p-12 bg-white border rounded-2xl"><Carregando mensagem="Carregando dados do Sankhya…" /></div> : <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+    {carregando && !dados ? <div className="p-12 bg-white border rounded-2xl"><Carregando mensagem="Carregando dados do Sankhya…" /></div> : <div className="grid grid-cols-1 xl:grid-cols-4 gap-5 items-start">
+    <div className="xl:col-span-3 grid grid-cols-1 xl:grid-cols-2 gap-5">
 
       <Grafico titulo="Valor por Curva ABC" insight={insights.curvaAbc} onExpandir={() => setModalAberto('curvaAbc')}>
         {curvaAbc.every((c) => c.valor === 0) ? <SemDado mensagem="Nenhum valor de estoque classificado por curva ABC." /> : (
@@ -224,6 +224,10 @@ export function DashboardEstoque() {
         )}
       </Grafico>
 
+    </div>
+    <div className="xl:col-span-1 xl:sticky xl:top-5">
+      <SugestoesAutomaticas dados={dados} limite={8} />
+    </div>
     </div>}
 
     <ModalExpandido aberto={modalAberto === 'curvaAbc'} onFechar={() => setModalAberto(null)} titulo="Maior valor em estoque · Curva ABC" subtitulo="Valor calculado por estoque × custo gerencial mais recente.">

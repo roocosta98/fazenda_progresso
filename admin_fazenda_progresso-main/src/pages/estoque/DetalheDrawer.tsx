@@ -83,7 +83,7 @@ export function DetalheDrawer({ aberto, onFechar, tipo, linha }: DetalheDrawerPr
   }, [aberto, tipo, linha]);
 
   return (
-    <SlideOverDrawer isOpen={aberto} onClose={onFechar} title={TITULOS[tipo]} width="max-w-xl">
+    <SlideOverDrawer isOpen={aberto} onClose={onFechar} title={TITULOS[tipo]} width="max-w-xl" expansivel>
       <div className="space-y-5">
         <section>
           <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2.5">Dados desta linha</h3>
