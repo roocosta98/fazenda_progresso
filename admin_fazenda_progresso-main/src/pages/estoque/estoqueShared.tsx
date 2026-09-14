@@ -57,7 +57,7 @@ export const ROTULOS_COLUNAS: Record<string, string> = {
   VALORESTOQUE: 'Valor em estoque', CUSTO: 'Custo', VALORTOTAL: 'Valor total', CLASSEABC: 'ABC', FORNECEDOR: 'Fornecedor',
   PRAZOMEDIO: 'Prazo médio (dias)', TOTALCOTACOES: 'Total de cotações', TOTALVENCIDAS: 'Cotações vencidas', TAXAVITORIA: 'Taxa de vitória',
   PRODUTOSDISTINTOS: 'Produtos distintos', NUMCOTACAO: 'Nº cotação',
-  DHINIC: 'Início', DHFINAL: 'Prazo final', COMPRADOR: 'Comprador', TOTALITENS: 'Total de itens', ITENSEMABERTO: 'Itens em aberto',
+  DHINIC: 'Início', DHFINAL: 'Prazo final', SITUACAO_COTACAO: 'Situação', COMPRADOR: 'Comprador', TOTALITENS: 'Total de itens', ITENSEMABERTO: 'Itens em aberto',
   QTD_COMPRA: 'Qtd. compra', QTD_DEV_COMPRA: 'Qtd. devolução', COMPRA_LIQUIDA: 'Compra líquida',
   CONSUMO: 'Consumo', ESTOQUE_ATUAL: 'Estoque atual', ESTOQUE_INICIAL: 'Estoque inicial (estimado)', ESTMIN: 'Estoque mínimo', ESTMAX: 'Estoque máximo',
   GIRO_ESTOQUE: 'Giro de estoque', DIAS_COBERTURA: 'Dias de cobertura',
@@ -115,9 +115,42 @@ export function comStatusEstoque<T extends Linha>(linhas: T[], campos: { estoque
   });
 }
 
+// Situação de uma cotação em aberto — calculada no cliente a partir de campos reais (prazo final
+// e itens ainda em aberto), nunca um status "gerado" ou inventado. Cotação sem DHFINAL não é
+// tratada como atrasada (prazo desconhecido é diferente de prazo vencido).
+export type SituacaoCotacao = 'Atrasada' | 'Sem prazo' | 'Em andamento';
+const SITUACAO_COTACAO_ESTILO: Record<SituacaoCotacao, string> = {
+  'Atrasada': 'bg-rose-50 text-rose-700 border-rose-200',
+  'Sem prazo': 'bg-amber-50 text-amber-700 border-amber-200',
+  'Em andamento': 'bg-blue-50 text-blue-700 border-blue-200',
+};
+function BadgeSituacaoCotacao({ situacao }: { situacao: SituacaoCotacao }) {
+  return <span className={`inline-flex items-center px-2 py-0.5 rounded-md border text-[11px] font-bold whitespace-nowrap ${SITUACAO_COTACAO_ESTILO[situacao]}`}>{situacao}</span>;
+}
+function situacaoCotacao(dhfinal: unknown): SituacaoCotacao {
+  if (dhfinal === null || dhfinal === undefined || dhfinal === '') return 'Sem prazo';
+  const prazo = data(dhfinal);
+  if (prazo === '—') return 'Sem prazo';
+  const [dia, mes, ano] = prazo.split('/').map(Number);
+  const dataPrazo = new Date(ano, mes - 1, dia, 23, 59, 59);
+  return dataPrazo.getTime() < Date.now() ? 'Atrasada' : 'Em andamento';
+}
+// Insere a coluna SITUACAO_COTACAO logo após DHFINAL — usar só em tabelas de cotação (precisam
+// ter o campo DHFINAL, o prazo final vindo do Sankhya).
+export function comSituacaoCotacao<T extends Linha>(linhas: T[]): Linha[] {
+  return linhas.map((linha) => {
+    const entradas = Object.entries(linha);
+    const indice = entradas.findIndex(([chave]) => chave === 'DHFINAL');
+    const posicao = indice === -1 ? entradas.length - 1 : indice;
+    entradas.splice(posicao + 1, 0, ['SITUACAO_COTACAO', situacaoCotacao(linha.DHFINAL)]);
+    return Object.fromEntries(entradas);
+  });
+}
+
 export const valorCelula = (chave: string, valor: unknown): React.ReactNode => {
   if (chave === 'CLASSEABC' && typeof valor === 'string' && valor) return <BadgeClasseAbc classe={valor} />;
   if (chave === 'STATUS' && typeof valor === 'string' && valor) return <BadgeStatusEstoque status={valor as StatusEstoque} />;
+  if (chave === 'SITUACAO_COTACAO' && typeof valor === 'string' && valor) return <BadgeSituacaoCotacao situacao={valor as SituacaoCotacao} />;
   if (valor === null || valor === undefined || valor === '') return '—';
   if (/^TAXAVITORIA$/i.test(chave)) return `${numero(valor, 1)}%`;
   // PRAZOMEDIO/PONTOPEDIDO são contagem (dias/quantidade), não dinheiro — só VALOR/CUSTO/
