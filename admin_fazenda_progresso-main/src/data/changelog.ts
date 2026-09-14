@@ -9,6 +9,13 @@ export type EntradaChangelog = { data: string; hora?: string; itens: string[] };
 export const CHANGELOG: EntradaChangelog[] = [
   {
     data: '14/09/2026',
+    hora: '16:38:52',
+    itens: [
+      'Duas telas novas no menu de Estoque: "Central de Ações" (produtos e cotações que pedem atenção agora, priorizados por regra de negócio real — não por IA) e "Análises" (curva ABC, itens mais críticos, produtos parados e estoque por local, todos com resumo calculado a partir do cadastro atual).',
+    ],
+  },
+  {
+    data: '14/09/2026',
     hora: '16:32:41',
     itens: [
       'Fornecedores ganhou indicadores reais (melhor prazo médio, maior taxa de vitória, cotações no histórico) e um gráfico de Prazo × Taxa de vitória.',

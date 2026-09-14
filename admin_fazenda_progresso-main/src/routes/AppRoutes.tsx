@@ -17,6 +17,8 @@ import { PesquisaIA } from '../pages/logistica/PesquisaIA';
 import { Inventario } from '../pages/estoque/Inventario';
 import { Fornecedores } from '../pages/estoque/Fornecedores';
 import { Cotacoes } from '../pages/estoque/Cotacoes';
+import { CentralAcoes } from '../pages/estoque/CentralAcoes';
+import { Analises } from '../pages/estoque/Analises';
 import { PerguntaIA as PerguntaIAEstoque } from '../pages/estoque/PerguntaIA';
 import { DashboardEstoque } from '../pages/estoque/DashboardEstoque';
 import { ProducaoBatata } from '../pages/producao/ProducaoBatata';
@@ -99,6 +101,8 @@ export const AppRoutes = () => {
             Cotações e Pergunte à IA são páginas por assunto, cada uma com sua própria rota. */}
         <Route path="/logistica/estoque" element={<Navigate to="/logistica/estoque/dashboard" replace />} />
         <Route path="/logistica/estoque/dashboard" element={<ProtectedRoute allowedRoles={['logistica']}><DashboardEstoque /></ProtectedRoute>} />
+        <Route path="/logistica/estoque/central-de-acoes" element={<ProtectedRoute allowedRoles={['logistica']}><CentralAcoes /></ProtectedRoute>} />
+        <Route path="/logistica/estoque/analises" element={<ProtectedRoute allowedRoles={['logistica']}><Analises /></ProtectedRoute>} />
         <Route path="/logistica/estoque/inventario" element={<ProtectedRoute allowedRoles={['logistica']}><Inventario /></ProtectedRoute>} />
         <Route path="/logistica/estoque/fornecedores" element={<ProtectedRoute allowedRoles={['logistica']}><Fornecedores /></ProtectedRoute>} />
         <Route path="/logistica/estoque/cotacoes" element={<ProtectedRoute allowedRoles={['logistica']}><Cotacoes /></ProtectedRoute>} />
