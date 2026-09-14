@@ -3,6 +3,7 @@ import { BarChart3, Boxes, Clock3, Sparkles, Trophy } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Cell, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis, ZAxis } from 'recharts';
 import { TabelaInterativa, numero, useEstoquePainel } from './estoqueShared';
+import { SugestoesAutomaticas } from './SugestoesAutomaticas';
 import { Carregando, SemDado } from '../../components/common/viz';
 
 // Paleta categórica validada (dataviz skill): ordem fixa, nunca ciclar por rank — mesma paleta
@@ -64,6 +65,8 @@ export function Fornecedores() {
           <CardFornecedores Icon={Trophy} cor="bg-amber-50 text-amber-600" rotulo="Maior taxa de vitória" valor={maiorTaxa ? `${numero(maiorTaxa.taxa, 1)}%` : '—'} apoio={maiorTaxa?.fornecedor} />
           <CardFornecedores Icon={BarChart3} cor="bg-violet-50 text-violet-600" rotulo="Cotações no histórico" valor={numero(totalCotacoesHistorico)} apoio="Soma de todos os fornecedores" />
         </div>
+
+        <SugestoesAutomaticas dados={dados} limite={4} />
 
         {maisFrequente && (
           <section className="bg-white border rounded-2xl p-5 flex flex-wrap items-center gap-6">

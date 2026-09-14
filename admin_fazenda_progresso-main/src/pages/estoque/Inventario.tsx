@@ -4,6 +4,7 @@ import { AlertTriangle, ArrowUpCircle, BarChart3, Boxes, MapPinOff, Sparkles, Ti
 import {
   FiltroDataEstoque, TabelaInterativa, comStatusEstoque, numero, useEstoquePainel, type FiltroSituacaoTabela, type Linha,
 } from './estoqueShared';
+import { SugestoesAutomaticas } from './SugestoesAutomaticas';
 import { Carregando, SemDado } from '../../components/common/viz';
 
 type Aba = 'ruptura' | 'curvaAbc' | 'semMovimentacao' | 'giro';
@@ -105,6 +106,8 @@ export function Inventario() {
         </section>
 
         <div className="space-y-5">
+          <SugestoesAutomaticas dados={dados} limite={4} />
+
           <section className="bg-white rounded-2xl border border-slate-200/80 p-5">
             <h2 className="font-bold text-slate-800 text-sm">Distribuição por local</h2>
             <p className="text-[11px] text-slate-400 mt-0.5 mb-3">Quantidade de itens em estoque por depósito/local (cadastro atual).</p>

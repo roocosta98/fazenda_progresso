@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { BarChart3, Boxes, CalendarClock, Sparkles, TriangleAlert } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { TabelaInterativa, comSituacaoCotacao, numero, useEstoquePainel } from './estoqueShared';
+import { SugestoesAutomaticas } from './SugestoesAutomaticas';
 import { Carregando } from '../../components/common/viz';
 
 function CardCotacoes({ Icon, cor, rotulo, valor, apoio }: { Icon: typeof Boxes; cor: string; rotulo: string; valor: string; apoio?: string }) {
@@ -56,6 +57,8 @@ export function Cotacoes() {
           <CardCotacoes Icon={CalendarClock} cor="bg-amber-50 text-amber-600" rotulo="Sem prazo definido" valor={numero(semPrazo)} />
           <CardCotacoes Icon={CalendarClock} cor="bg-violet-50 text-violet-600" rotulo="Prazo médio até o final" valor={prazoMedioDias == null ? '—' : `${numero(prazoMedioDias, 0)} dias`} apoio="Só cotações dentro do prazo (exclui atrasadas)" />
         </div>
+
+        <SugestoesAutomaticas dados={dados} limite={4} />
 
         {!!dados.cotacoesPorSituacao?.length && (
           <section className="bg-white border rounded-2xl p-4 flex flex-wrap gap-4">
