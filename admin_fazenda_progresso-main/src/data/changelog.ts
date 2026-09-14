@@ -9,6 +9,14 @@ export type EntradaChangelog = { data: string; hora?: string; itens: string[] };
 export const CHANGELOG: EntradaChangelog[] = [
   {
     data: '14/09/2026',
+    hora: '18:30:42',
+    itens: [
+      'Fornecedores e Cotações: "Sugestões automáticas" também foi pra lateral direita (mesmo padrão do Dashboard e Inventário) — antes ficava esticado na tela toda.',
+      'Card de sugestões deixa mais explícito que ainda estamos estudando como aplicar IA de verdade e que, por enquanto, mistura tipos diferentes de regra (estoque, excesso, parado, cotação).',
+    ],
+  },
+  {
+    data: '14/09/2026',
     hora: '18:22:32',
     itens: [
       'Dashboard de Estoque: "Sugestões automáticas" foi pra lateral direita e agora mistura vários tipos de alerta (estoque zerado/mínimo, excesso acima do máximo, parado há muito tempo, cotação atrasada/sem prazo) em vez de só ruptura.',

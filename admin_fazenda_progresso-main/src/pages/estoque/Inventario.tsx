@@ -106,7 +106,7 @@ export function Inventario() {
         </section>
 
         <div className="space-y-5">
-          <SugestoesAutomaticas dados={dados} limite={4} />
+          <SugestoesAutomaticas dados={dados} limite={6} />
 
           <section className="bg-white rounded-2xl border border-slate-200/80 p-5">
             <h2 className="font-bold text-slate-800 text-sm">Distribuição por local</h2>

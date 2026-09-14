@@ -66,7 +66,8 @@ export function Fornecedores() {
           <CardFornecedores Icon={BarChart3} cor="bg-violet-50 text-violet-600" rotulo="Cotações no histórico" valor={numero(totalCotacoesHistorico)} apoio="Soma de todos os fornecedores" />
         </div>
 
-        <SugestoesAutomaticas dados={dados} limite={4} />
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-5 items-start">
+        <div className="xl:col-span-2 space-y-5">
 
         {maisFrequente && (
           <section className="bg-white border rounded-2xl p-5 flex flex-wrap items-center gap-6">
@@ -130,6 +131,12 @@ export function Fornecedores() {
             ? <p className="text-xs bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-3">Esta seção não pôde ser carregada: {dados.erros.fornecedores}</p>
             : <TabelaInterativa linhas={dados.fornecedores} />}
         </section>
+
+        </div>
+        <div className="xl:col-span-1 xl:sticky xl:top-5">
+          <SugestoesAutomaticas dados={dados} limite={6} />
+        </div>
+        </div>
       </>
     )}
   </div>;
