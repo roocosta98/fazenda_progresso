@@ -115,14 +115,15 @@ export const Sidebar = ({ mobileAberto = false, onFechar }: SidebarProps) => {
   const itemVisaoGeral: LinkItem = { to: '/visao-geral', icon: <PieChart size={18} />, label: 'Visão Geral (BI)' };
   const itensPorModuloBase: Record<ModuloSistema, (LinkItem | GrupoItem)[]> = {
     logistica_frota: itensLogistica,
-    // "Painel de Estoque" tinha saído do menu (o Dashboard virou a porta de entrada, com
-    // clique-pra-expandir em cada card/gráfico) — mas no celular o único acesso à lista
-    // completa (um botão pequeno lá no Dashboard) ficava fácil de não achar. Voltou como
-    // item de menu próprio, com nome mais claro, pra navegação continuar simples no celular.
+    // Estrutura por assunto (Inventário / Fornecedores / Cotações como páginas próprias, não
+    // seções empilhadas numa lista só) — pedido do Marcos, alinhado também com o que a auditoria
+    // de UX recomendou. Dashboard continua a porta de entrada; cada página tem sua própria rota.
     estoque: [
       { to: '/logistica/estoque/dashboard', icon: <BarChart3 size={18} />, label: 'Dashboard' },
-      { to: '/logistica/estoque', icon: <List size={18} />, label: 'Lista completa' },
-      { to: '/logistica/estoque#pesquisa-ia', icon: <Sparkles size={18} />, label: 'Pergunte à IA' },
+      { to: '/logistica/estoque/inventario', icon: <List size={18} />, label: 'Inventário' },
+      { to: '/logistica/estoque/fornecedores', icon: <Handshake size={18} />, label: 'Fornecedores' },
+      { to: '/logistica/estoque/cotacoes', icon: <ClipboardCheck size={18} />, label: 'Cotações' },
+      { to: '/logistica/estoque/pesquisa-ia', icon: <Sparkles size={18} />, label: 'Pergunte à IA' },
     ],
     producao_batata: [
       { to: '/producao/batata', icon: <LayoutDashboard size={18} />, label: 'Painel de Produção' },

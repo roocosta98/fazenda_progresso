@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Bar, BarChart, Cell, LabelList, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { BarChart3, List, Maximize2, Sparkles } from 'lucide-react';
-import { FiltroDataEstoque, KpiCardsEstoque, ModalExpandido, TabelaInterativa, moeda, numero, useEstoquePainel } from './estoqueShared';
+import { FiltroDataEstoque, KpiCardsEstoque, ModalExpandido, TabelaInterativa, comStatusEstoque, moeda, numero, useEstoquePainel } from './estoqueShared';
 import { Carregando, SemDado } from '../../components/common/viz';
 
 // Paleta categórica validada (dataviz skill): ordem fixa, nunca ciclar por rank.
@@ -59,6 +59,9 @@ export function DashboardEstoque() {
     .map((l) => ({ situacao: String(l.SITUACAO ?? ''), itens: Number(l.TOTALITENS ?? 0) }))
     .sort((a, b) => b.itens - a.itens), [dados]);
 
+  const rupturaComStatus = useMemo(() => comStatusEstoque(dados?.ruptura ?? [], { estoque: 'ESTOQUE', minimo: 'MINIMO', maximo: 'MAXIMO' }), [dados]);
+  const giroComStatus = useMemo(() => comStatusEstoque(dados?.giroProdutos ?? [], { estoque: 'ESTOQUE_ATUAL', minimo: 'ESTMIN', maximo: 'ESTMAX' }), [dados]);
+
   const piorRuptura = ruptura[0];
   const maiorConsumo = giro[0];
   const maisParado = parados[0];
@@ -74,10 +77,10 @@ export function DashboardEstoque() {
         <p className="text-sm text-slate-500 mt-1">Visão geral e gráfica dos níveis, valor, giro e itens parados (empresa 01). Clique num card ou gráfico pra ver o detalhe completo.</p>
       </div>
       <div className="flex flex-wrap items-center gap-2 shrink-0 w-full sm:w-auto">
-        <Link to="/logistica/estoque" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-50 transition-colors">
-          <List size={15} className="text-emerald-700" /> Lista completa
+        <Link to="/logistica/estoque/inventario" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-50 transition-colors">
+          <List size={15} className="text-emerald-700" /> Inventário
         </Link>
-        <Link to="/logistica/estoque#pesquisa-ia" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-950 text-white text-xs font-bold hover:bg-emerald-900 transition-colors">
+        <Link to="/logistica/estoque/pesquisa-ia" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-950 text-white text-xs font-bold hover:bg-emerald-900 transition-colors">
           <Sparkles size={15} className="text-emerald-300" /> Pergunte à IA
         </Link>
       </div>
@@ -235,10 +238,10 @@ export function DashboardEstoque() {
         </BarChart>
       </ResponsiveContainer>
       <Legenda itens={[{ cor: COR_CATEGORICA[0], rotulo: 'Estoque atual' }, { cor: COR_CATEGORICA[1], rotulo: 'Mínimo' }]} />
-      <div className="mt-5"><TabelaInterativa linhas={dados?.ruptura ?? []} /></div>
+      <div className="mt-5"><TabelaInterativa linhas={rupturaComStatus} /></div>
     </ModalExpandido>
     <ModalExpandido aberto={modalAberto === 'giro'} onFechar={() => setModalAberto(null)} titulo="Giro por produto" subtitulo="Consumo por requisição no período filtrado, giro e dias de cobertura do estoque atual.">
-      <TabelaInterativa linhas={dados?.giroProdutos ?? []} />
+      <TabelaInterativa linhas={giroComStatus} />
     </ModalExpandido>
     <ModalExpandido aberto={modalAberto === 'parados'} onFechar={() => setModalAberto(null)} titulo="Itens sem movimentação" subtitulo="Produtos sem saída (consumo, produção ou baixa) por 90 dias ou mais.">
       <TabelaInterativa linhas={dados?.semMovimentacao ?? []} filtroSituacao={{ coluna: 'SITUACAO', rotuloSim: 'Com estoque', rotuloNao: 'Sem estoque' }} />

@@ -14,7 +14,10 @@ import { AvaliacaoConducao } from '../pages/logistica/AvaliacaoConducao';
 import { MapaMonitoramento } from '../pages/logistica/MapaMonitoramento';
 import { TelaTVMonitor } from '../pages/logistica/TelaTVMonitor';
 import { PesquisaIA } from '../pages/logistica/PesquisaIA';
-import { Estoque } from '../pages/estoque/Estoque';
+import { Inventario } from '../pages/estoque/Inventario';
+import { Fornecedores } from '../pages/estoque/Fornecedores';
+import { Cotacoes } from '../pages/estoque/Cotacoes';
+import { PerguntaIA as PerguntaIAEstoque } from '../pages/estoque/PerguntaIA';
 import { DashboardEstoque } from '../pages/estoque/DashboardEstoque';
 import { ProducaoBatata } from '../pages/producao/ProducaoBatata';
 import { GestaoUsuarios } from '../pages/administracao/GestaoUsuarios';
@@ -92,11 +95,14 @@ export const AppRoutes = () => {
           path="/logistica/pesquisa-ia"
           element={<ProtectedRoute allowedRoles={['logistica']}><PesquisaIA /></ProtectedRoute>}
         />
-        <Route
-          path="/logistica/estoque"
-          element={<ProtectedRoute allowedRoles={['logistica']}><Estoque /></ProtectedRoute>}
-        />
+        {/* /logistica/estoque virou o Dashboard (porta de entrada); Inventário, Fornecedores,
+            Cotações e Pergunte à IA são páginas por assunto, cada uma com sua própria rota. */}
+        <Route path="/logistica/estoque" element={<Navigate to="/logistica/estoque/dashboard" replace />} />
         <Route path="/logistica/estoque/dashboard" element={<ProtectedRoute allowedRoles={['logistica']}><DashboardEstoque /></ProtectedRoute>} />
+        <Route path="/logistica/estoque/inventario" element={<ProtectedRoute allowedRoles={['logistica']}><Inventario /></ProtectedRoute>} />
+        <Route path="/logistica/estoque/fornecedores" element={<ProtectedRoute allowedRoles={['logistica']}><Fornecedores /></ProtectedRoute>} />
+        <Route path="/logistica/estoque/cotacoes" element={<ProtectedRoute allowedRoles={['logistica']}><Cotacoes /></ProtectedRoute>} />
+        <Route path="/logistica/estoque/pesquisa-ia" element={<ProtectedRoute allowedRoles={['logistica']}><PerguntaIAEstoque /></ProtectedRoute>} />
         <Route path="/producao/batata" element={<ProtectedRoute allowedRoles={['logistica']}><ProducaoBatata /></ProtectedRoute>} />
         <Route path="/producao/batata/safras" element={<ProtectedRoute allowedRoles={['logistica']}><ProducaoBatata tela="safras" /></ProtectedRoute>} />
         <Route path="/producao/batata/lancamentos" element={<ProtectedRoute allowedRoles={['logistica']}><ProducaoBatata tela="lancamentos" /></ProtectedRoute>} />

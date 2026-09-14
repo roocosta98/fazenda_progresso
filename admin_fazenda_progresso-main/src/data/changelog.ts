@@ -8,6 +8,17 @@ export type EntradaChangelog = { data: string; hora?: string; itens: string[] };
 
 export const CHANGELOG: EntradaChangelog[] = [
   {
+    data: '14/09/2026',
+    hora: '08:33:46',
+    itens: [
+      'Estoque reorganizado em páginas por assunto: Inventário, Fornecedores e Cotações agora têm cada uma sua própria tela no menu (antes ficavam empilhadas numa lista só).',
+      'Inventário ganhou abas (Ruptura, Curva ABC, Sem movimentação, Giro) em vez de tudo em uma tela só, e cada linha mostra um selo de status (Zerado / Abaixo do mínimo / Acima do máximo / Normal).',
+      'Curva ABC ganhou selo colorido por classe (A/B/C) na tabela.',
+      'Cards de indicador (Dashboard e Inventário) ganharam ícone com fundo colorido por tipo de alerta.',
+      '"Pergunte à IA" virou uma tela própria, em vez de um link que só rolava a página até a caixa de busca.',
+    ],
+  },
+  {
     data: '12/09/2026',
     hora: '12:10:08',
     itens: [
