@@ -58,7 +58,7 @@ export const ROTULOS_COLUNAS: Record<string, string> = {
   PRODUTOSDISTINTOS: 'Produtos distintos', NUMCOTACAO: 'Nº cotação',
   DHINIC: 'Início', DHFINAL: 'Prazo final', COMPRADOR: 'Comprador', TOTALITENS: 'Total de itens', ITENSEMABERTO: 'Itens em aberto',
   QTD_COMPRA: 'Qtd. compra', QTD_DEV_COMPRA: 'Qtd. devolução', COMPRA_LIQUIDA: 'Compra líquida',
-  CONSUMO: 'Consumo', ESTOQUE_ATUAL: 'Estoque atual', ESTMIN: 'Estoque mínimo', ESTMAX: 'Estoque máximo',
+  CONSUMO: 'Consumo', ESTOQUE_ATUAL: 'Estoque atual', ESTOQUE_INICIAL: 'Estoque inicial (estimado)', ESTMIN: 'Estoque mínimo', ESTMAX: 'Estoque máximo',
   GIRO_ESTOQUE: 'Giro de estoque', DIAS_COBERTURA: 'Dias de cobertura',
   MARCA: 'Marca', ATIVO: 'Ativo', CODLOCAL: 'Cód. local', NUNOTA: 'Nº nota (interno)', NUMNOTA: 'Nota fiscal',
   DTNEG: 'Data', TIPMOV: 'Tipo mov.', TIPO: 'Tipo', PARCEIRO: 'Parceiro', QTDNEG: 'Quantidade',

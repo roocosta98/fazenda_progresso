@@ -81,13 +81,24 @@ function montarConsultas(dataInicio: string, dataFim: string, dias: number) {
   // continuar somando o valor de todos os grupos.
   const filtroGrupo = 'GRU.CODGRUPAI NOT IN (9000000,13000000,15000000,16000000,22000000,23000000,24000000,25000000,27000000,29000000,98000000)';
   return {
-  ruptura: `SELECT TOP 2000 P.CODPROD, P.DESCRPROD, P.REFERENCIA, L.DESCRLOCAL AS LOCAL, E.CONTROLE AS LOTE,
-      E.ESTOQUE, P.ESTMIN AS MINIMO, P.ESTMAX AS MAXIMO, G.ESTMINGIR AS MINIMOSUGERIDO, G.DIASRUPTURA, G.PRODFALTA, G.PONTOPED AS PONTOPEDIDO
-    FROM TGFPRO P LEFT JOIN TGFEST E ON E.CODPROD=P.CODPROD AND E.CODEMP=1 LEFT JOIN TGFLOC L ON L.CODLOCAL=E.CODLOCAL
-      LEFT JOIN TGFGIR G ON G.CODPROD=P.CODPROD AND G.CODLOCAL=E.CODLOCAL AND G.CODEMP=1
+  // Éder pediu pra não considerar lote na ruptura: TGFEST tem uma linha por (produto, local,
+  // lote), e comparar o saldo de UM lote contra o mínimo do PRODUTO (P.ESTMIN, que não é por
+  // lote) gerava dezenas de linhas repetidas do mesmo item — cada lote com saldo baixo isolado,
+  // mesmo quando o produto somado (todos os locais/lotes) tinha estoque de sobra pras aplicações
+  // (caso real: CARTAP BR 1KG). Corrigido pra somar o estoque de todos os locais/lotes por
+  // produto (mesmo padrão já usado em "sem movimentação") antes de comparar com o mínimo.
+  ruptura: `SELECT TOP 2000 P.CODPROD, P.DESCRPROD, P.REFERENCIA,
+      ISNULL(EST.ESTOQUE,0) AS ESTOQUE, P.ESTMIN AS MINIMO, P.ESTMAX AS MAXIMO,
+      GIR.MINIMOSUGERIDO, GIR.DIASRUPTURA, GIR.PRODFALTA, GIR.PONTOPEDIDO
+    FROM TGFPRO P
       INNER JOIN TGFGRU GRU ON GRU.CODGRUPOPROD=P.CODGRUPOPROD
-    WHERE P.ATIVO='S' AND (G.PRODFALTA='S' OR (P.ESTMIN IS NOT NULL AND E.ESTOQUE<=P.ESTMIN)) AND ${filtroGrupo}
-    ORDER BY G.DIASRUPTURA DESC, E.ESTOQUE ASC`,
+      OUTER APPLY (SELECT SUM(E.ESTOQUE) AS ESTOQUE FROM TGFEST E WHERE E.CODPROD=P.CODPROD AND E.CODEMP=1) EST
+      OUTER APPLY (SELECT MAX(G.ESTMINGIR) AS MINIMOSUGERIDO, MAX(G.DIASRUPTURA) AS DIASRUPTURA,
+          MAX(CASE WHEN G.PRODFALTA='S' THEN 'S' ELSE 'N' END) AS PRODFALTA, MAX(G.PONTOPED) AS PONTOPEDIDO
+        FROM TGFGIR G WHERE G.CODPROD=P.CODPROD AND G.CODEMP=1) GIR
+    WHERE P.ATIVO='S' AND ${filtroGrupo}
+      AND (GIR.PRODFALTA='S' OR (P.ESTMIN IS NOT NULL AND ISNULL(EST.ESTOQUE,0)<=P.ESTMIN))
+    ORDER BY GIR.DIASRUPTURA DESC, EST.ESTOQUE ASC`,
   // Query fornecida pelo Eder: estoque real (local padrão + outros locais, já líquido de
   // reservado), quantidade a comprar, última movimentação de saída e há quantos dias está parado,
   // excluindo os grupos de produto que não fazem sentido pra controle de giro (materiais de
@@ -209,23 +220,39 @@ function montarConsultas(dataInicio: string, dataFim: string, dias: number) {
       GROUP BY CAB.CODEMP, ITE.CODPROD
     ), ESTOQUE AS (
       SELECT EST.CODEMP, EST.CODPROD, SUM(EST.ESTOQUE) AS ESTOQUE_ATUAL FROM TGFEST EST GROUP BY EST.CODEMP, EST.CODPROD
+    ), BASE AS (
+      SELECT MOV.CODPROD, PRO.DESCRPROD,
+        MOV.QTD_COMPRA, MOV.QTD_DEV_COMPRA, MOV.QTD_COMPRA - MOV.QTD_DEV_COMPRA AS COMPRA_LIQUIDA,
+        MOV.QTD_REQUISICAO AS CONSUMO,
+        ISNULL(EST.ESTOQUE_ATUAL, 0) AS ESTOQUE_ATUAL, ISNULL(PRO.ESTMIN, 0) AS ESTMIN, ISNULL(PRO.ESTMAX, 0) AS ESTMAX
+      FROM MOVIMENTOS MOV
+      INNER JOIN TGFPRO PRO ON PRO.CODPROD = MOV.CODPROD
+      INNER JOIN TGFGRU GRU ON GRU.CODGRUPOPROD = PRO.CODGRUPOPROD
+      LEFT JOIN ESTOQUE EST ON EST.CODEMP = MOV.CODEMP AND EST.CODPROD = MOV.CODPROD
+      WHERE ${filtroGrupo}
     )
-    SELECT TOP 2000 MOV.CODPROD, PRO.DESCRPROD,
-      MOV.QTD_COMPRA, MOV.QTD_DEV_COMPRA, MOV.QTD_COMPRA - MOV.QTD_DEV_COMPRA AS COMPRA_LIQUIDA,
-      MOV.QTD_REQUISICAO AS CONSUMO,
-      ISNULL(EST.ESTOQUE_ATUAL, 0) AS ESTOQUE_ATUAL, ISNULL(PRO.ESTMIN, 0) AS ESTMIN, ISNULL(PRO.ESTMAX, 0) AS ESTMAX,
-      CASE WHEN ISNULL(EST.ESTOQUE_ATUAL, 0) > 0 THEN MOV.QTD_REQUISICAO / NULLIF(EST.ESTOQUE_ATUAL, 0) ELSE 0 END AS GIRO_ESTOQUE,
-      CASE WHEN MOV.QTD_REQUISICAO > 0 THEN ISNULL(EST.ESTOQUE_ATUAL, 0) / NULLIF(MOV.QTD_REQUISICAO / ${dias}.0, 0) ELSE NULL END AS DIAS_COBERTURA
-    FROM MOVIMENTOS MOV
-    INNER JOIN TGFPRO PRO ON PRO.CODPROD = MOV.CODPROD
-    INNER JOIN TGFGRU GRU ON GRU.CODGRUPOPROD = PRO.CODGRUPOPROD
-    LEFT JOIN ESTOQUE EST ON EST.CODEMP = MOV.CODEMP AND EST.CODPROD = MOV.CODPROD
-    WHERE ${filtroGrupo}
-    ORDER BY MOV.QTD_REQUISICAO DESC`,
+    -- Giro = Requisições / Estoque médio do período (guia do Éder: nunca soma compra+requisição
+    -- no numerador, e usa a MÉDIA entre estoque inicial e final, não só o saldo atual). TGFEST só
+    -- guarda o saldo atual (não histórico), então o estoque inicial é reconstruído de trás pra
+    -- frente (atual - compra líquida + consumo do período) — por isso só é exato quando o
+    -- filtro de período termina hoje, que é o caso padrão da tela.
+    SELECT TOP 2000 CODPROD, DESCRPROD, QTD_COMPRA, QTD_DEV_COMPRA, COMPRA_LIQUIDA, CONSUMO,
+      ESTOQUE_ATUAL, ESTMIN, ESTMAX,
+      (ESTOQUE_ATUAL - COMPRA_LIQUIDA + CONSUMO) AS ESTOQUE_INICIAL,
+      CASE WHEN ((ESTOQUE_ATUAL - COMPRA_LIQUIDA + CONSUMO) + ESTOQUE_ATUAL) > 0
+        THEN CONSUMO / (((ESTOQUE_ATUAL - COMPRA_LIQUIDA + CONSUMO) + ESTOQUE_ATUAL) / 2.0) ELSE 0 END AS GIRO_ESTOQUE,
+      CASE WHEN CONSUMO > 0 THEN ESTOQUE_ATUAL / NULLIF(CONSUMO / ${dias}.0, 0) ELSE NULL END AS DIAS_COBERTURA
+    FROM BASE
+    ORDER BY CONSUMO DESC`,
   // O filtro de grupo (filtroGrupo) vale em toda tela de Estoque, EXCETO o KPI
   // VALORTOTALESTOQUE ("Valor total em estoque"), que continua somando todos os grupos.
   kpis: `SELECT
-    (SELECT COUNT(DISTINCT P.CODPROD) FROM TGFPRO P LEFT JOIN TGFEST E ON E.CODPROD=P.CODPROD AND E.CODEMP=1 LEFT JOIN TGFGIR G ON G.CODPROD=P.CODPROD AND G.CODLOCAL=E.CODLOCAL AND G.CODEMP=1 INNER JOIN TGFGRU GRU ON GRU.CODGRUPOPROD=P.CODGRUPOPROD WHERE P.ATIVO='S' AND (G.PRODFALTA='S' OR (P.ESTMIN IS NOT NULL AND E.ESTOQUE<=P.ESTMIN)) AND ${filtroGrupo}) AS TOTALRUPTURA,
+    -- Mesmo critério (por produto, somando todos os locais/lotes) da consulta "ruptura" acima —
+    -- nunca compara o saldo de um lote isolado contra o mínimo do produto.
+    (SELECT COUNT(*) FROM TGFPRO P INNER JOIN TGFGRU GRU ON GRU.CODGRUPOPROD=P.CODGRUPOPROD
+        OUTER APPLY (SELECT SUM(E.ESTOQUE) AS ESTOQUE FROM TGFEST E WHERE E.CODPROD=P.CODPROD AND E.CODEMP=1) EST
+        OUTER APPLY (SELECT MAX(CASE WHEN G.PRODFALTA='S' THEN 'S' ELSE 'N' END) AS PRODFALTA FROM TGFGIR G WHERE G.CODPROD=P.CODPROD AND G.CODEMP=1) GIR
+      WHERE P.ATIVO='S' AND ${filtroGrupo} AND (GIR.PRODFALTA='S' OR (P.ESTMIN IS NOT NULL AND ISNULL(EST.ESTOQUE,0)<=P.ESTMIN))) AS TOTALRUPTURA,
     (SELECT COUNT(DISTINCT G.CODPROD) FROM TGFGIR G JOIN TGFPRO P ON P.CODPROD=G.CODPROD INNER JOIN TGFGRU GRU ON GRU.CODGRUPOPROD=P.CODGRUPOPROD WHERE P.ATIVO='S' AND G.CODEMP=1 AND G.DIASSEMVENDA>=90 AND ${filtroGrupo}) AS TOTALSEMMOVIMENTACAO,
     (SELECT COUNT(DISTINCT COT.NUMCOTACAO) FROM TGFCOT COT WHERE EXISTS (SELECT 1 FROM TGFITC I INNER JOIN TGFPRO PRO ON PRO.CODPROD=I.CODPROD INNER JOIN TGFGRU GRU ON GRU.CODGRUPOPROD=PRO.CODGRUPOPROD WHERE I.NUMCOTACAO=COT.NUMCOTACAO AND I.CABECALHO='S' AND I.STATUSPRODCOT='O' AND ${filtroGrupo})) AS TOTALCOTACOES,
     (SELECT SUM(ISNULL(EST.ESTOQUE,0)*CUS.CUSTO) FROM TGFPRO P CROSS APPLY (SELECT SUM(E.ESTOQUE) AS ESTOQUE FROM TGFEST E WHERE E.CODPROD=P.CODPROD AND E.CODEMP=1) EST CROSS APPLY (SELECT TOP 1 COALESCE(C.CUSMEDICM,C.CUSSEMICM) AS CUSTO FROM TGFCUS C WHERE C.CODPROD=P.CODPROD AND C.CODEMP=1 ORDER BY C.DTATUAL DESC,C.NUNOTA DESC) CUS WHERE P.ATIVO='S' AND CUS.CUSTO IS NOT NULL) AS VALORTOTALESTOQUE,
@@ -237,6 +264,16 @@ function montarConsultas(dataInicio: string, dataFim: string, dias: number) {
       ) GIR INNER JOIN TGFPRO PRO ON PRO.CODPROD=GIR.CODPROD INNER JOIN TGFGRU GRU ON GRU.CODGRUPOPROD=PRO.CODGRUPOPROD
       WHERE ${filtroGrupo}
     ) AS CONSUMOPERIODO,
+    -- Compra líquida do período (mesmo escopo de produto do consumo acima) — usada só pra
+    -- reconstruir o estoque inicial e calcular o giro pela média (ver comentário no handler).
+    (SELECT SUM(GIR.COMPRALIQUIDA) FROM (
+        SELECT ITE.CODPROD, SUM(CASE WHEN CAB.TIPMOV IN('C','F') THEN ITE.QTDNEG WHEN CAB.TIPMOV='E' THEN -ITE.QTDNEG ELSE 0 END) AS COMPRALIQUIDA
+        FROM TGFCAB CAB INNER JOIN TGFITE ITE ON ITE.NUNOTA=CAB.NUNOTA
+        WHERE ${filtroData} AND CAB.TIPMOV IN ('C','Q','E','F') AND CAB.STATUSNOTA='L' AND CAB.CODEMP=1
+        GROUP BY ITE.CODPROD
+      ) GIR INNER JOIN TGFPRO PRO ON PRO.CODPROD=GIR.CODPROD INNER JOIN TGFGRU GRU ON GRU.CODGRUPOPROD=PRO.CODGRUPOPROD
+      WHERE ${filtroGrupo}
+    ) AS COMPRALIQUIDAPERIODO,
     (SELECT SUM(ISNULL(EST.ESTOQUE,0)) FROM TGFPRO P CROSS APPLY (SELECT SUM(E.ESTOQUE) AS ESTOQUE FROM TGFEST E WHERE E.CODPROD=P.CODPROD AND E.CODEMP=1) EST INNER JOIN TGFGRU GRU ON GRU.CODGRUPOPROD=P.CODGRUPOPROD WHERE P.ATIVO='S' AND ${filtroGrupo}) AS ESTOQUETOTALGIRO`,
   };
 }
@@ -257,7 +294,16 @@ export async function painelEstoque(req: VercelRequest, res: VercelResponse) {
       executar('ruptura'), executar('semMovimentacao'), executar('valor'), executar('curvaAbc'), executar('fornecedores'), executar('cotacoes'), executar('cotacoesPorSituacao'), executar('giroProdutos'), executar('kpis'),
     ]);
     const kpis = kpiRows[0] ?? {};
-    const giroEstoque = Number(kpis.CONSUMOPERIODO ?? 0) / Number(kpis.ESTOQUETOTALGIRO ?? 0) || null;
+    // Giro = Requisições / Estoque médio (guia do Éder — nunca soma compra+requisição, e usa a
+    // média entre estoque inicial e final, não só o saldo atual). O saldo inicial é reconstruído
+    // (atual - compra líquida + consumo do período), então só é exato quando o período filtrado
+    // termina hoje — o padrão da tela.
+    const consumoPeriodo = Number(kpis.CONSUMOPERIODO ?? 0);
+    const compraLiquidaPeriodo = Number(kpis.COMPRALIQUIDAPERIODO ?? 0);
+    const estoqueAtualGiro = Number(kpis.ESTOQUETOTALGIRO ?? 0);
+    const estoqueInicialGiro = estoqueAtualGiro - compraLiquidaPeriodo + consumoPeriodo;
+    const estoqueMedioGiro = (estoqueInicialGiro + estoqueAtualGiro) / 2;
+    const giroEstoque = estoqueMedioGiro > 0 ? consumoPeriodo / estoqueMedioGiro : null;
     res.status(200).json({ ruptura, semMovimentacao, valor, curvaAbc, fornecedores, cotacoes, cotacoesPorSituacao, giroProdutos, kpis: { ...kpis, giroEstoque }, periodo: { dataInicio, dataFim }, erros });
   } catch (error) {
     res.status(502).json({ error: 'Não foi possível conectar ao banco de dados de estoque.', detalhe: error instanceof Error ? error.message : undefined });
