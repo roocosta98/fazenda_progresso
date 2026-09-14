@@ -137,15 +137,33 @@ export function Inicio() {
     : (usuario?.modulos?.length ? usuario.modulos : ['logistica_frota']);
   const cards = CARDS.filter((c) => modulosDisponiveis.includes(c.modulo));
 
-  // Só o Estoque tem dado real pronto pra virar métrica de resumo aqui na tela inicial — os
-  // demais módulos ativos (Logística etc.) ainda não têm esse resumo agregado implementado,
-  // então não mostramos número nenhum pra eles (nunca um valor fictício só pra preencher o card).
+  // Só Estoque e Logística têm dado real pronto pra virar métrica de resumo aqui na tela inicial —
+  // os demais módulos ativos ainda não têm esse resumo agregado implementado, então não mostramos
+  // número nenhum pra eles (nunca um valor fictício só pra preencher o card).
   const [resumoEstoque, setResumoEstoque] = useState<{ valorTotal: number; ruptura: number } | null>(null);
   useEffect(() => {
     if (!modulosDisponiveis.includes('estoque')) return;
     fetch(`${API_URL}/api/estoque/painel`, { headers: cabecalhoPerfil(usuario?.perfil) })
       .then((r) => (r.ok ? r.json() : null))
       .then((corpo) => { if (corpo?.kpis) setResumoEstoque({ valorTotal: Number(corpo.kpis.VALORTOTALESTOQUE ?? 0), ruptura: Number(corpo.kpis.TOTALRUPTURA ?? 0) }); })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const [resumoLogistica, setResumoLogistica] = useState<{ custoMes: number; alarmes24h: number } | null>(null);
+  useEffect(() => {
+    if (!modulosDisponiveis.includes('logistica_frota')) return;
+    fetch(`${API_URL}/api/metas/diario?modo=executivo`, { headers: cabecalhoPerfil(usuario?.perfil) })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((corpo) => {
+        if (!corpo) return;
+        const meses = Array.isArray(corpo.tendenciaMensal) ? corpo.tendenciaMensal : [];
+        const mesAtual = meses[meses.length - 1];
+        setResumoLogistica({
+          custoMes: Number(mesAtual?.CustoOperacionalTotalMes ?? 0),
+          alarmes24h: Number(corpo.alarmes24h ?? 0),
+        });
+      })
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -192,6 +210,18 @@ export function Inicio() {
                 <div>
                   <p className="text-[10px] font-bold uppercase text-slate-400 flex items-center gap-1"><AlertTriangle size={11} className="text-rose-500" />Em ruptura</p>
                   <p className="text-sm font-bold text-slate-800">{numero(resumoEstoque.ruptura)}</p>
+                </div>
+              </div>
+            )}
+            {card.modulo === 'logistica_frota' && resumoLogistica && (
+              <div className="flex items-center gap-4 mt-4 pt-4 border-t border-slate-100">
+                <div>
+                  <p className="text-[10px] font-bold uppercase text-slate-400">Custo operacional (mês)</p>
+                  <p className="text-sm font-bold text-slate-800">{moeda(resumoLogistica.custoMes)}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold uppercase text-slate-400 flex items-center gap-1"><AlertTriangle size={11} className="text-rose-500" />Alarmes (24h)</p>
+                  <p className="text-sm font-bold text-slate-800">{numero(resumoLogistica.alarmes24h)}</p>
                 </div>
               </div>
             )}
