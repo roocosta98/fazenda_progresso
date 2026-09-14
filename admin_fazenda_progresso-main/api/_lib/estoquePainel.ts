@@ -244,6 +244,16 @@ function montarConsultas(dataInicio: string, dataFim: string, dias: number) {
       CASE WHEN CONSUMO > 0 THEN ESTOQUE_ATUAL / NULLIF(CONSUMO / ${dias}.0, 0) ELSE NULL END AS DIAS_COBERTURA
     FROM BASE
     ORDER BY CONSUMO DESC`,
+  // Quantidade de itens em estoque por local/depósito — cadastro atual, mesmo escopo de grupo
+  // das demais telas. Usado no painel de Inventário (distribuição por local).
+  distribuicaoLocal: `SELECT TOP 30 L.DESCRLOCAL AS LOCAL, SUM(E.ESTOQUE) AS ESTOQUE
+    FROM TGFEST E
+      INNER JOIN TGFLOC L ON L.CODLOCAL=E.CODLOCAL
+      INNER JOIN TGFPRO P ON P.CODPROD=E.CODPROD
+      INNER JOIN TGFGRU GRU ON GRU.CODGRUPOPROD=P.CODGRUPOPROD
+    WHERE E.CODEMP=1 AND P.ATIVO='S' AND E.ESTOQUE>0 AND ${filtroGrupo}
+    GROUP BY L.DESCRLOCAL
+    ORDER BY SUM(E.ESTOQUE) DESC`,
   // O filtro de grupo (filtroGrupo) vale em toda tela de Estoque, EXCETO o KPI
   // VALORTOTALESTOQUE ("Valor total em estoque"), que continua somando todos os grupos.
   kpis: `SELECT
@@ -253,6 +263,17 @@ function montarConsultas(dataInicio: string, dataFim: string, dias: number) {
         OUTER APPLY (SELECT SUM(E.ESTOQUE) AS ESTOQUE FROM TGFEST E WHERE E.CODPROD=P.CODPROD AND E.CODEMP=1) EST
         OUTER APPLY (SELECT MAX(CASE WHEN G.PRODFALTA='S' THEN 'S' ELSE 'N' END) AS PRODFALTA FROM TGFGIR G WHERE G.CODPROD=P.CODPROD AND G.CODEMP=1) GIR
       WHERE P.ATIVO='S' AND ${filtroGrupo} AND (GIR.PRODFALTA='S' OR (P.ESTMIN IS NOT NULL AND ISNULL(EST.ESTOQUE,0)<=P.ESTMIN))) AS TOTALRUPTURA,
+    -- Mesma agregação por produto (soma de todos os locais/lotes) — item "acima do máximo"
+    -- configurado, sinal de excesso de compra/estoque parado.
+    (SELECT COUNT(*) FROM TGFPRO P INNER JOIN TGFGRU GRU ON GRU.CODGRUPOPROD=P.CODGRUPOPROD
+        OUTER APPLY (SELECT SUM(E.ESTOQUE) AS ESTOQUE FROM TGFEST E WHERE E.CODPROD=P.CODPROD AND E.CODEMP=1) EST
+      WHERE P.ATIVO='S' AND ${filtroGrupo} AND P.ESTMAX IS NOT NULL AND P.ESTMAX>0 AND ISNULL(EST.ESTOQUE,0)>P.ESTMAX) AS TOTALACIMAMAXIMO,
+    -- Produtos com estoque > 0 mas sem "local padrão" definido no cadastro (P.CODLOCALPADRAO) —
+    -- não há como saber onde esse item deveria estar fisicamente por padrão.
+    (SELECT COUNT(*) FROM TGFPRO P INNER JOIN TGFGRU GRU ON GRU.CODGRUPOPROD=P.CODGRUPOPROD
+        OUTER APPLY (SELECT SUM(E.ESTOQUE) AS ESTOQUE FROM TGFEST E WHERE E.CODPROD=P.CODPROD AND E.CODEMP=1) EST
+      WHERE P.ATIVO='S' AND ${filtroGrupo} AND P.CODLOCALPADRAO IS NULL AND ISNULL(EST.ESTOQUE,0)>0) AS TOTALSEMLOCALIZACAO,
+    (SELECT COUNT(*) FROM TGFPRO P INNER JOIN TGFGRU GRU ON GRU.CODGRUPOPROD=P.CODGRUPOPROD WHERE P.ATIVO='S' AND ${filtroGrupo}) AS TOTALSKUS,
     (SELECT COUNT(DISTINCT G.CODPROD) FROM TGFGIR G JOIN TGFPRO P ON P.CODPROD=G.CODPROD INNER JOIN TGFGRU GRU ON GRU.CODGRUPOPROD=P.CODGRUPOPROD WHERE P.ATIVO='S' AND G.CODEMP=1 AND G.DIASSEMVENDA>=90 AND ${filtroGrupo}) AS TOTALSEMMOVIMENTACAO,
     (SELECT COUNT(DISTINCT COT.NUMCOTACAO) FROM TGFCOT COT WHERE EXISTS (SELECT 1 FROM TGFITC I INNER JOIN TGFPRO PRO ON PRO.CODPROD=I.CODPROD INNER JOIN TGFGRU GRU ON GRU.CODGRUPOPROD=PRO.CODGRUPOPROD WHERE I.NUMCOTACAO=COT.NUMCOTACAO AND I.CABECALHO='S' AND I.STATUSPRODCOT='O' AND ${filtroGrupo})) AS TOTALCOTACOES,
     (SELECT SUM(ISNULL(EST.ESTOQUE,0)*CUS.CUSTO) FROM TGFPRO P CROSS APPLY (SELECT SUM(E.ESTOQUE) AS ESTOQUE FROM TGFEST E WHERE E.CODPROD=P.CODPROD AND E.CODEMP=1) EST CROSS APPLY (SELECT TOP 1 COALESCE(C.CUSMEDICM,C.CUSSEMICM) AS CUSTO FROM TGFCUS C WHERE C.CODPROD=P.CODPROD AND C.CODEMP=1 ORDER BY C.DTATUAL DESC,C.NUNOTA DESC) CUS WHERE P.ATIVO='S' AND CUS.CUSTO IS NOT NULL) AS VALORTOTALESTOQUE,
@@ -290,8 +311,8 @@ export async function painelEstoque(req: VercelRequest, res: VercelResponse) {
       try { return await consultarSankhya(consultas[nome]); }
       catch (error) { erros[nome] = error instanceof Error ? error.message : 'Falha na consulta'; return []; }
     };
-    const [ruptura, semMovimentacao, valor, curvaAbc, fornecedores, cotacoes, cotacoesPorSituacao, giroProdutos, kpiRows] = await Promise.all([
-      executar('ruptura'), executar('semMovimentacao'), executar('valor'), executar('curvaAbc'), executar('fornecedores'), executar('cotacoes'), executar('cotacoesPorSituacao'), executar('giroProdutos'), executar('kpis'),
+    const [ruptura, semMovimentacao, valor, curvaAbc, fornecedores, cotacoes, cotacoesPorSituacao, giroProdutos, distribuicaoLocal, kpiRows] = await Promise.all([
+      executar('ruptura'), executar('semMovimentacao'), executar('valor'), executar('curvaAbc'), executar('fornecedores'), executar('cotacoes'), executar('cotacoesPorSituacao'), executar('giroProdutos'), executar('distribuicaoLocal'), executar('kpis'),
     ]);
     const kpis = kpiRows[0] ?? {};
     // Giro = Requisições / Estoque médio (guia do Éder — nunca soma compra+requisição, e usa a
@@ -304,7 +325,7 @@ export async function painelEstoque(req: VercelRequest, res: VercelResponse) {
     const estoqueInicialGiro = estoqueAtualGiro - compraLiquidaPeriodo + consumoPeriodo;
     const estoqueMedioGiro = (estoqueInicialGiro + estoqueAtualGiro) / 2;
     const giroEstoque = estoqueMedioGiro > 0 ? consumoPeriodo / estoqueMedioGiro : null;
-    res.status(200).json({ ruptura, semMovimentacao, valor, curvaAbc, fornecedores, cotacoes, cotacoesPorSituacao, giroProdutos, kpis: { ...kpis, giroEstoque }, periodo: { dataInicio, dataFim }, erros });
+    res.status(200).json({ ruptura, semMovimentacao, valor, curvaAbc, fornecedores, cotacoes, cotacoesPorSituacao, giroProdutos, distribuicaoLocal, kpis: { ...kpis, giroEstoque }, periodo: { dataInicio, dataFim }, erros });
   } catch (error) {
     res.status(502).json({ error: 'Não foi possível conectar ao banco de dados de estoque.', detalhe: error instanceof Error ? error.message : undefined });
   }
