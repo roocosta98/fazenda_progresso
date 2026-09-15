@@ -81,7 +81,15 @@ export const Sidebar = ({ mobileAberto = false, onFechar }: SidebarProps) => {
   const { usuario, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [grupoAberto, setGrupoAberto] = useState(true);
+  // Cada grupo abre/fecha de forma independente (por label) — antes era um único booleano
+  // compartilhado por todos os grupos da tela, então abrir "Metas" também abria/fechava
+  // "Monitoramento" junto. Começa vazio (= todos abertos), igual ao comportamento anterior.
+  const [gruposFechados, setGruposFechados] = useState<Set<string>>(new Set());
+  const alternarGrupo = (label: string) => setGruposFechados((atual) => {
+    const novo = new Set(atual);
+    if (novo.has(label)) novo.delete(label); else novo.add(label);
+    return novo;
+  });
   const [seletorAberto, setSeletorAberto] = useState(false);
   const modulosPermitidos: ModuloSistema[] = usuario?.tipoUsuario === 'admin'
     ? ['logistica_frota', 'estoque', 'producao_batata', 'manutencao', 'compras', 'financeiro', 'comercial', 'custos', 'rh', 'seguranca_trabalho', 'controladoria', 'fiscal']
@@ -104,13 +112,25 @@ export const Sidebar = ({ mobileAberto = false, onFechar }: SidebarProps) => {
       ? [{ to: '/solicitante/minhas', icon: <List size={18} />, label: 'Minhas Solicitações' }]
       : [
           { to: '/logistica/dashboard', icon: <LayoutDashboard size={18} />, label: 'Dashboard' },
-          { to: '/logistica/bi', icon: <BarChart3 size={18} />, label: 'Métricas' },
+          { to: '/logistica/central-de-acoes', icon: <ListChecks size={18} />, label: 'Central de Ações' },
           { to: '/logistica/pendentes', icon: <Clock size={18} />, label: 'Fila de Aprovação', badge: 2 },
-          { to: '/logistica/metas', icon: <Trophy size={18} />, label: 'Metas & Ranking' },
-          { to: '/logistica/avaliacao-conducao', icon: <ClipboardCheck size={18} />, label: 'Avaliação de Condução' },
-          { to: '/logistica/monitoramento', icon: <MapIcon size={18} />, label: 'Telemetria & Mapa' },
+          { to: '/logistica/bi', icon: <BarChart3 size={18} />, label: 'Métricas' },
+          {
+            label: 'Metas', icon: <Trophy size={18} />,
+            children: [
+              { to: '/logistica/metas', icon: <Trophy size={16} />, label: 'Metas & Ranking' },
+              { to: '/logistica/avaliacao-conducao', icon: <ClipboardCheck size={16} />, label: 'Avaliação de Condução' },
+            ],
+          },
+          {
+            label: 'Monitoramento', icon: <MapIcon size={18} />,
+            children: [
+              { to: '/logistica/monitoramento', icon: <MapIcon size={16} />, label: 'Telemetria & Mapa' },
+              { to: '/logistica/monitor-tv', icon: <MonitorPlay size={16} />, label: 'Monitor TV' },
+            ],
+          },
+          { to: '/logistica/analises', icon: <LineChart size={18} />, label: 'Análises' },
           { to: '/logistica/pesquisa-ia', icon: <Sparkles size={18} />, label: 'Pergunte à IA' },
-          { to: '/logistica/monitor-tv', icon: <MonitorPlay size={18} />, label: 'Monitor TV' },
         ];
   // Atalho pro painel geral (BI) em todo módulo — pedido explícito do Marcos, pra não precisar
   // voltar pra "Início" toda vez que quiser ver a visão consolidada.
@@ -276,10 +296,11 @@ export const Sidebar = ({ mobileAberto = false, onFechar }: SidebarProps) => {
 
         {items.length === 0 ? <p className="px-3 py-4 text-xs leading-relaxed text-slate-500">As telas deste módulo serão disponibilizadas em breve.</p> : items.map((item) => {
           if (isGrupo(item)) {
+            const aberto = !gruposFechados.has(item.label);
             return (
               <div key={item.label} className="pt-2">
                 <button
-                  onClick={() => setGrupoAberto((atual) => !atual)}
+                  onClick={() => alternarGrupo(item.label)}
                   className="w-full flex items-center justify-between px-3 py-2 rounded-md text-xs font-medium text-slate-400 hover:text-slate-200 hover:bg-[#1e2b23] transition-colors"
                 >
                   <div className="flex items-center gap-2.5">
@@ -289,12 +310,12 @@ export const Sidebar = ({ mobileAberto = false, onFechar }: SidebarProps) => {
                   <ChevronDown
                     size={14}
                     className={`text-slate-400 transition-transform duration-200 ${
-                      grupoAberto ? 'rotate-180' : ''
+                      aberto ? 'rotate-180' : ''
                     }`}
                   />
                 </button>
 
-                {grupoAberto && (
+                {aberto && (
                   <div className="mt-1 ml-3.5 pl-2.5 border-l border-[#24352b] space-y-1">
                     {item.children.map((child) => (
                       <NavLink
