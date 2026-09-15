@@ -9,6 +9,13 @@ export type EntradaChangelog = { data: string; hora?: string; itens: string[] };
 export const CHANGELOG: EntradaChangelog[] = [
   {
     data: '15/09/2026',
+    hora: '16:42:09',
+    itens: [
+      'Fornecedores redesenhada: cards de KPI, cartão de "Melhor fornecedor" com badges e metodologia, gráfico Preço × Prazo × Taxa de Vitória com legenda lateral e filtro por fornecedor, e ranking com busca, ordenação por coluna, paginação e comparação entre fornecedores selecionados — tudo usando os mesmos dados reais de sempre (nenhum número novo foi inventado).',
+    ],
+  },
+  {
+    data: '15/09/2026',
     hora: '14:41:32',
     itens: [
       'Frase de apresentação na tela de login atualizada: agora fala de "gestão inteligente, automação de processos e eficiência operacional" com IA, em vez de só "gestão de requisições e logística agropecuária".',
