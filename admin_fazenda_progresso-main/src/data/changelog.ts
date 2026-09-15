@@ -9,6 +9,13 @@ export type EntradaChangelog = { data: string; hora?: string; itens: string[] };
 export const CHANGELOG: EntradaChangelog[] = [
   {
     data: '15/09/2026',
+    hora: '17:01:10',
+    itens: [
+      'Corrigido filtro de grupos de produto sem relevância de estoque (material de escritório, imobilizado, serviços etc): antes só excluía quem era filho direto de um desses grupos; agora sobe toda a árvore, então um grupo aninhado mais fundo (ex.: item de vinícola dentro de um grupo-neto de "Alimentos/cozinha/limpeza") também é excluído das telas de Estoque.',
+    ],
+  },
+  {
+    data: '15/09/2026',
     hora: '16:51:58',
     itens: [
       'Central de Ações redesenhada: 5 indicadores (Críticos, Rupturas, Risco em 15 dias, Excesso de estoque, Sem giro 90+ dias — o de Excesso é novo, com uma consulta nova no Sankhya pra achar itens acima do máximo), filtros por categoria em vez do antigo segmentado, colunas de Curva ABC e Cobertura (dias) na tabela, e um resumo por categoria no fim da tela.',
