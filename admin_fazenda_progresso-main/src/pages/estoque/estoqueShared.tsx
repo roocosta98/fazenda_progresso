@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown, Boxes, ChevronLeft, ChevronRight, Eye, RefreshCw, Search, TrendingUp, X } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown, Boxes, ChevronLeft, ChevronRight, Columns3, Eye, RefreshCw, Search, TrendingUp, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { cabecalhoPerfil } from '../../utils/apiAuth';
 import { usePeriodoPadrao } from '../../hooks/usePeriodoPadrao';
@@ -353,7 +353,28 @@ export function TabelaInterativa({ linhas, filtroSituacao }: { linhas: Linha[]; 
   const [ordemDesc, setOrdemDesc] = useState(false);
   const [pagina, setPagina] = useState(1);
   const [detalheAberto, setDetalheAberto] = useState<{ tipo: TipoDetalhe; linha: Linha } | null>(null);
-  const colunas = useMemo(() => linhas.length ? Object.keys(linhas[0]) : [], [linhas]);
+  const todasColunas = useMemo(() => linhas.length ? Object.keys(linhas[0]) : [], [linhas]);
+  const chaveColunas = todasColunas.join(',');
+
+  // "Configurar colunas" — mostra/esconde colunas que já existem no dado real (nada novo é
+  // calculado). Reseta pra mostrar tudo de novo sempre que o conjunto de colunas muda (troca de
+  // aba pra uma tabela diferente), senão uma coluna escondida numa tabela some por engano em outra.
+  const [colunasVisiveis, setColunasVisiveis] = useState<Set<string>>(() => new Set(todasColunas));
+  const [menuColunasAberto, setMenuColunasAberto] = useState(false);
+  const menuColunasRef = useRef<HTMLDivElement>(null);
+  useEffect(() => { setColunasVisiveis(new Set(todasColunas)); }, [chaveColunas]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (!menuColunasAberto) return;
+    const aoClicarFora = (e: MouseEvent) => { if (menuColunasRef.current && !menuColunasRef.current.contains(e.target as Node)) setMenuColunasAberto(false); };
+    document.addEventListener('mousedown', aoClicarFora);
+    return () => document.removeEventListener('mousedown', aoClicarFora);
+  }, [menuColunasAberto]);
+  const colunas = useMemo(() => todasColunas.filter((c) => colunasVisiveis.has(c)), [todasColunas, colunasVisiveis]);
+  const alternarColuna = (coluna: string) => setColunasVisiveis((atual) => {
+    const proxima = new Set(atual);
+    if (proxima.has(coluna) && proxima.size > 1) proxima.delete(coluna); else proxima.add(coluna);
+    return proxima;
+  });
 
   const porSituacao = useMemo(() => {
     if (!filtroSituacao || situacaoFiltro === 'todos') return linhas;
@@ -410,6 +431,22 @@ export function TabelaInterativa({ linhas, filtroSituacao }: { linhas: Linha[]; 
             ))}
           </div>
         )}
+        <div className="relative" ref={menuColunasRef}>
+          <button onClick={() => setMenuColunasAberto((v) => !v)}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[11px] font-bold text-slate-500 hover:bg-slate-50">
+            <Columns3 size={13} /> Configurar colunas
+          </button>
+          {menuColunasAberto && (
+            <div className="absolute right-0 z-20 mt-1 w-56 max-h-64 overflow-y-auto bg-white border border-slate-200 rounded-xl shadow-lg p-2">
+              {todasColunas.map((coluna) => (
+                <label key={coluna} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-50 text-xs text-slate-600 cursor-pointer">
+                  <input type="checkbox" checked={colunasVisiveis.has(coluna)} onChange={() => alternarColuna(coluna)} className="accent-emerald-600" />
+                  {rotuloColuna(coluna)}
+                </label>
+              ))}
+            </div>
+          )}
+        </div>
         {clicavel && <p className="text-[11px] text-slate-400">Clique numa linha pra ver o detalhe</p>}
       </div>
       <div className="overflow-auto max-h-[420px] border rounded-xl">
