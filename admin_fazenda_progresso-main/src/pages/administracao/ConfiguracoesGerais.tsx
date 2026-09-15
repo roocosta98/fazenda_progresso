@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { BrainCircuit, Calendar, Database, FileUp, MessageSquareText, Pencil, Plus, Settings, Sparkles, Trash2, Wand2, X } from 'lucide-react';
+import { AlertTriangle, BrainCircuit, Calendar, Database, FileUp, MessageSquareText, Pencil, Plus, Settings, Sparkles, Terminal, Trash2, Wand2, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useConfiguracaoGeral, invalidarCacheConfiguracaoGeral, PRAZO_PADRAO_DIAS_FALLBACK } from '../../hooks/useConfiguracaoGeral';
 
@@ -12,9 +12,19 @@ const MODULOS = [
   { id: 'manutencao', nome: 'Manutenção' },
 ];
 
-type TipoConteudo = 'schema' | 'prompt' | 'texto';
+type TipoConteudo = 'schema' | 'prompt' | 'texto' | 'query';
 
-const TIPOS: { id: TipoConteudo; nome: string; icone: typeof Database; descricao: string; placeholderTitulo: string; placeholderConteudo: string; monoespacado?: boolean }[] = [
+const TIPOS: { id: TipoConteudo; nome: string; icone: typeof Database; descricao: string; placeholderTitulo: string; placeholderConteudo: string; monoespacado?: boolean; perigoso?: boolean }[] = [
+  {
+    id: 'query',
+    nome: 'Query SQL executável',
+    icone: Terminal,
+    descricao: 'Substitui de verdade a query que a tela roda — não é documentação pra IA, é código em produção. Só SELECT/WITH é aceito; qualquer outro comando é recusado ao salvar.',
+    placeholderTitulo: 'Ex.: Análise de Fornecedores — Supplier Score',
+    placeholderConteudo: 'SELECT ... FROM ... WHERE DATA >= \'{{dataInicio}}\' AND DATA < \'{{dataFim}}\' AND {{filtroGrupo}}',
+    monoespacado: true,
+    perigoso: true,
+  },
   {
     id: 'schema',
     nome: 'Esquema de banco de dados',
@@ -42,10 +52,128 @@ const TIPOS: { id: TipoConteudo; nome: string; icone: typeof Database; descricao
   },
 ];
 
+// Query REAL da Análise de Fornecedores (api/_lib/estoquePainel.ts, chave 'estoque.fornecedores'),
+// com as três interpolações que o backend resolve (${dataInicio}/${dataFim}/${filtroGrupo} no
+// TypeScript) trocadas pelos placeholders {{...}} que uma query customizada usa — ver
+// api/_lib/querySistema.ts. Editar isso aqui e ativar substitui, em produção, a query que a tela
+// de Fornecedores/Análise de Fornecedores usa de verdade.
+const SQL_FORNECEDORES_MODELO = `WITH
+    BASE AS (
+      SELECT COT.NUMCOTACAO, COT.DHINIC, COT.CODEMP, ITC.CODPARC, PAR.NOMEPARC, PAR.RAZAOSOCIAL, PAR.CGC_CPF,
+        ITC.CODPROD, PRO.DESCRPROD, PRO.CODGRUPOPROD, ITC.CONTROLE, ITC.CODLOCAL, ITC.DIFERENCIADOR,
+        ITC.PRECO, ITC.QTDCOTADA, ITC.PRAZOENTREGA, ITC.SITUACAO, ITC.MELHOR,
+        CASE WHEN COALESCE(ITC.PRECO,0)>0 THEN 1 ELSE 0 END AS RESPONDEU,
+        CASE WHEN ITC.MELHOR='S' THEN 1 ELSE 0 END AS VENCEU
+      FROM TGFCOT COT
+        INNER JOIN TGFITC ITC ON ITC.NUMCOTACAO=COT.NUMCOTACAO
+        INNER JOIN TGFPAR PAR ON PAR.CODPARC=ITC.CODPARC
+        INNER JOIN TGFPRO PRO ON PRO.CODPROD=ITC.CODPROD
+        INNER JOIN TGFGRU GRU ON GRU.CODGRUPOPROD=PRO.CODGRUPOPROD
+      WHERE COT.DHINIC >= CONVERT(date,'{{dataInicio}}',23) AND COT.DHINIC < DATEADD(DAY,1,CONVERT(date,'{{dataFim}}',23))
+        AND ITC.CABECALHO='N' AND ITC.CODPARC>0 AND {{filtroGrupo}}
+    ),
+    PRECO_ITEM AS (
+      SELECT B.*,
+        SUM(CASE WHEN B.PRECO>0 THEN B.PRECO ELSE 0 END) OVER (PARTITION BY B.NUMCOTACAO,B.CODPROD,B.CONTROLE,B.CODLOCAL,B.DIFERENCIADOR) AS SOMA_PRECOS_ITEM,
+        SUM(CASE WHEN B.PRECO>0 THEN 1 ELSE 0 END) OVER (PARTITION BY B.NUMCOTACAO,B.CODPROD,B.CONTROLE,B.CODLOCAL,B.DIFERENCIADOR) AS QTD_PRECOS_ITEM
+      FROM BASE B
+    ),
+    COMPARATIVO_ITEM AS (
+      SELECT P.*, CASE WHEN P.PRECO>0 AND P.QTD_PRECOS_ITEM>1 THEN (P.SOMA_PRECOS_ITEM-P.PRECO)/NULLIF(P.QTD_PRECOS_ITEM-1,0) END AS PRECO_MEDIO_CONCORRENTES
+      FROM PRECO_ITEM P
+    ),
+    INDICADORES AS (
+      SELECT C.CODPARC, MAX(C.NOMEPARC) AS FORNECEDOR, MAX(C.RAZAOSOCIAL) AS RAZAOSOCIAL, MAX(C.CGC_CPF) AS CNPJ_CPF,
+        COUNT(DISTINCT C.NUMCOTACAO) AS TOTAL_COTACOES,
+        COUNT(DISTINCT CASE WHEN C.RESPONDEU=1 THEN C.NUMCOTACAO END) AS COTACOES_RESPONDIDAS,
+        COUNT(DISTINCT CASE WHEN C.VENCEU=1 THEN C.NUMCOTACAO END) AS COTACOES_VENCIDAS,
+        COUNT(DISTINCT CASE WHEN C.RESPONDEU=1 AND C.VENCEU=0 THEN C.NUMCOTACAO END) AS COTACOES_SEM_VITORIA,
+        SUM(C.RESPONDEU) AS ITENS_COTADOS, SUM(C.VENCEU) AS ITENS_VENCIDOS,
+        SUM(CASE WHEN C.RESPONDEU=1 AND C.VENCEU=0 THEN 1 ELSE 0 END) AS ITENS_NAO_VENCIDOS,
+        ROUND(100*COUNT(DISTINCT CASE WHEN C.RESPONDEU=1 THEN C.NUMCOTACAO END)/NULLIF(COUNT(DISTINCT C.NUMCOTACAO),0),2) AS TAXA_RESPOSTA_PCT,
+        ROUND(100*SUM(C.VENCEU)/NULLIF(SUM(C.RESPONDEU),0),2) AS TAXA_VITORIA_PCT,
+        ROUND(100*COUNT(DISTINCT CASE WHEN C.VENCEU=1 THEN C.NUMCOTACAO END)/NULLIF(COUNT(DISTINCT CASE WHEN C.RESPONDEU=1 THEN C.NUMCOTACAO END),0),2) AS TAXA_VITORIA_COTACAO_PCT,
+        ROUND(AVG(CASE WHEN C.RESPONDEU=1 THEN C.PRAZOENTREGA END),2) AS PRAZO_MEDIO_DIAS,
+        COUNT(DISTINCT CASE WHEN C.RESPONDEU=1 THEN C.CODPROD END) AS PRODUTOS_DISTINTOS,
+        COUNT(DISTINCT CASE WHEN C.RESPONDEU=1 THEN C.CODGRUPOPROD END) AS CATEGORIAS_DISTINTAS,
+        ROUND(AVG(CASE WHEN C.PRECO>0 THEN C.PRECO END),4) AS PRECO_MEDIO_FORNECEDOR,
+        ROUND(AVG(C.PRECO_MEDIO_CONCORRENTES),4) AS PRECO_MEDIO_CONCORRENTES,
+        ROUND(AVG(CASE WHEN C.PRECO>0 AND C.PRECO_MEDIO_CONCORRENTES>0 THEN (C.PRECO_MEDIO_CONCORRENTES-C.PRECO)/C.PRECO_MEDIO_CONCORRENTES*100 END),2) AS COMPETITIVIDADE_PRECO_MEDIA_PCT,
+        ROUND(100*SUM(CASE WHEN C.PRECO>0 AND C.PRECO_MEDIO_CONCORRENTES>0 AND COALESCE(C.QTDCOTADA,0)>0 THEN (C.PRECO_MEDIO_CONCORRENTES-C.PRECO)*C.QTDCOTADA ELSE 0 END)/
+          NULLIF(SUM(CASE WHEN C.PRECO>0 AND C.PRECO_MEDIO_CONCORRENTES>0 AND COALESCE(C.QTDCOTADA,0)>0 THEN C.PRECO_MEDIO_CONCORRENTES*C.QTDCOTADA ELSE 0 END),0),2) AS COMPETITIVIDADE_PRECO_PCT,
+        SUM(CASE WHEN C.PRECO>0 AND C.PRECO_MEDIO_CONCORRENTES>0 THEN 1 ELSE 0 END) AS ITENS_COM_COMPARACAO_PRECO,
+        ROUND(SUM(CASE WHEN C.VENCEU=1 AND C.PRECO>0 AND C.PRECO_MEDIO_CONCORRENTES>0 AND COALESCE(C.QTDCOTADA,0)>0 THEN (C.PRECO_MEDIO_CONCORRENTES-C.PRECO)*C.QTDCOTADA ELSE 0 END),2) AS ECONOMIA_LIQUIDA_VS_MEDIA,
+        ROUND(SUM(CASE WHEN C.VENCEU=1 AND C.PRECO>0 AND C.PRECO_MEDIO_CONCORRENTES>C.PRECO AND COALESCE(C.QTDCOTADA,0)>0 THEN (C.PRECO_MEDIO_CONCORRENTES-C.PRECO)*C.QTDCOTADA ELSE 0 END),2) AS ECONOMIA_POSITIVA_VS_MEDIA,
+        MIN(C.DHINIC) AS PRIMEIRA_COTACAO_PERIODO, MAX(C.DHINIC) AS ULTIMA_COTACAO
+      FROM COMPARATIVO_ITEM C GROUP BY C.CODPARC
+    ),
+    FORNECEDORES_VALIDOS AS (SELECT I.* FROM INDICADORES I WHERE I.COTACOES_RESPONDIDAS>0),
+    SCORE_COMPONENTES AS (
+      SELECT F.*,
+        CASE WHEN F.TAXA_VITORIA_PCT IS NOT NULL THEN ROUND(100*CUME_DIST() OVER (PARTITION BY CASE WHEN F.TAXA_VITORIA_PCT IS NULL THEN 1 ELSE 0 END ORDER BY F.TAXA_VITORIA_PCT),2) END AS SCORE_VITORIA,
+        CASE WHEN COALESCE(F.COMPETITIVIDADE_PRECO_PCT,F.COMPETITIVIDADE_PRECO_MEDIA_PCT) IS NOT NULL THEN ROUND(100*CUME_DIST() OVER (PARTITION BY CASE WHEN COALESCE(F.COMPETITIVIDADE_PRECO_PCT,F.COMPETITIVIDADE_PRECO_MEDIA_PCT) IS NULL THEN 1 ELSE 0 END ORDER BY COALESCE(F.COMPETITIVIDADE_PRECO_PCT,F.COMPETITIVIDADE_PRECO_MEDIA_PCT)),2) END AS SCORE_COMPETITIVIDADE,
+        CASE WHEN F.PRAZO_MEDIO_DIAS IS NOT NULL THEN ROUND(100*CUME_DIST() OVER (PARTITION BY CASE WHEN F.PRAZO_MEDIO_DIAS IS NULL THEN 1 ELSE 0 END ORDER BY F.PRAZO_MEDIO_DIAS DESC),2) END AS SCORE_PRAZO,
+        ROUND(100*CUME_DIST() OVER (ORDER BY F.PRODUTOS_DISTINTOS),2) AS SCORE_COBERTURA,
+        ROUND(100*CUME_DIST() OVER (ORDER BY F.TOTAL_COTACOES),2) AS SCORE_VOLUME
+      FROM FORNECEDORES_VALIDOS F
+    ),
+    SCORE_FINAL AS (
+      SELECT S.*, ROUND((
+          CASE WHEN S.SCORE_VITORIA IS NOT NULL THEN S.SCORE_VITORIA*35 ELSE 0 END +
+          CASE WHEN S.SCORE_COMPETITIVIDADE IS NOT NULL THEN S.SCORE_COMPETITIVIDADE*30 ELSE 0 END +
+          CASE WHEN S.SCORE_PRAZO IS NOT NULL THEN S.SCORE_PRAZO*15 ELSE 0 END +
+          CASE WHEN S.SCORE_COBERTURA IS NOT NULL THEN S.SCORE_COBERTURA*10 ELSE 0 END +
+          CASE WHEN S.SCORE_VOLUME IS NOT NULL THEN S.SCORE_VOLUME*10 ELSE 0 END
+        )/NULLIF(
+          CASE WHEN S.SCORE_VITORIA IS NOT NULL THEN 35 ELSE 0 END +
+          CASE WHEN S.SCORE_COMPETITIVIDADE IS NOT NULL THEN 30 ELSE 0 END +
+          CASE WHEN S.SCORE_PRAZO IS NOT NULL THEN 15 ELSE 0 END +
+          CASE WHEN S.SCORE_COBERTURA IS NOT NULL THEN 10 ELSE 0 END +
+          CASE WHEN S.SCORE_VOLUME IS NOT NULL THEN 10 ELSE 0 END, 0),2) AS SUPPLIER_SCORE
+      FROM SCORE_COMPONENTES S
+    ),
+    CLASSIFICADO AS (
+      SELECT S.*,
+        CASE WHEN S.SUPPLIER_SCORE>=85 THEN 'Excelente' WHEN S.SUPPLIER_SCORE>=70 THEN 'Bom' WHEN S.SUPPLIER_SCORE>=50 THEN 'Regular' ELSE 'Atencao' END AS FAIXA_SUPPLIER_SCORE,
+        CASE WHEN COALESCE(S.COMPETITIVIDADE_PRECO_PCT,S.COMPETITIVIDADE_PRECO_MEDIA_PCT)>0 THEN 'Mais competitivo' WHEN COALESCE(S.COMPETITIVIDADE_PRECO_PCT,S.COMPETITIVIDADE_PRECO_MEDIA_PCT)<0 THEN 'Mais caro' ELSE 'Neutro' END AS STATUS_COMPETITIVIDADE
+      FROM SCORE_FINAL S
+    ),
+    RANKING AS (
+      SELECT C.*, DENSE_RANK() OVER (ORDER BY C.SUPPLIER_SCORE DESC, C.TAXA_VITORIA_PCT DESC, COALESCE(C.COMPETITIVIDADE_PRECO_PCT,C.COMPETITIVIDADE_PRECO_MEDIA_PCT) DESC, C.PRAZO_MEDIO_DIAS ASC, C.TOTAL_COTACOES DESC) AS RANKING_GERAL
+      FROM CLASSIFICADO C
+    ),
+    KPI_GERAIS AS (
+      SELECT COUNT(*) AS FORNECEDORES_ATIVOS_PERIODO, MIN(R.PRAZO_MEDIO_DIAS) AS MELHOR_PRAZO_MEDIO_PERIODO,
+        MAX(R.TAXA_VITORIA_PCT) AS MAIOR_TAXA_VITORIA_PERIODO, SUM(R.ECONOMIA_POSITIVA_VS_MEDIA) AS ECONOMIA_ACUMULADA_PERIODO,
+        (SELECT COUNT(DISTINCT CASE WHEN B.RESPONDEU=1 THEN B.CODGRUPOPROD END) FROM BASE B) AS CATEGORIAS_ATENDIDAS_PERIODO
+      FROM RANKING R
+    )
+    SELECT TOP 2000
+      R.RANKING_GERAL, CASE WHEN R.RANKING_GERAL=1 THEN 'S' ELSE 'N' END AS MELHOR_FORNECEDOR_PERIODO,
+      R.CODPARC, R.FORNECEDOR, R.RAZAOSOCIAL, R.CNPJ_CPF,
+      R.SUPPLIER_SCORE, R.FAIXA_SUPPLIER_SCORE, R.SCORE_VITORIA, R.SCORE_COMPETITIVIDADE, R.SCORE_PRAZO, R.SCORE_COBERTURA, R.SCORE_VOLUME,
+      R.TOTAL_COTACOES, R.COTACOES_RESPONDIDAS, R.COTACOES_VENCIDAS, R.COTACOES_SEM_VITORIA,
+      R.ITENS_COTADOS, R.ITENS_VENCIDOS, R.ITENS_NAO_VENCIDOS,
+      R.TAXA_RESPOSTA_PCT, R.TAXA_VITORIA_PCT, R.TAXA_VITORIA_COTACAO_PCT,
+      R.PRAZO_MEDIO_DIAS, R.PRODUTOS_DISTINTOS, R.CATEGORIAS_DISTINTAS,
+      R.PRECO_MEDIO_FORNECEDOR, R.PRECO_MEDIO_CONCORRENTES, R.COMPETITIVIDADE_PRECO_PCT, R.COMPETITIVIDADE_PRECO_MEDIA_PCT, R.STATUS_COMPETITIVIDADE,
+      R.ITENS_COM_COMPARACAO_PRECO, R.ECONOMIA_LIQUIDA_VS_MEDIA, R.ECONOMIA_POSITIVA_VS_MEDIA,
+      R.PRIMEIRA_COTACAO_PERIODO, R.ULTIMA_COTACAO,
+      K.FORNECEDORES_ATIVOS_PERIODO, K.MELHOR_PRAZO_MEDIO_PERIODO, K.MAIOR_TAXA_VITORIA_PERIODO, K.CATEGORIAS_ATENDIDAS_PERIODO, K.ECONOMIA_ACUMULADA_PERIODO
+    FROM RANKING R CROSS JOIN KPI_GERAIS K
+    ORDER BY R.RANKING_GERAL, R.SUPPLIER_SCORE DESC, R.FORNECEDOR`;
+
 // Modelos prontos com o esquema real já validado nesta instalação (achados confirmados nas
 // próprias telas/queries do sistema) — clique em "Usar modelo" pra já cair no formulário
 // pronto pra revisar e adicionar, em vez de digitar tudo do zero.
-const MODELOS_PRONTOS: { titulo: string; modulo: string; tipo: TipoConteudo; conteudo: string }[] = [
+const MODELOS_PRONTOS: { titulo: string; modulo: string; tipo: TipoConteudo; conteudo: string; chaveQuery?: string }[] = [
+  {
+    titulo: 'Análise de Fornecedores — query real (Supplier Score)',
+    modulo: 'estoque',
+    tipo: 'query',
+    chaveQuery: 'estoque.fornecedores',
+    conteudo: SQL_FORNECEDORES_MODELO,
+  },
   {
     titulo: 'Fornecedores — critério real de vitória em cotação',
     modulo: 'estoque',
@@ -84,12 +212,13 @@ type Entrada = {
   Conteudo: string;
   Modulo: string;
   Tipo: TipoConteudo;
+  ChaveQuery: string | null;
   Ativo: boolean;
   AtualizadoEm: string;
   CriadoPor: string | null;
 };
 
-const FORM_VAZIO = { titulo: '', conteudo: '', modulo: 'estoque', tipo: 'texto' as TipoConteudo };
+const FORM_VAZIO = { titulo: '', conteudo: '', modulo: 'estoque', tipo: 'texto' as TipoConteudo, chaveQuery: '' };
 
 type Aba = 'geral' | 'ia';
 
@@ -169,18 +298,18 @@ function PainelTreinamentoIA() {
   }, [usuario?.tipoUsuario]);
   useEffect(() => { carregar(); }, [carregar]);
 
-  const tipoAtual = useMemo(() => TIPOS.find((t) => t.id === form.tipo) ?? TIPOS[2], [form.tipo]);
+  const tipoAtual = useMemo(() => TIPOS.find((t) => t.id === form.tipo) ?? TIPOS.find((t) => t.id === 'texto')!, [form.tipo]);
 
   const iniciarEdicao = (entrada: Entrada) => {
     setEditandoId(entrada.ConfiguracaoIAId);
-    setForm({ titulo: entrada.Titulo, conteudo: entrada.Conteudo, modulo: entrada.Modulo, tipo: entrada.Tipo ?? 'texto' });
+    setForm({ titulo: entrada.Titulo, conteudo: entrada.Conteudo, modulo: entrada.Modulo, tipo: entrada.Tipo ?? 'texto', chaveQuery: entrada.ChaveQuery ?? '' });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
   const cancelarEdicao = () => { setEditandoId(null); setForm(FORM_VAZIO); setAvisoImportacao(null); };
 
   const usarModelo = (modelo: typeof MODELOS_PRONTOS[number]) => {
     setEditandoId(null);
-    setForm({ titulo: modelo.titulo, conteudo: modelo.conteudo, modulo: modelo.modulo, tipo: modelo.tipo });
+    setForm({ titulo: modelo.titulo, conteudo: modelo.conteudo, modulo: modelo.modulo, tipo: modelo.tipo, chaveQuery: modelo.chaveQuery ?? '' });
     setAvisoImportacao(null);
     setMostrarModelos(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -199,7 +328,7 @@ function PainelTreinamentoIA() {
       const corpo = await resposta.json();
       if (!resposta.ok) throw new Error(corpo.error);
       setEditandoId(null);
-      setForm({ titulo: corpo.titulo, conteudo: corpo.conteudo, modulo: corpo.modulo, tipo: corpo.tipo });
+      setForm({ titulo: corpo.titulo, conteudo: corpo.conteudo, modulo: corpo.modulo, tipo: corpo.tipo, chaveQuery: '' });
       setAvisoImportacao(corpo.truncado
         ? `Arquivo "${arquivo.name}" processado — ele é grande e o conteúdo foi cortado no que a IA conseguiu organizar. Revise antes de salvar.`
         : `Arquivo "${arquivo.name}" processado. Revise o título, tipo e conteúdo sugeridos abaixo antes de salvar.`);
@@ -224,7 +353,7 @@ function PainelTreinamentoIA() {
 
   const alternarAtivo = async (entrada: Entrada) => {
     try {
-      const resposta = await fetch(`${API_URL}/api/administracao/ia`, { method: 'PUT', headers, body: JSON.stringify({ id: entrada.ConfiguracaoIAId, titulo: entrada.Titulo, conteudo: entrada.Conteudo, modulo: entrada.Modulo, tipo: entrada.Tipo, ativo: !entrada.Ativo }) });
+      const resposta = await fetch(`${API_URL}/api/administracao/ia`, { method: 'PUT', headers, body: JSON.stringify({ id: entrada.ConfiguracaoIAId, titulo: entrada.Titulo, conteudo: entrada.Conteudo, modulo: entrada.Modulo, tipo: entrada.Tipo, chaveQuery: entrada.ChaveQuery, ativo: !entrada.Ativo }) });
       const corpo = await resposta.json();
       if (!resposta.ok) throw new Error(corpo.error);
       await carregar();
@@ -289,14 +418,14 @@ function PainelTreinamentoIA() {
 
         <div>
           <p className="text-xs font-semibold text-slate-500 mb-2">1. Que tipo de conteúdo é este?</p>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
             {TIPOS.map((t) => {
               const Icone = t.icone;
               const selecionado = form.tipo === t.id;
               return (
                 <button type="button" key={t.id} onClick={() => setForm({ ...form, tipo: t.id })}
-                  className={`text-left rounded-xl border-2 p-3 transition-colors ${selecionado ? 'border-emerald-500 bg-emerald-50' : 'border-slate-200 hover:border-slate-300'}`}>
-                  <div className={`flex items-center gap-2 font-bold text-sm ${selecionado ? 'text-emerald-700' : 'text-slate-700'}`}>
+                  className={`text-left rounded-xl border-2 p-3 transition-colors ${selecionado ? (t.perigoso ? 'border-rose-500 bg-rose-50' : 'border-emerald-500 bg-emerald-50') : 'border-slate-200 hover:border-slate-300'}`}>
+                  <div className={`flex items-center gap-2 font-bold text-sm ${selecionado ? (t.perigoso ? 'text-rose-700' : 'text-emerald-700') : 'text-slate-700'}`}>
                     <Icone size={16} />{t.nome}
                   </div>
                   <p className="text-xs text-slate-500 mt-1">{t.descricao}</p>
@@ -306,13 +435,23 @@ function PainelTreinamentoIA() {
           </div>
         </div>
 
+        {tipoAtual.perigoso && (
+          <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 flex gap-2">
+            <AlertTriangle size={16} className="shrink-0 mt-0.5" />
+            <p>Isso substitui, em produção, a query real que a tela roda — não é documentação pra IA. Um erro de sintaxe ou de lógica aqui quebra a tela na hora, sem passar por revisão. Só <b>SELECT</b>/<b>WITH</b> é aceito (qualquer outro comando é recusado ao salvar), e a chave abaixo precisa bater exatamente com a chave que o backend espera.</p>
+          </div>
+        )}
+
         <div>
-          <p className="text-xs font-semibold text-slate-500 mb-2">2. Título e módulo</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <p className="text-xs font-semibold text-slate-500 mb-2">2. Título e módulo{tipoAtual.perigoso ? ' (e chave da query)' : ''}</p>
+          <div className={`grid grid-cols-1 gap-4 ${tipoAtual.perigoso ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
             <input required value={form.titulo} onChange={(e) => setForm({ ...form, titulo: e.target.value })} placeholder={tipoAtual.placeholderTitulo} className="rounded-xl border px-3 py-2.5 text-sm" />
             <select value={form.modulo} onChange={(e) => setForm({ ...form, modulo: e.target.value })} className="rounded-xl border px-3 py-2.5 text-sm">
               {MODULOS.map((m) => <option key={m.id} value={m.id}>{m.nome}</option>)}
             </select>
+            {tipoAtual.perigoso && (
+              <input required value={form.chaveQuery} onChange={(e) => setForm({ ...form, chaveQuery: e.target.value })} placeholder="Chave (ex.: estoque.fornecedores)" className="rounded-xl border px-3 py-2.5 text-sm font-mono" />
+            )}
           </div>
         </div>
 
@@ -348,12 +487,15 @@ function PainelTreinamentoIA() {
             <tbody>
               {entradasFiltradas.length === 0 && <tr><td colSpan={6} className="p-8 text-center text-slate-400">Nenhuma entrada cadastrada ainda.</td></tr>}
               {entradasFiltradas.map((item) => {
-                const tipoInfo = TIPOS.find((t) => t.id === (item.Tipo ?? 'texto')) ?? TIPOS[2];
+                const tipoInfo = TIPOS.find((t) => t.id === (item.Tipo ?? 'texto')) ?? TIPOS.find((t) => t.id === 'texto')!;
                 const Icone = tipoInfo.icone;
                 return (
                   <tr key={item.ConfiguracaoIAId} className="border-t">
                     <td className="p-3"><span className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600"><Icone size={13} />{tipoInfo.nome}</span></td>
-                    <td className="p-3 font-medium max-w-xs truncate" title={item.Titulo}>{item.Titulo}</td>
+                    <td className="p-3 font-medium max-w-xs truncate" title={item.Titulo}>
+                      {item.Titulo}
+                      {item.ChaveQuery && <span className="block text-[10px] font-mono font-normal text-rose-600">{item.ChaveQuery}</span>}
+                    </td>
                     <td className="p-3 text-slate-600">{MODULOS.find((m) => m.id === item.Modulo)?.nome ?? item.Modulo}</td>
                     <td className="p-3">
                       <button onClick={() => alternarAtivo(item)} className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${item.Ativo ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'}`}>

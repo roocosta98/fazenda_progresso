@@ -1,6 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import sql from 'mssql';
 import { getMssqlPool } from './mssql.js';
+import { validarSomenteLeitura } from './querySistema.js';
 
 // Mesmo padrão de admin usado em usuariosSistema.ts: o proxy de autenticação do frontend
 // sobrescreve este header a partir da sessão logada — nunca é o navegador quem decide.
@@ -19,7 +20,10 @@ export async function treinamentoAtivo(modulo: string): Promise<string> {
     const pool = await getMssqlPool();
     const resultado = await pool.request()
       .input('modulo', sql.NVarChar, modulo)
-      .query(`SELECT Titulo, Conteudo, Tipo FROM dbo.ConfiguracaoIA WHERE Ativo=1 AND (Modulo=@modulo OR Modulo='geral') ORDER BY CASE Tipo WHEN 'schema' THEN 0 WHEN 'prompt' THEN 1 ELSE 2 END, AtualizadoEm DESC`);
+      // Tipo='query' fica de fora do contexto da IA de propósito: é SQL executável (ver
+      // querySistema.ts), não é texto explicativo pra IA ler — incluir aqui só jogaria a query
+      // inteira no prompt sem necessidade.
+      .query(`SELECT Titulo, Conteudo, Tipo FROM dbo.ConfiguracaoIA WHERE Ativo=1 AND Tipo<>'query' AND (Modulo=@modulo OR Modulo='geral') ORDER BY CASE Tipo WHEN 'schema' THEN 0 WHEN 'prompt' THEN 1 ELSE 2 END, AtualizadoEm DESC`);
     if (!resultado.recordset.length) return '';
     return resultado.recordset.map((linha) => `### [${RUBRICA_TIPO[linha.Tipo] ?? 'Conteúdo'}] ${linha.Titulo}\n${linha.Conteudo}`).join('\n\n');
   } catch (error) {
@@ -36,34 +40,46 @@ export async function configuracaoIA(req: VercelRequest, res: VercelResponse) {
   try {
     const pool = await getMssqlPool();
     if (req.method === 'GET') {
-      const resultado = await pool.request().query(`SELECT ConfiguracaoIAId, Titulo, Conteudo, Modulo, Tipo, Ativo, CriadoEm, AtualizadoEm, CriadoPor FROM dbo.ConfiguracaoIA ORDER BY AtualizadoEm DESC`);
+      const resultado = await pool.request().query(`SELECT ConfiguracaoIAId, Titulo, Conteudo, Modulo, Tipo, ChaveQuery, Ativo, CriadoEm, AtualizadoEm, CriadoPor FROM dbo.ConfiguracaoIA ORDER BY AtualizadoEm DESC`);
       return res.status(200).json(resultado.recordset);
     }
     if (req.method === 'POST') {
-      const { titulo, conteudo, modulo, tipo, criadoPor } = req.body ?? {};
+      const { titulo, conteudo, modulo, tipo, chaveQuery, criadoPor } = req.body ?? {};
       if (!String(titulo ?? '').trim() || !String(conteudo ?? '').trim()) return res.status(400).json({ error: 'Informe título e conteúdo.' });
+      if (tipo === 'query') {
+        if (!String(chaveQuery ?? '').trim()) return res.status(400).json({ error: 'Informe a chave da query (ex.: estoque.fornecedores).' });
+        const motivo = validarSomenteLeitura(String(conteudo));
+        if (motivo) return res.status(400).json({ error: `Query recusada: ${motivo}.` });
+      }
       const criado = await pool.request()
         .input('titulo', sql.NVarChar, String(titulo).trim())
         .input('conteudo', sql.NVarChar(sql.MAX), String(conteudo))
         .input('modulo', sql.NVarChar, String(modulo ?? 'estoque').trim() || 'estoque')
         .input('tipo', sql.NVarChar, String(tipo ?? 'texto').trim() || 'texto')
+        .input('chaveQuery', sql.NVarChar, tipo === 'query' ? String(chaveQuery).trim() : null)
         .input('criadoPor', sql.NVarChar, criadoPor ? String(criadoPor) : null)
-        .query(`INSERT INTO dbo.ConfiguracaoIA(Titulo,Conteudo,Modulo,Tipo,CriadoPor) OUTPUT INSERTED.ConfiguracaoIAId VALUES(@titulo,@conteudo,@modulo,@tipo,@criadoPor)`);
+        .query(`INSERT INTO dbo.ConfiguracaoIA(Titulo,Conteudo,Modulo,Tipo,ChaveQuery,CriadoPor) OUTPUT INSERTED.ConfiguracaoIAId VALUES(@titulo,@conteudo,@modulo,@tipo,@chaveQuery,@criadoPor)`);
       return res.status(201).json({ configuracaoIAId: criado.recordset[0].ConfiguracaoIAId });
     }
     if (req.method === 'PUT') {
       const id = Number(req.body?.id);
       if (!Number.isInteger(id)) return res.status(400).json({ error: 'id inválido.' });
-      const { titulo, conteudo, modulo, tipo, ativo } = req.body ?? {};
+      const { titulo, conteudo, modulo, tipo, chaveQuery, ativo } = req.body ?? {};
       if (!String(titulo ?? '').trim() || !String(conteudo ?? '').trim()) return res.status(400).json({ error: 'Informe título e conteúdo.' });
+      if (tipo === 'query') {
+        if (!String(chaveQuery ?? '').trim()) return res.status(400).json({ error: 'Informe a chave da query (ex.: estoque.fornecedores).' });
+        const motivo = validarSomenteLeitura(String(conteudo));
+        if (motivo) return res.status(400).json({ error: `Query recusada: ${motivo}.` });
+      }
       await pool.request()
         .input('id', sql.Int, id)
         .input('titulo', sql.NVarChar, String(titulo).trim())
         .input('conteudo', sql.NVarChar(sql.MAX), String(conteudo))
         .input('modulo', sql.NVarChar, String(modulo ?? 'estoque').trim() || 'estoque')
         .input('tipo', sql.NVarChar, String(tipo ?? 'texto').trim() || 'texto')
+        .input('chaveQuery', sql.NVarChar, tipo === 'query' ? String(chaveQuery).trim() : null)
         .input('ativo', sql.Bit, ativo ? 1 : 0)
-        .query(`UPDATE dbo.ConfiguracaoIA SET Titulo=@titulo, Conteudo=@conteudo, Modulo=@modulo, Tipo=@tipo, Ativo=@ativo, AtualizadoEm=SYSUTCDATETIME() WHERE ConfiguracaoIAId=@id`);
+        .query(`UPDATE dbo.ConfiguracaoIA SET Titulo=@titulo, Conteudo=@conteudo, Modulo=@modulo, Tipo=@tipo, ChaveQuery=@chaveQuery, Ativo=@ativo, AtualizadoEm=SYSUTCDATETIME() WHERE ConfiguracaoIAId=@id`);
       return res.status(200).json({ ok: true });
     }
     if (req.method === 'DELETE') {

@@ -9,6 +9,14 @@ export type EntradaChangelog = { data: string; hora?: string; itens: string[] };
 export const CHANGELOG: EntradaChangelog[] = [
   {
     data: '15/09/2026',
+    hora: '12:45:44',
+    itens: [
+      'Treinamento de IA ganhou um 4º tipo de entrada: "Query SQL executável" — permite substituir, de verdade, a query que uma tela do sistema roda, sem precisar mexer em código. Por enquanto só a Análise de Fornecedores (Estoque) está conectada a esse mecanismo (chave "estoque.fornecedores", já com um modelo pronto pra usar). Só SELECT/WITH é aceito; qualquer outro comando é recusado ao salvar, e um erro na query customizada volta sozinho pra query padrão do sistema (nunca derruba a tela).',
+      'Seletor de período ganhou mais opções: além de Últimos 7/15/30/60/90 dias, agora tem "Mês atual", "Trimestre atual" e "Ano atual".',
+    ],
+  },
+  {
+    data: '15/09/2026',
     hora: '14:55:09',
     itens: [
       '"Configuração de IA" virou "Configurações Gerais": agora tem duas abas — "Padrões do Sistema" (novo) e "Treinamento de IA" (o que já existia). A tela de treinamento ganhou "Modelos prontos", com 5 exemplos já preenchidos com o esquema real mapeado nesta instalação (critério de vitória em cotação, limites de status da frota, regra de status de estoque etc.) — só clicar em "Usar este modelo" pra revisar e adicionar.',
