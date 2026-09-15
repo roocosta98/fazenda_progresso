@@ -48,7 +48,7 @@ export const Login = () => {
             </div>
           </div>
           <p className="text-emerald-50 text-xl max-w-lg font-light leading-relaxed animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
-            Plataforma integrada para gestão de requisições e logística agropecuária.
+            Plataforma integrada com IA para gestão inteligente, automação de processos e eficiência operacional.
           </p>
         </div>
       </div>

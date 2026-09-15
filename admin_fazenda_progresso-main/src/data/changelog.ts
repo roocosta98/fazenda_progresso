@@ -9,6 +9,13 @@ export type EntradaChangelog = { data: string; hora?: string; itens: string[] };
 export const CHANGELOG: EntradaChangelog[] = [
   {
     data: '15/09/2026',
+    hora: '14:41:32',
+    itens: [
+      'Frase de apresentação na tela de login atualizada: agora fala de "gestão inteligente, automação de processos e eficiência operacional" com IA, em vez de só "gestão de requisições e logística agropecuária".',
+    ],
+  },
+  {
+    data: '15/09/2026',
     hora: '13:50:18',
     itens: [
       'Mensagem de erro mais clara em Padrões do Sistema quando a tabela de configurações ainda não existe no banco (antes mostrava o erro técnico do SQL Server puro).',
