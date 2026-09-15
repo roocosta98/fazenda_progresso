@@ -6,6 +6,8 @@ import { Login } from '../pages/auth/Login';
 import { MinhasSolicitacoes } from '../pages/solicitante/MinhasSolicitacoes';
 import { Dashboard } from '../pages/logistica/Dashboard';
 import { DashboardBI } from '../pages/logistica/DashboardBI';
+import { CentralAcoes as CentralAcoesLogistica } from '../pages/logistica/CentralAcoes';
+import { Analises as AnalisesLogistica } from '../pages/logistica/Analises';
 import { FilaPendentes } from '../pages/logistica/FilaPendentes';
 import { GestaoFrota } from '../pages/logistica/GestaoFrota';
 import { PainelMetas } from '../pages/logistica/PainelMetas';
@@ -65,12 +67,20 @@ export const AppRoutes = () => {
           path="/logistica/dashboard" 
           element={<ProtectedRoute allowedRoles={['logistica']}><Dashboard /></ProtectedRoute>} 
         />
-        <Route 
-          path="/logistica/bi" 
-          element={<ProtectedRoute allowedRoles={['logistica']}><DashboardBI /></ProtectedRoute>} 
+        <Route
+          path="/logistica/bi"
+          element={<ProtectedRoute allowedRoles={['logistica']}><DashboardBI /></ProtectedRoute>}
         />
-        <Route 
-          path="/logistica/pendentes" 
+        <Route
+          path="/logistica/central-de-acoes"
+          element={<ProtectedRoute allowedRoles={['logistica']}><CentralAcoesLogistica /></ProtectedRoute>}
+        />
+        <Route
+          path="/logistica/analises"
+          element={<ProtectedRoute allowedRoles={['logistica']}><AnalisesLogistica /></ProtectedRoute>}
+        />
+        <Route
+          path="/logistica/pendentes"
           element={<ProtectedRoute allowedRoles={['logistica']}><FilaPendentes /></ProtectedRoute>} 
         />
         <Route
