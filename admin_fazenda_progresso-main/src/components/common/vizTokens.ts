@@ -57,5 +57,16 @@ export const primeiroDiaMesISO = () => {
   return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split('T')[0];
 };
 
+export const primeiroDiaTrimestreISO = () => {
+  const d = new Date();
+  const mesTrimestre = Math.floor(d.getMonth() / 3) * 3;
+  return new Date(d.getFullYear(), mesTrimestre, 1).toISOString().split('T')[0];
+};
+
+export const primeiroDiaAnoISO = () => {
+  const d = new Date();
+  return new Date(d.getFullYear(), 0, 1).toISOString().split('T')[0];
+};
+
 export const somar = <T,>(lista: T[], pegar: (item: T) => number | null | undefined) =>
   lista.reduce((acc, item) => acc + (pegar(item) ?? 0), 0);

@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { exigirAcessoCustos } from './custosAuth.js';
+import { carregarQuerySql } from './querySistema.js';
 
 let tokenSankhya: { valor: string; expiraEm: number } | null = null;
 
@@ -68,6 +69,13 @@ function periodoEstoque(req: VercelRequest): { dataInicio: string; dataFim: stri
   return { dataInicio, dataFim, dias };
 }
 
+// Grupos de produto que não fazem sentido pro controle de estoque operacional (materiais de
+// escritório, imobilizado, serviços tomados, energia elétrica, produtos obsoletos etc). Aplicado
+// em toda tela de Estoque, EXCETO o KPI "Valor total em estoque" (VALORTOTALESTOQUE), que deve
+// continuar somando o valor de todos os grupos. Exportado pro mesmo valor poder ser usado como
+// placeholder {{filtroGrupo}} de uma query customizada em querySistema.ts.
+export const FILTRO_GRUPO_ESTOQUE = 'GRU.CODGRUPAI NOT IN (9000000,13000000,15000000,16000000,22000000,23000000,24000000,25000000,27000000,29000000,98000000)';
+
 // As consultas reproduzem o módulo de estoque recebido: dados reais do
 // Sankhya (TGF*) e cada seção é independente para um schema incompleto não
 // derrubar o painel inteiro. Ruptura, Curva ABC, sem movimentação e cotações refletem o
@@ -75,11 +83,7 @@ function periodoEstoque(req: VercelRequest): { dataInicio: string; dataFim: stri
 // (giro/KPI) e a Análise de Fornecedores (cotações no período) variam com o filtro de data da tela.
 function montarConsultas(dataInicio: string, dataFim: string, dias: number) {
   const filtroData = `CAB.DTNEG >= CONVERT(date,'${dataInicio}',23) AND CAB.DTNEG < DATEADD(DAY,1,CONVERT(date,'${dataFim}',23))`;
-  // Grupos de produto que não fazem sentido pro controle de estoque operacional (materiais de
-  // escritório, imobilizado, serviços tomados, energia elétrica, produtos obsoletos etc). Aplicado
-  // em toda tela de Estoque, EXCETO o KPI "Valor total em estoque" (VALORTOTALESTOQUE), que deve
-  // continuar somando o valor de todos os grupos.
-  const filtroGrupo = 'GRU.CODGRUPAI NOT IN (9000000,13000000,15000000,16000000,22000000,23000000,24000000,25000000,27000000,29000000,98000000)';
+  const filtroGrupo = FILTRO_GRUPO_ESTOQUE;
   return {
   // Éder pediu pra não considerar lote na ruptura: TGFEST tem uma linha por (produto, local,
   // lote), e comparar o saldo de UM lote contra o mínimo do PRODUTO (P.ESTMIN, que não é por
@@ -409,6 +413,13 @@ export async function painelEstoque(req: VercelRequest, res: VercelResponse) {
   try {
     const { dataInicio, dataFim, dias } = periodoEstoque(req);
     const consultas = montarConsultas(dataInicio, dataFim, dias);
+    // Única query deste painel com override editável (pedido do Cássio): se houver uma entrada
+    // ativa Tipo='query'/ChaveQuery='estoque.fornecedores' em Configurações Gerais > Treinamento
+    // de IA, ela substitui a Análise de Fornecedores abaixo. Ver api/_lib/querySistema.ts pros
+    // guardas de segurança (só SELECT/WITH) e o padrão pra estender a outras queries do sistema.
+    consultas.fornecedores = await carregarQuerySql('estoque.fornecedores', consultas.fornecedores, {
+      dataInicio, dataFim, dias, filtroGrupo: FILTRO_GRUPO_ESTOQUE,
+    });
     const erros: Record<string, string> = {};
     const executar = async (nome: keyof typeof consultas) => {
       try { return await consultarSankhya(consultas[nome]); }
