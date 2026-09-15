@@ -103,6 +103,19 @@ function montarConsultas(dataInicio: string, dataFim: string, dias: number) {
     WHERE P.ATIVO='S' AND ${filtroGrupo}
       AND (GIR.PRODFALTA='S' OR (P.ESTMIN IS NOT NULL AND ISNULL(EST.ESTOQUE,0)<=P.ESTMIN))
     ORDER BY GIR.DIASRUPTURA DESC, EST.ESTOQUE ASC`,
+  // Espelha a query de ruptura acima, só que pro lado oposto: estoque acima do máximo cadastrado
+  // (capital parado). CUSTO vem do último custo lançado (mesma fonte da query "valor"), pra dar
+  // o valor parado real em vez de só a quantidade — nunca uma estimativa.
+  excesso: `SELECT TOP 2000 P.CODPROD, P.DESCRPROD, P.REFERENCIA,
+      ISNULL(EST.ESTOQUE,0) AS ESTOQUE, P.ESTMIN AS MINIMO, P.ESTMAX AS MAXIMO,
+      CUS.CUSTO, ISNULL(EST.ESTOQUE,0)*ISNULL(CUS.CUSTO,0) AS VALORPARADO
+    FROM TGFPRO P
+      INNER JOIN TGFGRU GRU ON GRU.CODGRUPOPROD=P.CODGRUPOPROD
+      OUTER APPLY (SELECT SUM(E.ESTOQUE) AS ESTOQUE FROM TGFEST E WHERE E.CODPROD=P.CODPROD AND E.CODEMP=1) EST
+      OUTER APPLY (SELECT TOP 1 COALESCE(C.CUSMEDICM,C.CUSSEMICM) AS CUSTO FROM TGFCUS C WHERE C.CODPROD=P.CODPROD AND C.CODEMP=1 ORDER BY C.DTATUAL DESC,C.NUNOTA DESC) CUS
+    WHERE P.ATIVO='S' AND ${filtroGrupo}
+      AND P.ESTMAX IS NOT NULL AND P.ESTMAX>0 AND ISNULL(EST.ESTOQUE,0)>P.ESTMAX
+    ORDER BY (ISNULL(EST.ESTOQUE,0)-P.ESTMAX) DESC`,
   // Query fornecida pelo Eder: estoque real (local padrão + outros locais, já líquido de
   // reservado), quantidade a comprar, última movimentação de saída e há quantos dias está parado,
   // excluindo os grupos de produto que não fazem sentido pra controle de giro (materiais de
@@ -425,8 +438,8 @@ export async function painelEstoque(req: VercelRequest, res: VercelResponse) {
       try { return await consultarSankhya(consultas[nome]); }
       catch (error) { erros[nome] = error instanceof Error ? error.message : 'Falha na consulta'; return []; }
     };
-    const [ruptura, semMovimentacao, valor, curvaAbc, fornecedores, cotacoes, cotacoesPorSituacao, giroProdutos, distribuicaoLocal, kpiRows] = await Promise.all([
-      executar('ruptura'), executar('semMovimentacao'), executar('valor'), executar('curvaAbc'), executar('fornecedores'), executar('cotacoes'), executar('cotacoesPorSituacao'), executar('giroProdutos'), executar('distribuicaoLocal'), executar('kpis'),
+    const [ruptura, excesso, semMovimentacao, valor, curvaAbc, fornecedores, cotacoes, cotacoesPorSituacao, giroProdutos, distribuicaoLocal, kpiRows] = await Promise.all([
+      executar('ruptura'), executar('excesso'), executar('semMovimentacao'), executar('valor'), executar('curvaAbc'), executar('fornecedores'), executar('cotacoes'), executar('cotacoesPorSituacao'), executar('giroProdutos'), executar('distribuicaoLocal'), executar('kpis'),
     ]);
     const kpis = kpiRows[0] ?? {};
     // Giro = Requisições / Estoque médio (guia do Éder — nunca soma compra+requisição, e usa a
@@ -439,7 +452,7 @@ export async function painelEstoque(req: VercelRequest, res: VercelResponse) {
     const estoqueInicialGiro = estoqueAtualGiro - compraLiquidaPeriodo + consumoPeriodo;
     const estoqueMedioGiro = (estoqueInicialGiro + estoqueAtualGiro) / 2;
     const giroEstoque = estoqueMedioGiro > 0 ? consumoPeriodo / estoqueMedioGiro : null;
-    res.status(200).json({ ruptura, semMovimentacao, valor, curvaAbc, fornecedores, cotacoes, cotacoesPorSituacao, giroProdutos, distribuicaoLocal, kpis: { ...kpis, giroEstoque }, periodo: { dataInicio, dataFim }, erros });
+    res.status(200).json({ ruptura, excesso, semMovimentacao, valor, curvaAbc, fornecedores, cotacoes, cotacoesPorSituacao, giroProdutos, distribuicaoLocal, kpis: { ...kpis, giroEstoque }, periodo: { dataInicio, dataFim }, erros });
   } catch (error) {
     res.status(502).json({ error: 'Não foi possível conectar ao banco de dados de estoque.', detalhe: error instanceof Error ? error.message : undefined });
   }
