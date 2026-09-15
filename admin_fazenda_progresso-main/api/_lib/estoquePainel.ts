@@ -75,19 +75,13 @@ function periodoEstoque(req: VercelRequest): { dataInicio: string; dataFim: stri
 // continuar somando o valor de todos os grupos. Exportado pro mesmo valor poder ser usado como
 // placeholder {{filtroGrupo}} de uma query customizada em querySistema.ts.
 //
-// Sobe a árvore de grupos (TGFGRU.CODGRUPAI aponta pro pai) em vez de comparar só o pai direto:
-// comparar apenas GRU.CODGRUPAI contra a lista deixava passar qualquer grupo aninhado dois ou
-// mais níveis abaixo de um grupo excluído (caso real: itens de vinho/insumo de vinícola
-// aparecendo como "crítico" em Análises porque seu grupo folha não era filho direto de nenhum
-// código da lista, só neto/bisneto).
-export const FILTRO_GRUPO_ESTOQUE = `NOT EXISTS (
-      WITH GrupoAncestrais AS (
-        SELECT GRU.CODGRUPOPROD AS CODGRUPO
-        UNION ALL
-        SELECT G2.CODGRUPAI FROM TGFGRU G2 INNER JOIN GrupoAncestrais A ON G2.CODGRUPOPROD = A.CODGRUPO WHERE G2.CODGRUPAI IS NOT NULL
-      )
-      SELECT 1 FROM GrupoAncestrais WHERE CODGRUPO IN (9000000,13000000,15000000,16000000,22000000,23000000,24000000,25000000,27000000,29000000,98000000)
-    )`;
+// TENTATIVA REVERTIDA: uma versão anterior tentou subir a árvore inteira com uma CTE recursiva
+// dentro de NOT EXISTS (...) e zerou o painel inteiro em produção — o gateway Sankhya
+// (DbExplorerSP) não aceita esse SQL do jeito que o SQL Server aceitaria. Voltamos a comparar só
+// o pai direto (GRU.CODGRUPAI), que é o comportamento validado com o Marcos desde o início. Subir
+// mais de um nível na árvore fica pendente até validar a sintaxe direto no banco antes de subir
+// pra produção de novo.
+export const FILTRO_GRUPO_ESTOQUE = 'GRU.CODGRUPAI NOT IN (9000000,13000000,15000000,16000000,22000000,23000000,24000000,25000000,27000000,29000000,98000000)';
 
 // As consultas reproduzem o módulo de estoque recebido: dados reais do
 // Sankhya (TGF*) e cada seção é independente para um schema incompleto não
