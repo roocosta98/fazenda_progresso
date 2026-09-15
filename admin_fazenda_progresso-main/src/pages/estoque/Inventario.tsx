@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Bar, BarChart, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { AlertTriangle, ArrowUpCircle, BarChart3, Boxes, MapPinOff, Sparkles, Timer } from 'lucide-react';
 import {
   FiltroDataEstoque, TabelaInterativa, comStatusEstoque, numero, useEstoquePainel, type FiltroSituacaoTabela, type Linha,
@@ -8,6 +9,48 @@ import { SugestoesAutomaticas } from './SugestoesAutomaticas';
 import { Carregando, SemDado } from '../../components/common/viz';
 
 type Aba = 'ruptura' | 'curvaAbc' | 'semMovimentacao' | 'giro';
+
+// Mesma paleta categórica validada (dataviz skill) do resto do módulo.
+const COR_CATEGORICA = ['#2a78d6', '#eb6834', '#1baf7a'];
+
+function truncar(texto: string, tamanho: number) {
+  return texto.length > tamanho ? `${texto.slice(0, tamanho - 1)}…` : texto;
+}
+
+// Gráfico de barra horizontal com destaque do item nº 1 — usado nas abas "Giro por produto" e
+// "Itens sem movimentação". Todo número vem direto da linha original (CONSUMO, GIRO_ESTOQUE,
+// DIAS_SEM_USO), nunca calculado ou estimado aqui.
+function GraficoTopItens({ titulo, itens, corBarra, rotuloDestaque, formatarValor, formatarEixo }: {
+  titulo: string; corBarra: string; rotuloDestaque: string;
+  itens: { nome: string; valor: number; apoio?: string }[];
+  formatarValor: (v: number) => string; formatarEixo?: (v: number) => string;
+}) {
+  const destaque = itens[0];
+  if (!destaque) return null;
+  return (
+    <section className="bg-white border border-slate-200/80 rounded-2xl p-4 mb-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <h3 className="font-bold text-slate-800 text-sm flex items-center gap-2"><BarChart3 size={15} className="text-emerald-600" />{titulo}</h3>
+        <div className="text-right">
+          <p className="text-[10px] uppercase font-bold text-slate-400">{rotuloDestaque}</p>
+          <p className="text-sm font-bold text-slate-800">{truncar(destaque.nome, 28)}</p>
+          <p className="text-xs text-emerald-700 font-semibold">{formatarValor(destaque.valor)}</p>
+        </div>
+      </div>
+      {destaque.apoio && <p className="text-xs text-emerald-700 mt-2 flex items-start gap-1.5"><Sparkles size={13} className="shrink-0 mt-0.5" />{destaque.apoio}</p>}
+      <ResponsiveContainer width="100%" height={Math.max(itens.length * 32, 160)}>
+        <BarChart data={itens} layout="vertical" margin={{ left: 8, right: 36, top: 8 }}>
+          <XAxis type="number" tick={{ fontSize: 10, fill: '#898781' }} axisLine={false} tickLine={false} tickFormatter={formatarEixo ?? ((v: number) => numero(v))} />
+          <YAxis dataKey="nome" type="category" width={150} tick={{ fontSize: 10, fill: '#52514e' }} axisLine={false} tickLine={false} tickFormatter={(v: string) => truncar(v, 22)} />
+          <Tooltip formatter={(v) => formatarValor(Number(v))} labelFormatter={(v) => v} />
+          <Bar dataKey="valor" fill={corBarra} radius={[0, 4, 4, 0]} barSize={14}>
+            <LabelList dataKey="valor" position="right" style={{ fontSize: 10, fill: '#52514e' }} formatter={(v) => formatarValor(Number(v))} />
+          </Bar>
+        </BarChart>
+      </ResponsiveContainer>
+    </section>
+  );
+}
 
 const ABAS: { chave: Aba; rotulo: string; subtitulo: string }[] = [
   { chave: 'ruptura', rotulo: 'Ruptura e estoque mínimo/máximo', subtitulo: 'Itens sinalizados para reposição ou abaixo do mínimo configurado.' },
@@ -46,6 +89,33 @@ export function Inventario() {
     const validos = (dados?.giroProdutos ?? []).map((l) => Number(l.DIAS_COBERTURA)).filter((v) => Number.isFinite(v) && v > 0);
     if (!validos.length) return null;
     return validos.reduce((s, v) => s + v, 0) / validos.length;
+  }, [dados]);
+
+  // Top consumo por requisição no período filtrado — mesma ordenação já usada pelo backend
+  // (ORDER BY CONSUMO DESC), só recortada pro gráfico. GIRO_ESTOQUE do item nº 1 vem direto da
+  // linha, nunca calculado de novo aqui.
+  const topConsumo = useMemo(() => {
+    const linhas = [...(dados?.giroProdutos ?? [])]
+      .map((l) => ({ nome: String(l.DESCRPROD ?? ''), valor: Number(l.CONSUMO ?? 0), giro: l.GIRO_ESTOQUE != null ? Number(l.GIRO_ESTOQUE) : null }))
+      .filter((l) => l.valor > 0)
+      .sort((a, b) => b.valor - a.valor)
+      .slice(0, 8);
+    const destaque = linhas[0];
+    const apoio = destaque && destaque.giro != null ? `O produto "${destaque.nome}" tem giro de estoque de ${numero(destaque.giro, 2)}.` : undefined;
+    return linhas.map((l, i) => (i === 0 ? { ...l, apoio } : l));
+  }, [dados]);
+
+  // Top produtos parados há mais tempo, com saldo em estoque (mesmo recorte SITUACAO='S' já
+  // usado na lista "Itens sem movimentação" abaixo).
+  const topParados = useMemo(() => {
+    const linhas = (dados?.semMovimentacao ?? [])
+      .filter((l) => String(l.SITUACAO) === 'S')
+      .map((l) => ({ nome: String(l.DESCRPROD ?? ''), valor: Number(l.DIAS_SEM_USO ?? 0) }))
+      .sort((a, b) => b.valor - a.valor)
+      .slice(0, 8);
+    const destaque = linhas[0];
+    const apoio = destaque ? `O produto "${destaque.nome}" está sem movimentação há ${numero(destaque.valor)} dias.` : undefined;
+    return linhas.map((l, i) => (i === 0 ? { ...l, apoio } : l));
   }, [dados]);
 
   const distribuicaoLocal = useMemo(() => {
@@ -97,7 +167,17 @@ export function Inventario() {
           </div>
           <div className="p-5">
             <p className="text-xs text-slate-500 mb-1">{ABAS.find((a) => a.chave === aba)?.subtitulo}</p>
-            {atual.insight && <p className="text-xs text-emerald-700 mb-3 flex items-start gap-1.5"><Sparkles size={13} className="shrink-0 mt-0.5" />{atual.insight}</p>}
+            {aba === 'giro' && topConsumo.length > 0 && (
+              <GraficoTopItens titulo="Maior consumo por requisição (período filtrado)" corBarra={COR_CATEGORICA[0]}
+                rotuloDestaque="Maior consumo no período" itens={topConsumo}
+                formatarValor={(v) => `${numero(v)} un.`} />
+            )}
+            {aba === 'semMovimentacao' && topParados.length > 0 && (
+              <GraficoTopItens titulo="Produtos parados há mais tempo" corBarra={COR_CATEGORICA[1]}
+                rotuloDestaque="Parado há mais tempo" itens={topParados}
+                formatarValor={(v) => `${numero(v)} dias`} />
+            )}
+            {aba !== 'giro' && aba !== 'semMovimentacao' && atual.insight && <p className="text-xs text-emerald-700 mb-3 flex items-start gap-1.5"><Sparkles size={13} className="shrink-0 mt-0.5" />{atual.insight}</p>}
             {atual.nota && <pre className="text-xs text-slate-500 whitespace-pre-wrap font-sans bg-slate-50 border border-slate-200/80 rounded-xl p-3 mb-3">{atual.nota}</pre>}
             {atual.erro
               ? <p className="text-xs bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-3">Esta seção não pôde ser carregada: {atual.erro}</p>
