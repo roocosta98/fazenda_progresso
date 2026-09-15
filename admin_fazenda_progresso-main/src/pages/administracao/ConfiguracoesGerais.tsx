@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AlertTriangle, BrainCircuit, Calendar, Database, FileUp, MessageSquareText, Pencil, Plus, Settings, Sparkles, Terminal, Trash2, Wand2, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
-import { useConfiguracaoGeral, invalidarCacheConfiguracaoGeral, PRAZO_PADRAO_DIAS_FALLBACK } from '../../hooks/useConfiguracaoGeral';
+import { useConfiguracaoGeral, invalidarCacheConfiguracaoGeral, PERIODO_PADRAO_FALLBACK, type TipoPeriodoPadrao } from '../../hooks/useConfiguracaoGeral';
 
 const API_URL = import.meta.env.VITE_API_URL ?? '';
 const MODULOS = [
@@ -222,15 +222,23 @@ const FORM_VAZIO = { titulo: '', conteudo: '', modulo: 'estoque', tipo: 'texto' 
 
 type Aba = 'geral' | 'ia';
 
+const OPCOES_TIPO_PERIODO: { id: TipoPeriodoPadrao; nome: string }[] = [
+  { id: 'dias', nome: 'Últimos N dias' },
+  { id: 'mes_atual', nome: 'Mês atual' },
+  { id: 'trimestre_atual', nome: 'Trimestre atual' },
+  { id: 'ano_atual', nome: 'Ano atual' },
+];
+
 function PainelPadroesDoSistema() {
   const { usuario } = useAuth();
-  const { prazoPadraoDias, carregado } = useConfiguracaoGeral();
-  const [valor, setValor] = useState(PRAZO_PADRAO_DIAS_FALLBACK);
+  const { periodoPadrao, carregado } = useConfiguracaoGeral();
+  const [tipo, setTipo] = useState<TipoPeriodoPadrao>(PERIODO_PADRAO_FALLBACK.tipo);
+  const [dias, setDias] = useState(PERIODO_PADRAO_FALLBACK.dias);
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [sucesso, setSucesso] = useState(false);
 
-  useEffect(() => { if (carregado) setValor(prazoPadraoDias); }, [carregado, prazoPadraoDias]);
+  useEffect(() => { if (carregado) { setTipo(periodoPadrao.tipo); setDias(periodoPadrao.dias); } }, [carregado, periodoPadrao]);
 
   const salvar = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -239,7 +247,7 @@ function PainelPadroesDoSistema() {
       const resposta = await fetch(`${API_URL}/api/administracao/geral`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'x-user-type': usuario?.tipoUsuario ?? '' },
-        body: JSON.stringify({ prazoPadraoDias: valor }),
+        body: JSON.stringify({ tipo, dias }),
       });
       const corpo = await resposta.json();
       if (!resposta.ok) throw new Error(corpo.error);
@@ -256,15 +264,25 @@ function PainelPadroesDoSistema() {
           <Calendar size={18} className="text-emerald-600" /> Período padrão dos filtros de data
         </div>
         <p className="text-sm text-slate-500">
-          Define o período relativo (últimos N dias) que os filtros de data de Estoque e Logística abrem por padrão, em vez de um intervalo fixo "de-até". O usuário sempre pode trocar pra outro preset ou escolher "Personalizado" na hora.
+          Define com que período os filtros "De"/"Até" de Estoque e Logística já abrem preenchidos. O usuário sempre vê e pode editar as duas datas livremente na tela — isso só decide o valor inicial.
         </p>
-        <div className="flex items-center gap-3">
-          <input type="number" min={1} max={365} value={valor} onChange={(e) => setValor(Number(e.target.value))}
-            className="w-28 rounded-xl border px-3 py-2.5 text-sm font-semibold text-center" />
-          <span className="text-sm text-slate-600">dias</span>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          {OPCOES_TIPO_PERIODO.map((opcao) => (
+            <button key={opcao.id} type="button" onClick={() => setTipo(opcao.id)}
+              className={`rounded-xl border-2 px-3 py-2.5 text-sm font-bold transition-colors ${tipo === opcao.id ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-slate-200 text-slate-600 hover:border-slate-300'}`}>
+              {opcao.nome}
+            </button>
+          ))}
         </div>
+        {tipo === 'dias' && (
+          <div className="flex items-center gap-3">
+            <input type="number" min={1} max={365} value={dias} onChange={(e) => setDias(Number(e.target.value))}
+              className="w-28 rounded-xl border px-3 py-2.5 text-sm font-semibold text-center" />
+            <span className="text-sm text-slate-600">dias</span>
+          </div>
+        )}
         {erro && <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">{erro}</div>}
-        {sucesso && <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800">Prazo padrão salvo. Já vale pra próxima vez que qualquer tela de filtro de período for aberta.</div>}
+        {sucesso && <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800">Período padrão salvo. Já vale pra próxima vez que qualquer tela de filtro de data for aberta.</div>}
         <button disabled={salvando} className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50">
           {salvando ? 'Salvando…' : 'Salvar padrão'}
         </button>
