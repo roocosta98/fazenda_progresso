@@ -67,12 +67,12 @@ export const ROTULOS_COLUNAS: Record<string, string> = {
   QTD_COMPRAR: 'Qtd. sugerida p/ compra', CODLOCALPADRAO: 'Estoque local padrão', DESCRLOCAL_PADRAO: 'Local padrão (detalhe)',
   OUTROS_LOCAIS: 'Estoque outros locais', DESC_OUTROS_LOCAIS: 'Outros locais (detalhe)', TOTAL: 'Valor total',
   UTILIZADO: 'Último ano utilizado', DIAS_SEM_USO: 'Dias sem uso', ULTIMA_MOV: 'Última movimentação',
-  // Análise de Fornecedores (script da Fazenda Progresso) — Supplier Score e indicadores dos
-  // últimos 90 dias.
+  // Análise de Fornecedores (script da Fazenda Progresso) — Supplier Score e indicadores das
+  // cotações do período filtrado na tela (mesmo filtro de data usado no giro de estoque).
   RANKING_GERAL: 'Ranking', SUPPLIER_SCORE: 'Supplier Score', FAIXA_SUPPLIER_SCORE: 'Faixa',
   SCORE_VITORIA: 'Score vitória (35%)', SCORE_COMPETITIVIDADE: 'Score competitividade (30%)',
   SCORE_PRAZO: 'Score prazo (15%)', SCORE_COBERTURA: 'Score cobertura (10%)', SCORE_VOLUME: 'Score volume (10%)',
-  TOTAL_COTACOES: 'Total de cotações (90d)', COTACOES_RESPONDIDAS: 'Cotações respondidas', COTACOES_VENCIDAS: 'Cotações vencidas',
+  TOTAL_COTACOES: 'Total de cotações (período)', COTACOES_RESPONDIDAS: 'Cotações respondidas', COTACOES_VENCIDAS: 'Cotações vencidas',
   COTACOES_SEM_VITORIA: 'Cotações sem vitória', ITENS_COTADOS: 'Itens cotados', ITENS_VENCIDOS: 'Itens vencidos',
   ITENS_NAO_VENCIDOS: 'Itens não vencidos', TAXA_RESPOSTA_PCT: 'Taxa de resposta', TAXA_VITORIA_PCT: 'Taxa de vitória (itens)',
   TAXA_VITORIA_COTACAO_PCT: 'Taxa de vitória (cotações)', PRAZO_MEDIO_DIAS: 'Prazo médio (dias)',
@@ -81,11 +81,11 @@ export const ROTULOS_COLUNAS: Record<string, string> = {
   COMPETITIVIDADE_PRECO_PCT: 'Competitividade de preço', COMPETITIVIDADE_PRECO_MEDIA_PCT: 'Competitividade de preço (média)',
   STATUS_COMPETITIVIDADE: 'Competitividade', ITENS_COM_COMPARACAO_PRECO: 'Itens com comparação de preço',
   ECONOMIA_LIQUIDA_VS_MEDIA: 'Economia líquida vs. média', ECONOMIA_POSITIVA_VS_MEDIA: 'Economia (quando favorável)',
-  PRIMEIRA_COTACAO_PERIODO: 'Primeira cotação (90d)', ULTIMA_COTACAO: 'Última cotação',
+  PRIMEIRA_COTACAO_PERIODO: 'Primeira cotação (período)', ULTIMA_COTACAO: 'Última cotação',
   RAZAOSOCIAL: 'Razão social', CNPJ_CPF: 'CNPJ/CPF', CODPARC: 'Código parceiro',
-  FORNECEDORES_ATIVOS_90D: 'Fornecedores ativos (90d)', MELHOR_PRAZO_MEDIO_90D: 'Melhor prazo médio (90d)',
-  MAIOR_TAXA_VITORIA_90D: 'Maior taxa de vitória (90d)', CATEGORIAS_ATENDIDAS_90D: 'Categorias atendidas (90d)',
-  ECONOMIA_ACUMULADA_90D: 'Economia acumulada (90d)',
+  FORNECEDORES_ATIVOS_PERIODO: 'Fornecedores ativos (período)', MELHOR_PRAZO_MEDIO_PERIODO: 'Melhor prazo médio (período)',
+  MAIOR_TAXA_VITORIA_PERIODO: 'Maior taxa de vitória (período)', CATEGORIAS_ATENDIDAS_PERIODO: 'Categorias atendidas (período)',
+  ECONOMIA_ACUMULADA_PERIODO: 'Economia acumulada (período)',
 };
 export const rotuloColuna = (chave: string) => ROTULOS_COLUNAS[chave]
   ?? chave.replace(/_/g, ' ').toLowerCase().replace(/^\p{L}/u, (letra) => letra.toUpperCase());
@@ -265,7 +265,7 @@ export function FiltroDataEstoque({ dataDe, setDataDe, dataAte, setDataAte, carr
         <input type="date" value={dataAte} min={dataDe} onChange={(e) => setDataAte(e.target.value)}
           className="px-3 py-1.5 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl text-slate-700" />
       </div>
-      <p className="text-[11px] text-slate-400">Filtra o consumo/giro por requisição. Ruptura, Curva ABC, cotações e fornecedores mostram sempre o cadastro atual.</p>
+      <p className="text-[11px] text-slate-400">Filtra o consumo/giro por requisição e as cotações da Análise de Fornecedores. Ruptura, Curva ABC e cotações em aberto mostram sempre o cadastro atual.</p>
       <button onClick={carregar} disabled={carregando}
         className="ml-auto inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-bold disabled:opacity-60">
         <RefreshCw size={16} className={carregando ? 'animate-spin' : ''} /> Atualizar

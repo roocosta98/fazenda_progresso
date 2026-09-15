@@ -252,7 +252,7 @@ export function DashboardEstoque() {
     <ModalExpandido aberto={modalAberto === 'parados'} onFechar={() => setModalAberto(null)} titulo="Itens sem movimentação" subtitulo="Produtos sem saída (consumo, produção ou baixa) por 90 dias ou mais.">
       <TabelaInterativa linhas={dados?.semMovimentacao ?? []} filtroSituacao={{ coluna: 'SITUACAO', rotuloSim: 'Com estoque', rotuloNao: 'Sem estoque' }} />
     </ModalExpandido>
-    <ModalExpandido aberto={modalAberto === 'fornecedores'} onFechar={() => setModalAberto(null)} titulo="Ranking de fornecedores" subtitulo="Histórico de cotações: prazo, vitórias e produtos distintos cotados.">
+    <ModalExpandido aberto={modalAberto === 'fornecedores'} onFechar={() => setModalAberto(null)} titulo="Ranking de fornecedores" subtitulo="Cotações do período filtrado: Supplier Score, prazo, vitórias e produtos distintos cotados.">
       <TabelaInterativa linhas={dados?.fornecedores ?? []} />
     </ModalExpandido>
     <ModalExpandido aberto={modalAberto === 'cotacoes'} onFechar={() => setModalAberto(null)} titulo="Cotações em aberto" subtitulo="Cotações com pelo menos um item ainda não fechado ou cancelado.">
