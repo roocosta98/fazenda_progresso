@@ -9,6 +9,14 @@ export type EntradaChangelog = { data: string; hora?: string; itens: string[] };
 export const CHANGELOG: EntradaChangelog[] = [
   {
     data: '15/09/2026',
+    hora: '14:55:09',
+    itens: [
+      '"Configuração de IA" virou "Configurações Gerais": agora tem duas abas — "Padrões do Sistema" (novo) e "Treinamento de IA" (o que já existia). A tela de treinamento ganhou "Modelos prontos", com 5 exemplos já preenchidos com o esquema real mapeado nesta instalação (critério de vitória em cotação, limites de status da frota, regra de status de estoque etc.) — só clicar em "Usar este modelo" pra revisar e adicionar.',
+      'Novo em "Padrões do Sistema": o período padrão dos filtros de data (hoje 30 dias) fica configurável. Os filtros de Estoque e Logística trocaram o "de-até" fixo por um seletor de período relativo (Últimos 7/15/30/60/90 dias, com o padrão configurado em destaque, ou "Personalizado" pra escolher datas específicas).',
+    ],
+  },
+  {
+    data: '15/09/2026',
     hora: '11:32:04',
     itens: [
       'Menu de Logística reduzido: "Metas & Ranking" e "Avaliação de Condução" agora ficam dentro de um grupo "Metas"; "Telemetria & Mapa" e "Monitor TV" dentro de um grupo "Monitoramento". Cada grupo abre/fecha independente (antes um clique abria ou fechava todos juntos).',
