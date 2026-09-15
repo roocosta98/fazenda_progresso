@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { cabecalhoPerfil } from '../utils/apiAuth';
+import type { PerfilUsuario } from '../types';
 
 const API_URL = import.meta.env.VITE_API_URL ?? '';
 export const PRAZO_PADRAO_DIAS_FALLBACK = 30;
@@ -12,7 +13,7 @@ export const PRAZO_PADRAO_DIAS_FALLBACK = 30;
 let cache: number | null = null;
 let promessaEmAndamento: Promise<number> | null = null;
 
-async function buscarPrazoPadrao(perfil?: string): Promise<number> {
+async function buscarPrazoPadrao(perfil?: PerfilUsuario): Promise<number> {
   if (cache !== null) return cache;
   if (!promessaEmAndamento) {
     promessaEmAndamento = fetch(`${API_URL}/api/administracao/geral`, { headers: cabecalhoPerfil(perfil) })
