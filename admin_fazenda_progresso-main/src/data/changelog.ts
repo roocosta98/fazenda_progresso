@@ -9,6 +9,14 @@ export type EntradaChangelog = { data: string; hora?: string; itens: string[] };
 export const CHANGELOG: EntradaChangelog[] = [
   {
     data: '15/09/2026',
+    hora: '11:32:04',
+    itens: [
+      'Menu de Logística reduzido: "Metas & Ranking" e "Avaliação de Condução" agora ficam dentro de um grupo "Metas"; "Telemetria & Mapa" e "Monitor TV" dentro de um grupo "Monitoramento". Cada grupo abre/fecha independente (antes um clique abria ou fechava todos juntos).',
+      'Logística ganhou "Central de Ações" e "Análises", no mesmo espírito das telas já existentes em Estoque: veículos sem comunicação ou com alarme, motoristas abaixo do ponto de equilíbrio ou com avaliação de condução baixa, e insights de custo ainda não resolvidos, tudo priorizado por impacto — e gráficos de custo operacional, custo por frente/fazenda, ranking de motoristas e distribuição das avaliações de condução.',
+    ],
+  },
+  {
+    data: '15/09/2026',
     hora: '11:18:53',
     itens: [
       'Corrigido o critério de "venceu a cotação" na Análise de Fornecedores: estava usando o status de workflow do item (que também fica "Aprovada" em casos que não são a proposta vencedora), agora usa o campo do Sankhya dedicado a isso — o mesmo já validado antes no detalhe de cotação.',
