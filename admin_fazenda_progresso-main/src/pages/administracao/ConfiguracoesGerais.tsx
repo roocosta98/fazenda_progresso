@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { BrainCircuit, Database, FileUp, MessageSquareText, Pencil, Plus, Sparkles, Trash2, X } from 'lucide-react';
+import { BrainCircuit, Calendar, Database, FileUp, MessageSquareText, Pencil, Plus, Settings, Sparkles, Trash2, Wand2, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { useConfiguracaoGeral, invalidarCacheConfiguracaoGeral, PRAZO_PADRAO_DIAS_FALLBACK } from '../../hooks/useConfiguracaoGeral';
 
 const API_URL = import.meta.env.VITE_API_URL ?? '';
 const MODULOS = [
@@ -41,6 +42,42 @@ const TIPOS: { id: TipoConteudo; nome: string; icone: typeof Database; descricao
   },
 ];
 
+// Modelos prontos com o esquema real já validado nesta instalação (achados confirmados nas
+// próprias telas/queries do sistema) — clique em "Usar modelo" pra já cair no formulário
+// pronto pra revisar e adicionar, em vez de digitar tudo do zero.
+const MODELOS_PRONTOS: { titulo: string; modulo: string; tipo: TipoConteudo; conteudo: string }[] = [
+  {
+    titulo: 'Fornecedores — critério real de vitória em cotação',
+    modulo: 'estoque',
+    tipo: 'schema',
+    conteudo: 'Tabela: TGFITC (itens de cotação de compra).\nPara saber se um fornecedor venceu o item, use ITC.MELHOR=\'S\' — é o campo nativo do Sankhya dedicado a isso.\nNÃO use ITC.SITUACAO=\'A\' como critério de vitória: SITUACAO é um status de fluxo mais amplo (cotações enviadas passam por \'E\',\'R\',\'G\',\'A\'), não indica quem ganhou o item.',
+  },
+  {
+    titulo: 'Frota — limites de status de comunicação do equipamento',
+    modulo: 'logistica_frota',
+    tipo: 'schema',
+    conteudo: 'Campo MinutosSemComunicacao (retornado por /api/frota/posicoes):\n- até 30 min: comunicação normal\n- de 30 a 1440 min (24h): atenção, equipamento sem sinal recente\n- acima de 1440 min: crítico, provável equipamento parado/desligado há mais de 1 dia\nCampo AlarmesUltimas24h conta os alarmes do equipamento gerados nas últimas 24h.',
+  },
+  {
+    titulo: 'Estoque — regra de status do item (Zerado/Abaixo do mínimo/Normal)',
+    modulo: 'estoque',
+    tipo: 'schema',
+    conteudo: 'Calculado no cliente a partir de ESTOQUE, MINIMO e MAXIMO (nunca vem pronto do Sankhya):\n- ESTOQUE <= 0 → "Zerado"\n- MINIMO > 0 e ESTOQUE < MINIMO → "Abaixo do mínimo"\n- MAXIMO > 0 e ESTOQUE > MAXIMO → "Acima do máximo"\n- caso contrário → "Normal"\nSe MINIMO ou MAXIMO vier zerado/vazio no cadastro, aquela regra é ignorada (não vira "abaixo do mínimo" por um mínimo mal cadastrado).',
+  },
+  {
+    titulo: 'Cotações em aberto — situação calculada (Atrasada/Sem prazo/Em andamento)',
+    modulo: 'estoque',
+    tipo: 'schema',
+    conteudo: 'Campo usado: DHFINAL (prazo final da cotação).\n- DHFINAL vazio/nulo → "Sem prazo" (nunca tratado como atrasada por falta de dado)\n- DHFINAL no passado → "Atrasada"\n- DHFINAL no futuro → "Em andamento"',
+  },
+  {
+    titulo: 'Metas — saldo acumulado do motorista (ponto de equilíbrio)',
+    modulo: 'logistica_frota',
+    tipo: 'schema',
+    conteudo: 'Endpoint /api/metas/diario?modo=progresso retorna porMotorista[] com MotoristaNomeFicha e SaldoAcumuladoMes.\nSaldoAcumuladoMes positivo = motorista dentro do ponto de equilíbrio no mês; negativo = abaixo do ponto de equilíbrio.\nO array porVeiculo[] existe na mesma resposta mas ainda não tem colunas confirmadas em produção — não usar sem validar antes.',
+  },
+];
+
 type Entrada = {
   ConfiguracaoIAId: number;
   Titulo: string;
@@ -54,7 +91,60 @@ type Entrada = {
 
 const FORM_VAZIO = { titulo: '', conteudo: '', modulo: 'estoque', tipo: 'texto' as TipoConteudo };
 
-export function ConfiguracaoIA() {
+type Aba = 'geral' | 'ia';
+
+function PainelPadroesDoSistema() {
+  const { usuario } = useAuth();
+  const { prazoPadraoDias, carregado } = useConfiguracaoGeral();
+  const [valor, setValor] = useState(PRAZO_PADRAO_DIAS_FALLBACK);
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+  const [sucesso, setSucesso] = useState(false);
+
+  useEffect(() => { if (carregado) setValor(prazoPadraoDias); }, [carregado, prazoPadraoDias]);
+
+  const salvar = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSalvando(true); setErro(null); setSucesso(false);
+    try {
+      const resposta = await fetch(`${API_URL}/api/administracao/geral`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'x-user-type': usuario?.tipoUsuario ?? '' },
+        body: JSON.stringify({ prazoPadraoDias: valor }),
+      });
+      const corpo = await resposta.json();
+      if (!resposta.ok) throw new Error(corpo.error);
+      invalidarCacheConfiguracaoGeral();
+      setSucesso(true);
+    } catch (falha) { setErro(falha instanceof Error ? falha.message : 'Falha ao salvar.'); }
+    finally { setSalvando(false); }
+  };
+
+  return (
+    <div className="space-y-6">
+      <form onSubmit={salvar} className="bg-white border rounded-2xl p-5 space-y-4 max-w-2xl">
+        <div className="flex items-center gap-2 font-bold text-slate-800">
+          <Calendar size={18} className="text-emerald-600" /> Período padrão dos filtros de data
+        </div>
+        <p className="text-sm text-slate-500">
+          Define o período relativo (últimos N dias) que os filtros de data de Estoque e Logística abrem por padrão, em vez de um intervalo fixo "de-até". O usuário sempre pode trocar pra outro preset ou escolher "Personalizado" na hora.
+        </p>
+        <div className="flex items-center gap-3">
+          <input type="number" min={1} max={365} value={valor} onChange={(e) => setValor(Number(e.target.value))}
+            className="w-28 rounded-xl border px-3 py-2.5 text-sm font-semibold text-center" />
+          <span className="text-sm text-slate-600">dias</span>
+        </div>
+        {erro && <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-700">{erro}</div>}
+        {sucesso && <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-800">Prazo padrão salvo. Já vale pra próxima vez que qualquer tela de filtro de período for aberta.</div>}
+        <button disabled={salvando} className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white disabled:opacity-50">
+          {salvando ? 'Salvando…' : 'Salvar padrão'}
+        </button>
+      </form>
+    </div>
+  );
+}
+
+function PainelTreinamentoIA() {
   const { usuario } = useAuth();
   const [entradas, setEntradas] = useState<Entrada[]>([]);
   const [erro, setErro] = useState<string | null>(null);
@@ -64,6 +154,7 @@ export function ConfiguracaoIA() {
   const [filtroTipo, setFiltroTipo] = useState<TipoConteudo | 'todos'>('todos');
   const [importando, setImportando] = useState(false);
   const [avisoImportacao, setAvisoImportacao] = useState<string | null>(null);
+  const [mostrarModelos, setMostrarModelos] = useState(false);
   const inputArquivoRef = useRef<HTMLInputElement>(null);
   const headers = { 'Content-Type': 'application/json', 'x-user-type': usuario?.tipoUsuario ?? '' };
 
@@ -86,6 +177,14 @@ export function ConfiguracaoIA() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
   const cancelarEdicao = () => { setEditandoId(null); setForm(FORM_VAZIO); setAvisoImportacao(null); };
+
+  const usarModelo = (modelo: typeof MODELOS_PRONTOS[number]) => {
+    setEditandoId(null);
+    setForm({ titulo: modelo.titulo, conteudo: modelo.conteudo, modulo: modelo.modulo, tipo: modelo.tipo });
+    setAvisoImportacao(null);
+    setMostrarModelos(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const importarArquivo = async (arquivo: File) => {
     setImportando(true); setErro(null); setAvisoImportacao(null);
@@ -146,16 +245,32 @@ export function ConfiguracaoIA() {
   const entradasFiltradas = filtroTipo === 'todos' ? entradas : entradas.filter((e) => (e.Tipo ?? 'texto') === filtroTipo);
 
   return (
-    <div className="space-y-6 max-w-6xl">
-      <div>
-        <p className="text-xs font-bold uppercase tracking-wider text-emerald-700">Administração</p>
-        <h1 className="text-2xl font-bold text-slate-800">Configuração de IA</h1>
-        <p className="text-sm text-slate-500 mt-1">
-          Base de conhecimento que a IA sempre consulta antes de responder ou montar consultas: esquema real do banco, instruções de comportamento e conteúdo/documentos de negócio. Só entradas <b>ativas</b> são usadas; "Geral" vale para todos os módulos. Toda pesquisa e insight por IA lê esta base automaticamente — não precisa configurar nada além de cadastrar aqui.
-        </p>
-      </div>
+    <div className="space-y-6">
+      <p className="text-sm text-slate-500">
+        Base de conhecimento que a IA sempre consulta antes de responder ou montar consultas: esquema real do banco, instruções de comportamento e conteúdo/documentos de negócio. Só entradas <b>ativas</b> são usadas; "Geral" vale para todos os módulos. Toda pesquisa e insight por IA lê esta base automaticamente — não precisa configurar nada além de cadastrar aqui.
+      </p>
 
       {erro && <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{erro}</div>}
+
+      <div className="bg-white border rounded-2xl overflow-hidden">
+        <button type="button" onClick={() => setMostrarModelos((v) => !v)} className="w-full flex items-center justify-between gap-3 p-4 text-left hover:bg-slate-50">
+          <div className="flex items-center gap-2 font-bold text-slate-800"><Wand2 size={17} className="text-emerald-600" /> Modelos prontos com o esquema real já mapeado nesta instalação</div>
+          <span className="text-xs font-semibold text-emerald-700">{mostrarModelos ? 'Esconder' : `Ver ${MODELOS_PRONTOS.length} modelos`}</span>
+        </button>
+        {mostrarModelos && (
+          <div className="p-4 pt-0 grid grid-cols-1 md:grid-cols-2 gap-3">
+            {MODELOS_PRONTOS.map((modelo) => (
+              <div key={modelo.titulo} className="border rounded-xl p-3 flex flex-col gap-2">
+                <p className="text-sm font-bold text-slate-800">{modelo.titulo}</p>
+                <p className="text-xs text-slate-500 font-mono whitespace-pre-line line-clamp-4">{modelo.conteudo}</p>
+                <button type="button" onClick={() => usarModelo(modelo)} className="self-start inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-700 hover:bg-emerald-100">
+                  <Plus size={13} /> Usar este modelo
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       <form onSubmit={salvar} className="bg-white border rounded-2xl p-5 space-y-4">
         <div className="flex items-center justify-between flex-wrap gap-3">
@@ -264,6 +379,36 @@ export function ConfiguracaoIA() {
         <Sparkles size={16} className="shrink-0 mt-0.5" />
         <p>Sempre que descobrir algo novo sobre o significado real de um dado (um valor de código, um campo que costuma vir vazio, uma regra de negócio implícita), cadastre aqui como "Esquema de banco de dados" — a IA passa a considerar isso em toda pesquisa e insight, sem precisar mexer em código.</p>
       </div>
+    </div>
+  );
+}
+
+export function ConfiguracoesGerais() {
+  const [aba, setAba] = useState<Aba>('geral');
+  const abas: { id: Aba; label: string; icon: React.ReactNode }[] = [
+    { id: 'geral', label: 'Padrões do Sistema', icon: <Settings size={15} /> },
+    { id: 'ia', label: 'Treinamento de IA', icon: <BrainCircuit size={15} /> },
+  ];
+
+  return (
+    <div className="space-y-6 max-w-6xl">
+      <div>
+        <p className="text-xs font-bold uppercase tracking-wider text-emerald-700">Administração</p>
+        <h1 className="text-2xl font-bold text-slate-800">Configurações Gerais</h1>
+        <p className="text-sm text-slate-500 mt-1">Padrões do sistema (como o período inicial dos filtros de data) e a base de conhecimento que a IA usa nas pesquisas e insights.</p>
+      </div>
+
+      <div className="flex bg-slate-100 p-1.5 rounded-2xl border border-slate-200/60 max-w-full overflow-x-auto w-fit">
+        {abas.map((a) => (
+          <button key={a.id} onClick={() => setAba(a.id)}
+            className={`flex items-center gap-1.5 px-4 py-2 text-xs font-bold rounded-xl transition-all whitespace-nowrap shrink-0 ${aba === a.id ? 'bg-white text-emerald-700 shadow-xs' : 'text-slate-500 hover:text-slate-800'}`}>
+            {a.icon} {a.label}
+          </button>
+        ))}
+      </div>
+
+      {aba === 'geral' && <PainelPadroesDoSistema />}
+      {aba === 'ia' && <PainelTreinamentoIA />}
     </div>
   );
 }

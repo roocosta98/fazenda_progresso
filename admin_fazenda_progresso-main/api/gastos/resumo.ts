@@ -10,6 +10,7 @@ import { detalheEstoque } from '../_lib/estoqueDetalhe.js';
 import { insightEstoque } from '../_lib/estoqueInsight.js';
 import { configuracaoIA } from '../_lib/iaConhecimento.js';
 import { importarConhecimentoIA } from '../_lib/iaImportar.js';
+import { configuracaoGeral } from '../_lib/configuracaoGeral.js';
 import { usuariosSistema } from '../_lib/usuariosSistema.js';
 import { producaoBatata } from '../_lib/producaoBatata.js';
 import { manutencao } from '../_lib/manutencao.js';
@@ -62,6 +63,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.query.modo === 'estoque-insight') return insightEstoque(req, res);
   if (req.query.modo === 'ia-conhecimento') return configuracaoIA(req, res);
   if (req.query.modo === 'ia-importar') return importarConhecimentoIA(req, res);
+  if (req.query.modo === 'configuracao-geral') return configuracaoGeral(req, res);
   if (req.query.modo === 'estoque') return painelEstoque(req, res);
   if (!exigirAcessoCustos(req, res)) return;
   try {

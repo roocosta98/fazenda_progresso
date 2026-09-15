@@ -33,6 +33,10 @@
       "destination": "/api/gastos/resumo?modo=ia-importar"
     },
     {
+      "source": "/api/administracao/geral",
+      "destination": "/api/gastos/resumo?modo=configuracao-geral"
+    },
+    {
       "source": "/api/producao/batata",
       "destination": "/api/gastos/resumo?modo=producao-batata"
     },

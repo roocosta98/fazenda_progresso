@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, ArrowDown, ArrowUp, ArrowUpDown, Boxes, ChevronLeft, ChevronRight, Eye, RefreshCw, Search, TrendingUp, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { cabecalhoPerfil } from '../../utils/apiAuth';
-import { hojeISO, primeiroDiaMesISO } from '../../components/common/vizTokens';
+import { usePeriodoPadrao } from '../../hooks/usePeriodoPadrao';
+import { SeletorPeriodo } from '../../components/common/SeletorPeriodo';
 import { DetalheDrawer, type TipoDetalhe } from './DetalheDrawer';
 
 const API_URL = import.meta.env.VITE_API_URL ?? '';
@@ -210,8 +211,7 @@ export const valorCelula = (chave: string, valor: unknown): React.ReactNode => {
 
 export function useEstoquePainel() {
   const { usuario } = useAuth();
-  const [dataDe, setDataDe] = useState(primeiroDiaMesISO());
-  const [dataAte, setDataAte] = useState(hojeISO());
+  const { dataDe, setDataDe, dataAte, setDataAte } = usePeriodoPadrao();
   const [dados, setDados] = useState<DadosEstoque | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [carregando, setCarregando] = useState(true);
@@ -255,19 +255,10 @@ export function FiltroDataEstoque({ dataDe, setDataDe, dataAte, setDataAte, carr
 }) {
   return (
     <div className="bg-white p-4 rounded-2xl border border-slate-200/80 flex flex-wrap items-center gap-3">
-      <div className="flex items-center gap-1.5">
-        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">De</span>
-        <input type="date" value={dataDe} max={dataAte} onChange={(e) => setDataDe(e.target.value)}
-          className="px-3 py-1.5 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl text-slate-700" />
-      </div>
-      <div className="flex items-center gap-1.5">
-        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Até</span>
-        <input type="date" value={dataAte} min={dataDe} onChange={(e) => setDataAte(e.target.value)}
-          className="px-3 py-1.5 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl text-slate-700" />
-      </div>
-      <p className="text-[11px] text-slate-400">Filtra o consumo/giro por requisição e as cotações da Análise de Fornecedores. Ruptura, Curva ABC e cotações em aberto mostram sempre o cadastro atual.</p>
+      <SeletorPeriodo dataDe={dataDe} setDataDe={setDataDe} dataAte={dataAte} setDataAte={setDataAte} />
+      <p className="text-[11px] text-slate-400 basis-full lg:basis-auto">Filtra o consumo/giro por requisição e as cotações da Análise de Fornecedores. Ruptura, Curva ABC e cotações em aberto mostram sempre o cadastro atual.</p>
       <button onClick={carregar} disabled={carregando}
-        className="ml-auto inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-bold disabled:opacity-60">
+        className="lg:ml-auto inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 text-white text-sm font-bold disabled:opacity-60">
         <RefreshCw size={16} className={carregando ? 'animate-spin' : ''} /> Atualizar
       </button>
     </div>
