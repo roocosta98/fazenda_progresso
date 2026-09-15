@@ -9,6 +9,14 @@ export type EntradaChangelog = { data: string; hora?: string; itens: string[] };
 export const CHANGELOG: EntradaChangelog[] = [
   {
     data: '15/09/2026',
+    hora: '13:06:09',
+    itens: [
+      'Corrigido: a tela de Treinamento de IA estava dando erro "Invalid column name \'ChaveQuery\'" pra quem ainda não rodou a migração mais recente no banco — agora funciona normalmente com ou sem a coluna (só a "Query SQL executável" fica indisponível até a migração rodar).',
+      'Ajustado o filtro de período: os botões de preset (Últimos N dias, Mês atual etc.) saíram das telas de Estoque e Logística — elas voltam a mostrar só "De"/"Até", como antes. A escolha de qual período usar como padrão inicial desses filtros continua em Configurações Gerais > Padrões do Sistema, agora com opção de Últimos N dias, Mês atual, Trimestre atual ou Ano atual.',
+    ],
+  },
+  {
+    data: '15/09/2026',
     hora: '12:45:44',
     itens: [
       'Treinamento de IA ganhou um 4º tipo de entrada: "Query SQL executável" — permite substituir, de verdade, a query que uma tela do sistema roda, sem precisar mexer em código. Por enquanto só a Análise de Fornecedores (Estoque) está conectada a esse mecanismo (chave "estoque.fornecedores", já com um modelo pronto pra usar). Só SELECT/WITH é aceito; qualquer outro comando é recusado ao salvar, e um erro na query customizada volta sozinho pra query padrão do sistema (nunca derruba a tela).',
