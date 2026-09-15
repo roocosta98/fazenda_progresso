@@ -9,6 +9,14 @@ export type EntradaChangelog = { data: string; hora?: string; itens: string[] };
 export const CHANGELOG: EntradaChangelog[] = [
   {
     data: '15/09/2026',
+    hora: '13:50:18',
+    itens: [
+      'Mensagem de erro mais clara em Padrões do Sistema quando a tabela de configurações ainda não existe no banco (antes mostrava o erro técnico do SQL Server puro).',
+      'Treinamento de IA agora pré-cadastra sozinho (inativa) a query que já está de verdade plugada no sistema (por enquanto só a de Análise de Fornecedores) — assim que a migração da coluna correspondente rodar no banco, ela já aparece na lista pronta pra revisar e ativar, sem precisar clicar em "Usar modelo" primeiro.',
+    ],
+  },
+  {
+    data: '15/09/2026',
     hora: '13:06:09',
     itens: [
       'Corrigido: a tela de Treinamento de IA estava dando erro "Invalid column name \'ChaveQuery\'" pra quem ainda não rodou a migração mais recente no banco — agora funciona normalmente com ou sem a coluna (só a "Query SQL executável" fica indisponível até a migração rodar).',

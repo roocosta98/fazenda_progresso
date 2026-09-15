@@ -12,6 +12,11 @@
 -- aqui quebra a tela na hora, sem passar por build/PR/revisão. Trate como
 -- deploy direto em produção.
 --
+-- Depois de rodar isso, a próxima vez que a tela de Treinamento de IA for aberta ela pré-
+-- cadastra sozinha (INATIVA) a entrada de cada query já plugada no mecanismo (hoje só
+-- "estoque.fornecedores" — ver api/_lib/queriesConectadas.ts) — não precisa clicar em
+-- "Usar modelo" pra ela aparecer, só ativar se quiser que passe a valer.
+--
 -- Rode como statement isolado no DBeaver (selecione o texto e Ctrl+Enter).
 -- =============================================================================
 

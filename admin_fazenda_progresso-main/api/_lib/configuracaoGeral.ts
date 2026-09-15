@@ -62,6 +62,10 @@ export async function configuracaoGeral(req: VercelRequest, res: VercelResponse)
     // Mesma postura tolerante do treinamento de IA: se dbo.ConfiguracaoSistema ainda não existe
     // nesta instalação, o sistema inteiro segue com o padrão de 30 dias em vez de tela quebrada.
     if (req.method === 'GET') return res.status(200).json({ periodoPadrao: PERIODO_PADRAO_FALLBACK });
-    res.status(502).json({ error: error instanceof Error ? error.message : 'Falha ao salvar configuração geral. A tabela dbo.ConfiguracaoSistema existe no banco?' });
+    const mensagem = error instanceof Error ? error.message : String(error);
+    if (/Invalid object name 'dbo\.ConfiguracaoSistema'/i.test(mensagem)) {
+      return res.status(409).json({ error: 'A tabela dbo.ConfiguracaoSistema ainda não existe neste banco. Rode server/sql/configuracao_geral.sql (statement isolado no DBeaver) antes de salvar o período padrão.' });
+    }
+    res.status(502).json({ error: mensagem });
   }
 }
