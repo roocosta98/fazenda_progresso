@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
-import { LogOut, Settings, Wifi, Search, CheckCircle2, ChevronDown, Menu } from 'lucide-react';
+import { LogOut, Settings, Wifi, Search, CheckCircle2, ChevronDown, Menu, Download } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { Novidades } from './Novidades';
+import { usePwaInstall } from '../../hooks/usePwaInstall';
 
 interface HeaderProps {
   onAbrirMenu?: () => void;
@@ -11,6 +12,7 @@ export const Header = ({ onAbrirMenu }: HeaderProps) => {
   const { usuario, logout } = useAuth();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const { podeInstalar, instalar } = usePwaInstall();
 
   // Fecha o dropdown ao clicar fora
   useEffect(() => {
@@ -62,6 +64,19 @@ export const Header = ({ onAbrirMenu }: HeaderProps) => {
             <span>Telemetria Conectada</span>
           </div>
         </div>
+
+        {/* Instalar como app — só aparece quando o navegador oferece a instalação de verdade
+            (Chrome/Edge) e o app ainda não está instalado; nunca promete instalação em navegadores
+            sem suporte (Safari, Firefox). */}
+        {podeInstalar && (
+          <button
+            onClick={instalar}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-950 text-white rounded-md text-[11px] font-bold hover:bg-emerald-900 transition-colors shrink-0"
+          >
+            <Download size={13} />
+            <span className="hidden sm:inline">Instalar app</span>
+          </button>
+        )}
 
         <div className="h-4 w-px bg-slate-200 hidden lg:block" />
 
