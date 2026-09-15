@@ -177,14 +177,22 @@ function montarConsultas(dataInicio: string, dataFim: string, dias: number) {
   // pelo filtro de data da tela (igual giro de estoque); (3) ITC.PRAZOMEDIO trocado por
   // ITC.PRAZOENTREGA — o primeiro fica em branco em praticamente 100% das linhas nesta instalação
   // do Sankhya (mesmo problema já documentado em CONFIABFORN/QUALATEND/QUALPROD), o segundo é o
-  // campo de prazo que de fato vem preenchido (confirmado na consulta antiga de fornecedores).
+  // campo de prazo que de fato vem preenchido (confirmado na consulta antiga de fornecedores);
+  // (4) "venceu a cotação" trocado de ITC.SITUACAO='A' pra ITC.MELHOR='S' — validado contra a
+  // consulta de detalhe de cotação do próprio Sankhya (MELHORFORNEC/MELHORPRECO ali são sempre
+  // calculados com WHERE MELHOR='S', nunca com SITUACAO). SITUACAO é o status de workflow do item
+  // (Enviada/Rejeitada/Gerada/Aprovada etc., visto no relatório em STATUSENVIO incluindo 'A' junto
+  // com 'E','R','G') — não é exclusivo de "essa foi a proposta vencedora", então usar SITUACAO='A'
+  // pra taxa de vitória contaria aprovações de workflow que não são necessariamente o melhor preço.
+  // MELHOR é o campo dedicado do Sankhya pra "essa cotação venceu" — mesmo campo já usado (e
+  // confirmado como dado real) na consulta antiga de fornecedores, antes da troca pelo script novo.
   fornecedores: `WITH
     BASE AS (
       SELECT COT.NUMCOTACAO, COT.DHINIC, COT.CODEMP, ITC.CODPARC, PAR.NOMEPARC, PAR.RAZAOSOCIAL, PAR.CGC_CPF,
         ITC.CODPROD, PRO.DESCRPROD, PRO.CODGRUPOPROD, ITC.CONTROLE, ITC.CODLOCAL, ITC.DIFERENCIADOR,
-        ITC.PRECO, ITC.QTDCOTADA, ITC.PRAZOENTREGA, ITC.SITUACAO,
+        ITC.PRECO, ITC.QTDCOTADA, ITC.PRAZOENTREGA, ITC.SITUACAO, ITC.MELHOR,
         CASE WHEN COALESCE(ITC.PRECO,0)>0 THEN 1 ELSE 0 END AS RESPONDEU,
-        CASE WHEN ITC.SITUACAO='A' THEN 1 ELSE 0 END AS VENCEU
+        CASE WHEN ITC.MELHOR='S' THEN 1 ELSE 0 END AS VENCEU
       FROM TGFCOT COT
         INNER JOIN TGFITC ITC ON ITC.NUMCOTACAO=COT.NUMCOTACAO
         INNER JOIN TGFPAR PAR ON PAR.CODPARC=ITC.CODPARC

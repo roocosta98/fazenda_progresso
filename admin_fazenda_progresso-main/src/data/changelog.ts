@@ -9,6 +9,14 @@ export type EntradaChangelog = { data: string; hora?: string; itens: string[] };
 export const CHANGELOG: EntradaChangelog[] = [
   {
     data: '15/09/2026',
+    hora: '11:18:53',
+    itens: [
+      'Corrigido o critério de "venceu a cotação" na Análise de Fornecedores: estava usando o status de workflow do item (que também fica "Aprovada" em casos que não são a proposta vencedora), agora usa o campo do Sankhya dedicado a isso — o mesmo já validado antes no detalhe de cotação.',
+      'Módulos ainda em construção (Produção, Manutenção, Compras, Financeiro, Comercial, Custos, DP/RH, Segurança do Trabalho, Controladoria, Fiscal) ganharam números de exemplo nos cards da tela Início, no mesmo estilo de Estoque e Logística — sempre com o aviso "Números de exemplo" (não são dados reais, os módulos ainda não estão conectados).',
+    ],
+  },
+  {
+    data: '15/09/2026',
     hora: '11:11:13',
     itens: [
       'Fornecedores ganhou filtro de data no topo (igual Dashboard/Inventário) — os indicadores e o Supplier Score passaram a respeitar o período escolhido, em vez de fixar sempre os últimos 90 dias.',

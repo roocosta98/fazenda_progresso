@@ -17,6 +17,10 @@ interface CardModulo {
   to: string;
   cor: string;
   ativo: boolean;
+  // Só pros módulos "Em construção" (ainda sem integração real) — números de exemplo pedidos
+  // explicitamente pelo Cassio pra manter o visual consistente com Estoque/Logística antes da
+  // integração existir. Nunca reais: por isso o rótulo "(exemplo)" aparece sempre junto.
+  exemplo?: { rotulo1: string; valor1: string; rotulo2: string; valor2: string };
 }
 
 const CARDS: CardModulo[] = [
@@ -46,6 +50,7 @@ const CARDS: CardModulo[] = [
     to: '/producao/batata',
     cor: 'bg-emerald-50 text-emerald-600 border-emerald-200',
     ativo: false,
+    exemplo: { rotulo1: 'Produção (mês)', valor1: '1.850 t', rotulo2: 'Custo por tonelada', valor2: 'R$ 612,00' },
   },
   {
     modulo: 'manutencao',
@@ -55,6 +60,7 @@ const CARDS: CardModulo[] = [
     to: '/manutencao',
     cor: 'bg-orange-50 text-orange-600 border-orange-200',
     ativo: false,
+    exemplo: { rotulo1: 'Ordens abertas', valor1: '14', rotulo2: 'Preventivas no prazo', valor2: '92%' },
   },
   {
     modulo: 'compras',
@@ -64,6 +70,7 @@ const CARDS: CardModulo[] = [
     to: '/compras',
     cor: 'bg-violet-50 text-violet-600 border-violet-200',
     ativo: false,
+    exemplo: { rotulo1: 'Pedidos em aberto', valor1: '23', rotulo2: 'Prazo médio', valor2: '5,4 dias' },
   },
   {
     modulo: 'financeiro',
@@ -73,6 +80,7 @@ const CARDS: CardModulo[] = [
     to: '/financeiro',
     cor: 'bg-teal-50 text-teal-600 border-teal-200',
     ativo: false,
+    exemplo: { rotulo1: 'Contas a pagar (mês)', valor1: 'R$ 128.400,00', rotulo2: 'Saldo em caixa', valor2: 'R$ 342.900,00' },
   },
   {
     modulo: 'comercial',
@@ -82,6 +90,7 @@ const CARDS: CardModulo[] = [
     to: '/comercial',
     cor: 'bg-rose-50 text-rose-600 border-rose-200',
     ativo: false,
+    exemplo: { rotulo1: 'Vendas (mês)', valor1: 'R$ 210.000,00', rotulo2: 'Clientes ativos', valor2: '34' },
   },
   {
     modulo: 'custos',
@@ -91,6 +100,7 @@ const CARDS: CardModulo[] = [
     to: '/custos',
     cor: 'bg-sky-50 text-sky-600 border-sky-200',
     ativo: false,
+    exemplo: { rotulo1: 'Custo total (mês)', valor1: 'R$ 486.200,00', rotulo2: 'Centros de custo', valor2: '12' },
   },
   {
     modulo: 'rh',
@@ -100,6 +110,7 @@ const CARDS: CardModulo[] = [
     to: '/rh',
     cor: 'bg-fuchsia-50 text-fuchsia-600 border-fuchsia-200',
     ativo: false,
+    exemplo: { rotulo1: 'Colaboradores ativos', valor1: '96', rotulo2: 'Admissões (mês)', valor2: '4' },
   },
   {
     modulo: 'seguranca_trabalho',
@@ -109,6 +120,7 @@ const CARDS: CardModulo[] = [
     to: '/seguranca-trabalho',
     cor: 'bg-yellow-50 text-yellow-600 border-yellow-200',
     ativo: false,
+    exemplo: { rotulo1: 'Treinamentos (mês)', valor1: '8', rotulo2: 'Ocorrências (mês)', valor2: '1' },
   },
   {
     modulo: 'controladoria',
@@ -118,6 +130,7 @@ const CARDS: CardModulo[] = [
     to: '/controladoria',
     cor: 'bg-slate-100 text-slate-600 border-slate-200',
     ativo: false,
+    exemplo: { rotulo1: 'Indicadores no prazo', valor1: '89%', rotulo2: 'Auditorias (mês)', valor2: '2' },
   },
   {
     modulo: 'fiscal',
@@ -127,6 +140,7 @@ const CARDS: CardModulo[] = [
     to: '/fiscal',
     cor: 'bg-indigo-50 text-indigo-600 border-indigo-200',
     ativo: false,
+    exemplo: { rotulo1: 'Notas emitidas (mês)', valor1: '312', rotulo2: 'Obrigações pendentes', valor2: '3' },
   },
 ];
 
@@ -245,6 +259,21 @@ export function Inicio() {
                   <p className="text-[10px] font-bold uppercase text-slate-400 flex items-center gap-1"><AlertTriangle size={11} className="text-rose-500" />Alarmes (24h)</p>
                   <p className="text-sm font-bold text-slate-800">{numero(resumoLogistica.alarmes24h)}</p>
                 </div>
+              </div>
+            )}
+            {!card.ativo && card.exemplo && (
+              <div className="mt-4 pt-4 border-t border-slate-200/70">
+                <div className="flex items-center gap-4">
+                  <div>
+                    <p className="text-[10px] font-bold uppercase text-slate-400">{card.exemplo.rotulo1}</p>
+                    <p className="text-sm font-bold text-slate-500">{card.exemplo.valor1}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold uppercase text-slate-400">{card.exemplo.rotulo2}</p>
+                    <p className="text-sm font-bold text-slate-500">{card.exemplo.valor2}</p>
+                  </div>
+                </div>
+                <p className="text-[9px] text-slate-400 italic mt-1.5">Números de exemplo — módulo ainda não conectado</p>
               </div>
             )}
           </button>
