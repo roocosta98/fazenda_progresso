@@ -9,6 +9,15 @@ export type EntradaChangelog = { data: string; hora?: string; itens: string[] };
 export const CHANGELOG: EntradaChangelog[] = [
   {
     data: '15/09/2026',
+    hora: '11:11:13',
+    itens: [
+      'Fornecedores ganhou filtro de data no topo (igual Dashboard/Inventário) — os indicadores e o Supplier Score passaram a respeitar o período escolhido, em vez de fixar sempre os últimos 90 dias.',
+      'Corrigido o prazo médio de entrega: o campo usado vinha em branco nesta instalação do Sankhya, fazendo o card "Melhor prazo médio" e o gráfico Prazo × Taxa de vitória mostrarem tudo zerado. Agora usa o campo correto (mesmo já usado antes) e mostra "—" quando realmente não há prazo registrado, em vez de um zero enganoso.',
+      'Os 5 indicadores de Fornecedores (ativos, melhor prazo, maior taxa de vitória, categorias atendidas, economia acumulada) agora são clicáveis e abrem a lista completa ordenada por aquele indicador.',
+    ],
+  },
+  {
+    data: '15/09/2026',
     hora: '11:00:47',
     itens: [
       'Telas de Estoque agora ocupam a largura toda (antes sobrava espaço vazio nas laterais em telas grandes) — mais espaço pra tabelas e gráficos.',

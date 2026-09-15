@@ -70,9 +70,9 @@ function periodoEstoque(req: VercelRequest): { dataInicio: string; dataFim: stri
 
 // As consultas reproduzem o módulo de estoque recebido: dados reais do
 // Sankhya (TGF*) e cada seção é independente para um schema incompleto não
-// derrubar o painel inteiro. Ruptura, Curva ABC, sem movimentação, fornecedores e cotações
-// refletem o estoque/cadastro ATUAL (não fazem sentido filtrados por período); só o consumo por
-// requisição (giro/KPI) varia com o período escolhido no filtro de data da tela.
+// derrubar o painel inteiro. Ruptura, Curva ABC, sem movimentação e cotações refletem o
+// estoque/cadastro ATUAL (não fazem sentido filtrados por período); o consumo por requisição
+// (giro/KPI) e a Análise de Fornecedores (cotações no período) variam com o filtro de data da tela.
 function montarConsultas(dataInicio: string, dataFim: string, dias: number) {
   const filtroData = `CAB.DTNEG >= CONVERT(date,'${dataInicio}',23) AND CAB.DTNEG < DATEADD(DAY,1,CONVERT(date,'${dataFim}',23))`;
   // Grupos de produto que não fazem sentido pro controle de estoque operacional (materiais de
@@ -172,13 +172,17 @@ function montarConsultas(dataInicio: string, dataFim: string, dias: number) {
   // concorrentes na MESMA cotação/item, 15% prazo, 10% cobertura de produtos, 10% volume),
   // competitividade e economia calculadas item a item comparando o preço de cada fornecedor
   // contra a média dos concorrentes na mesma cotação — nunca inventado, é aritmética sobre preços
-  // reais das cotações dos últimos 90 dias. Adaptado do original só pra aplicar o mesmo filtro de
-  // grupo de produto (filtroGrupo) usado no resto do módulo.
+  // reais das cotações do período filtrado na tela. Adaptado do original em dois pontos: (1) filtro
+  // de grupo de produto (filtroGrupo) igual ao resto do módulo; (2) período fixo de 90 dias trocado
+  // pelo filtro de data da tela (igual giro de estoque); (3) ITC.PRAZOMEDIO trocado por
+  // ITC.PRAZOENTREGA — o primeiro fica em branco em praticamente 100% das linhas nesta instalação
+  // do Sankhya (mesmo problema já documentado em CONFIABFORN/QUALATEND/QUALPROD), o segundo é o
+  // campo de prazo que de fato vem preenchido (confirmado na consulta antiga de fornecedores).
   fornecedores: `WITH
     BASE AS (
       SELECT COT.NUMCOTACAO, COT.DHINIC, COT.CODEMP, ITC.CODPARC, PAR.NOMEPARC, PAR.RAZAOSOCIAL, PAR.CGC_CPF,
         ITC.CODPROD, PRO.DESCRPROD, PRO.CODGRUPOPROD, ITC.CONTROLE, ITC.CODLOCAL, ITC.DIFERENCIADOR,
-        ITC.PRECO, ITC.QTDCOTADA, ITC.PRAZOMEDIO, ITC.SITUACAO,
+        ITC.PRECO, ITC.QTDCOTADA, ITC.PRAZOENTREGA, ITC.SITUACAO,
         CASE WHEN COALESCE(ITC.PRECO,0)>0 THEN 1 ELSE 0 END AS RESPONDEU,
         CASE WHEN ITC.SITUACAO='A' THEN 1 ELSE 0 END AS VENCEU
       FROM TGFCOT COT
@@ -186,7 +190,7 @@ function montarConsultas(dataInicio: string, dataFim: string, dias: number) {
         INNER JOIN TGFPAR PAR ON PAR.CODPARC=ITC.CODPARC
         INNER JOIN TGFPRO PRO ON PRO.CODPROD=ITC.CODPROD
         INNER JOIN TGFGRU GRU ON GRU.CODGRUPOPROD=PRO.CODGRUPOPROD
-      WHERE COT.DHINIC >= DATEADD(DAY,-90,CAST(GETDATE() AS DATE))
+      WHERE COT.DHINIC >= CONVERT(date,'${dataInicio}',23) AND COT.DHINIC < DATEADD(DAY,1,CONVERT(date,'${dataFim}',23))
         AND ITC.CABECALHO='N' AND ITC.CODPARC>0 AND ${filtroGrupo}
     ),
     PRECO_ITEM AS (
@@ -210,7 +214,7 @@ function montarConsultas(dataInicio: string, dataFim: string, dias: number) {
         ROUND(100*COUNT(DISTINCT CASE WHEN C.RESPONDEU=1 THEN C.NUMCOTACAO END)/NULLIF(COUNT(DISTINCT C.NUMCOTACAO),0),2) AS TAXA_RESPOSTA_PCT,
         ROUND(100*SUM(C.VENCEU)/NULLIF(SUM(C.RESPONDEU),0),2) AS TAXA_VITORIA_PCT,
         ROUND(100*COUNT(DISTINCT CASE WHEN C.VENCEU=1 THEN C.NUMCOTACAO END)/NULLIF(COUNT(DISTINCT CASE WHEN C.RESPONDEU=1 THEN C.NUMCOTACAO END),0),2) AS TAXA_VITORIA_COTACAO_PCT,
-        ROUND(AVG(CASE WHEN C.RESPONDEU=1 THEN C.PRAZOMEDIO END),2) AS PRAZO_MEDIO_DIAS,
+        ROUND(AVG(CASE WHEN C.RESPONDEU=1 THEN C.PRAZOENTREGA END),2) AS PRAZO_MEDIO_DIAS,
         COUNT(DISTINCT CASE WHEN C.RESPONDEU=1 THEN C.CODPROD END) AS PRODUTOS_DISTINTOS,
         COUNT(DISTINCT CASE WHEN C.RESPONDEU=1 THEN C.CODGRUPOPROD END) AS CATEGORIAS_DISTINTAS,
         ROUND(AVG(CASE WHEN C.PRECO>0 THEN C.PRECO END),4) AS PRECO_MEDIO_FORNECEDOR,
@@ -260,9 +264,9 @@ function montarConsultas(dataInicio: string, dataFim: string, dias: number) {
       FROM CLASSIFICADO C
     ),
     KPI_GERAIS AS (
-      SELECT COUNT(*) AS FORNECEDORES_ATIVOS_90D, MIN(R.PRAZO_MEDIO_DIAS) AS MELHOR_PRAZO_MEDIO_90D,
-        MAX(R.TAXA_VITORIA_PCT) AS MAIOR_TAXA_VITORIA_90D, SUM(R.ECONOMIA_POSITIVA_VS_MEDIA) AS ECONOMIA_ACUMULADA_90D,
-        (SELECT COUNT(DISTINCT CASE WHEN B.RESPONDEU=1 THEN B.CODGRUPOPROD END) FROM BASE B) AS CATEGORIAS_ATENDIDAS_90D
+      SELECT COUNT(*) AS FORNECEDORES_ATIVOS_PERIODO, MIN(R.PRAZO_MEDIO_DIAS) AS MELHOR_PRAZO_MEDIO_PERIODO,
+        MAX(R.TAXA_VITORIA_PCT) AS MAIOR_TAXA_VITORIA_PERIODO, SUM(R.ECONOMIA_POSITIVA_VS_MEDIA) AS ECONOMIA_ACUMULADA_PERIODO,
+        (SELECT COUNT(DISTINCT CASE WHEN B.RESPONDEU=1 THEN B.CODGRUPOPROD END) FROM BASE B) AS CATEGORIAS_ATENDIDAS_PERIODO
       FROM RANKING R
     )
     SELECT TOP 2000
@@ -276,7 +280,7 @@ function montarConsultas(dataInicio: string, dataFim: string, dias: number) {
       R.PRECO_MEDIO_FORNECEDOR, R.PRECO_MEDIO_CONCORRENTES, R.COMPETITIVIDADE_PRECO_PCT, R.COMPETITIVIDADE_PRECO_MEDIA_PCT, R.STATUS_COMPETITIVIDADE,
       R.ITENS_COM_COMPARACAO_PRECO, R.ECONOMIA_LIQUIDA_VS_MEDIA, R.ECONOMIA_POSITIVA_VS_MEDIA,
       R.PRIMEIRA_COTACAO_PERIODO, R.ULTIMA_COTACAO,
-      K.FORNECEDORES_ATIVOS_90D, K.MELHOR_PRAZO_MEDIO_90D, K.MAIOR_TAXA_VITORIA_90D, K.CATEGORIAS_ATENDIDAS_90D, K.ECONOMIA_ACUMULADA_90D
+      K.FORNECEDORES_ATIVOS_PERIODO, K.MELHOR_PRAZO_MEDIO_PERIODO, K.MAIOR_TAXA_VITORIA_PERIODO, K.CATEGORIAS_ATENDIDAS_PERIODO, K.ECONOMIA_ACUMULADA_PERIODO
     FROM RANKING R CROSS JOIN KPI_GERAIS K
     ORDER BY R.RANKING_GERAL, R.SUPPLIER_SCORE DESC, R.FORNECEDOR`,
   // A "situação do produto" oficial do Sankhya é TGFITC.STATUSPRODCOT (O=Aberta, A=Aprovada,

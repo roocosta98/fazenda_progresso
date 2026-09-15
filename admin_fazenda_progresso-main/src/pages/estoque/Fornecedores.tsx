@@ -1,8 +1,8 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { BarChart3, Boxes, Clock3, Layers, Sparkles, Wallet } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Cell, ResponsiveContainer, Scatter, ScatterChart, Tooltip, XAxis, YAxis, ZAxis } from 'recharts';
-import { TabelaInterativa, moeda, numero, useEstoquePainel } from './estoqueShared';
+import { FiltroDataEstoque, ModalExpandido, TabelaInterativa, moeda, numero, useEstoquePainel, type Linha } from './estoqueShared';
 import { SugestoesAutomaticas } from './SugestoesAutomaticas';
 import { Carregando, SemDado } from '../../components/common/viz';
 
@@ -16,9 +16,30 @@ const FAIXA_COR: Record<string, string> = {
 };
 const FAIXA_ROTULO: Record<string, string> = { Excelente: 'Excelente', Bom: 'Bom', Regular: 'Regular', Atencao: 'Atenção' };
 
-function CardFornecedores({ Icon, cor, rotulo, valor, apoio }: { Icon: typeof Boxes; cor: string; rotulo: string; valor: string; apoio?: string }) {
+type ChaveKpi = 'ativos' | 'prazo' | 'taxa' | 'categorias' | 'economia';
+const MODAL_CONFIG: Record<ChaveKpi, { titulo: string; subtitulo: string; ordenarPor: keyof Linha; desc: boolean }> = {
+  ativos: { titulo: 'Fornecedores ativos no período', subtitulo: 'Todos os fornecedores com pelo menos uma cotação respondida no período filtrado, por ranking geral (Supplier Score).', ordenarPor: 'RANKING_GERAL', desc: false },
+  prazo: { titulo: 'Melhor prazo médio', subtitulo: 'Fornecedores ordenados pelo menor prazo médio de entrega cotado.', ordenarPor: 'PRAZO_MEDIO_DIAS', desc: false },
+  taxa: { titulo: 'Maior taxa de vitória', subtitulo: 'Fornecedores ordenados pela taxa de vitória (itens vencidos ÷ itens cotados).', ordenarPor: 'TAXA_VITORIA_PCT', desc: true },
+  categorias: { titulo: 'Categorias atendidas por fornecedor', subtitulo: 'Fornecedores ordenados pelo número de categorias de produto distintas atendidas no período.', ordenarPor: 'CATEGORIAS_DISTINTAS', desc: true },
+  economia: { titulo: 'Economia por fornecedor', subtitulo: 'Fornecedores ordenados pela economia gerada: cotações vencidas com preço abaixo da média dos concorrentes.', ordenarPor: 'ECONOMIA_POSITIVA_VS_MEDIA', desc: true },
+};
+
+// Ordena colocando valores nulos sempre por último, na direção pedida pro resto.
+function ordenarComNulosPorUltimo(linhas: Linha[], chave: string, desc: boolean): Linha[] {
+  return [...linhas].sort((a, b) => {
+    const va = a[chave]; const vb = b[chave];
+    if (va == null && vb == null) return 0;
+    if (va == null) return 1;
+    if (vb == null) return -1;
+    const cmp = Number(va) - Number(vb);
+    return desc ? -cmp : cmp;
+  });
+}
+
+function CardFornecedores({ Icon, cor, rotulo, valor, apoio, onClick }: { Icon: typeof Boxes; cor: string; rotulo: string; valor: string; apoio?: string; onClick?: () => void }) {
   return (
-    <div className="bg-white border rounded-2xl p-4">
+    <div onClick={onClick} className={`bg-white border rounded-2xl p-4 ${onClick ? 'cursor-pointer hover:border-emerald-300 transition-colors' : ''}`}>
       <span className={`inline-flex items-center justify-center w-9 h-9 rounded-xl mb-3 ${cor}`}><Icon size={17} /></span>
       <p className="text-[11px] uppercase font-bold text-slate-400">{rotulo}</p>
       <p className="text-xl font-bold text-slate-800 mt-1">{valor}</p>
@@ -28,15 +49,18 @@ function CardFornecedores({ Icon, cor, rotulo, valor, apoio }: { Icon: typeof Bo
 }
 
 export function Fornecedores() {
-  const { dados, erro, carregando, insights } = useEstoquePainel();
+  const { dados, erro, carregando, carregar, dataDe, setDataDe, dataAte, setDataAte, insights } = useEstoquePainel();
+  const [modalAberto, setModalAberto] = useState<ChaveKpi | null>(null);
 
   // Análise de Fornecedores fornecida pela Fazenda Progresso (script próprio deles): Supplier
   // Score ponderado (35% taxa de vitória, 30% competitividade de preço vs. concorrentes na MESMA
   // cotação/item, 15% prazo, 10% cobertura de produtos, 10% volume) e economia calculada item a
-  // item — não é estimativa nossa, é a fórmula e os dados reais deles, dos últimos 90 dias.
+  // item — não é estimativa nossa, é a fórmula e os dados reais deles, no período filtrado acima.
+  // Prazo pode vir "—" (sem dado) quando nenhuma cotação respondida do fornecedor tem prazo de
+  // entrega registrado — nunca vira 0 só pra preencher o card.
   const fornecedores = useMemo(() => (dados?.fornecedores ?? []).map((l) => ({
     fornecedor: String(l.FORNECEDOR ?? ''),
-    prazo: Number(l.PRAZO_MEDIO_DIAS ?? 0),
+    prazo: l.PRAZO_MEDIO_DIAS != null ? Number(l.PRAZO_MEDIO_DIAS) : null,
     taxa: Number(l.TAXA_VITORIA_PCT ?? 0),
     cotacoes: Number(l.TOTAL_COTACOES ?? 0),
     produtos: Number(l.PRODUTOS_DISTINTOS ?? 0),
@@ -45,9 +69,11 @@ export function Fornecedores() {
     competitividade: l.COMPETITIVIDADE_PRECO_PCT ?? l.COMPETITIVIDADE_PRECO_MEDIA_PCT ?? null,
     statusCompetitividade: String(l.STATUS_COMPETITIVIDADE ?? ''),
   })), [dados]);
+  // O gráfico só faz sentido pra quem tem os dois eixos — sem prazo registrado não dá pra plotar.
+  const fornecedoresComPrazo = useMemo(() => fornecedores.filter((f) => f.prazo !== null), [fornecedores]);
 
   // A própria consulta já traz o ranking (RANKING_GERAL=1 é o melhor no período) e os totais
-  // gerais dos últimos 90 dias replicados em toda linha (K.*) — pega da primeira, que é constante.
+  // gerais do período replicados em toda linha (K.*) — pega da primeira, que é constante.
   const melhor = fornecedores[0];
   const totais = dados?.fornecedores?.[0];
 
@@ -60,30 +86,39 @@ export function Fornecedores() {
     PRAZO_MEDIO_DIAS: l.PRAZO_MEDIO_DIAS,
     COMPETITIVIDADE_PRECO_PCT: l.COMPETITIVIDADE_PRECO_PCT ?? l.COMPETITIVIDADE_PRECO_MEDIA_PCT ?? null,
     STATUS_COMPETITIVIDADE: l.STATUS_COMPETITIVIDADE,
+    CATEGORIAS_DISTINTAS: l.CATEGORIAS_DISTINTAS,
+    ECONOMIA_POSITIVA_VS_MEDIA: l.ECONOMIA_POSITIVA_VS_MEDIA,
     TOTAL_COTACOES: l.TOTAL_COTACOES,
     PRODUTOS_DISTINTOS: l.PRODUTOS_DISTINTOS,
   })), [dados]);
+
+  const linhasModal = useMemo(() => {
+    if (!modalAberto) return [];
+    const cfg = MODAL_CONFIG[modalAberto];
+    return ordenarComNulosPorUltimo(linhasRanking, cfg.ordenarPor as string, cfg.desc);
+  }, [modalAberto, linhasRanking]);
 
   return <div className="space-y-5 pb-12">
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div>
         <p className="text-xs font-bold tracking-wider uppercase text-emerald-700">Estoque</p>
         <h1 className="text-2xl font-bold text-slate-800">Fornecedores</h1>
-        <p className="text-sm text-slate-500 mt-1">Supplier Score e indicadores de cotação dos últimos 90 dias (empresa 01).</p>
+        <p className="text-sm text-slate-500 mt-1">Supplier Score e indicadores de cotação do período filtrado (empresa 01).</p>
       </div>
       <Link to="/logistica/estoque/dashboard" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-50 transition-colors shrink-0">
         <BarChart3 size={15} className="text-emerald-700" /> Ver Dashboard
       </Link>
     </div>
+    <FiltroDataEstoque dataDe={dataDe} setDataDe={setDataDe} dataAte={dataAte} setDataAte={setDataAte} carregando={carregando} carregar={carregar} />
     {erro && <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-sm">{erro}</div>}
     {carregando && !dados ? <div className="bg-white border rounded-2xl p-12"><Carregando mensagem="Carregando fornecedores…" /></div> : dados && (
       <>
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-3">
-          <CardFornecedores Icon={Boxes} cor="bg-blue-50 text-blue-600" rotulo="Fornecedores ativos (90d)" valor={numero(totais?.FORNECEDORES_ATIVOS_90D)} />
-          <CardFornecedores Icon={Clock3} cor="bg-emerald-50 text-emerald-600" rotulo="Melhor prazo médio (90d)" valor={totais?.MELHOR_PRAZO_MEDIO_90D != null ? `${numero(totais.MELHOR_PRAZO_MEDIO_90D, 1)} dias` : '—'} />
-          <CardFornecedores Icon={BarChart3} cor="bg-amber-50 text-amber-600" rotulo="Maior taxa de vitória (90d)" valor={totais?.MAIOR_TAXA_VITORIA_90D != null ? `${numero(totais.MAIOR_TAXA_VITORIA_90D, 1)}%` : '—'} />
-          <CardFornecedores Icon={Layers} cor="bg-violet-50 text-violet-600" rotulo="Categorias atendidas (90d)" valor={numero(totais?.CATEGORIAS_ATENDIDAS_90D)} />
-          <CardFornecedores Icon={Wallet} cor="bg-teal-50 text-teal-600" rotulo="Economia acumulada (90d)" valor={moeda(totais?.ECONOMIA_ACUMULADA_90D)} apoio="Soma das cotações vencidas com preço abaixo da média dos concorrentes" />
+          <CardFornecedores Icon={Boxes} cor="bg-blue-50 text-blue-600" rotulo="Fornecedores ativos (período)" valor={numero(totais?.FORNECEDORES_ATIVOS_PERIODO)} onClick={() => setModalAberto('ativos')} />
+          <CardFornecedores Icon={Clock3} cor="bg-emerald-50 text-emerald-600" rotulo="Melhor prazo médio (período)" valor={totais?.MELHOR_PRAZO_MEDIO_PERIODO != null ? `${numero(totais.MELHOR_PRAZO_MEDIO_PERIODO, 1)} dias` : '—'} onClick={() => setModalAberto('prazo')} />
+          <CardFornecedores Icon={BarChart3} cor="bg-amber-50 text-amber-600" rotulo="Maior taxa de vitória (período)" valor={totais?.MAIOR_TAXA_VITORIA_PERIODO != null ? `${numero(totais.MAIOR_TAXA_VITORIA_PERIODO, 1)}%` : '—'} onClick={() => setModalAberto('taxa')} />
+          <CardFornecedores Icon={Layers} cor="bg-violet-50 text-violet-600" rotulo="Categorias atendidas (período)" valor={numero(totais?.CATEGORIAS_ATENDIDAS_PERIODO)} onClick={() => setModalAberto('categorias')} />
+          <CardFornecedores Icon={Wallet} cor="bg-teal-50 text-teal-600" rotulo="Economia acumulada (período)" valor={moeda(totais?.ECONOMIA_ACUMULADA_PERIODO)} apoio="Soma das cotações vencidas com preço abaixo da média dos concorrentes" onClick={() => setModalAberto('economia')} />
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-5 items-start">
@@ -99,17 +134,17 @@ export function Fornecedores() {
             <div className="flex flex-wrap gap-6 ml-auto">
               <div><p className="text-[10px] font-bold uppercase text-slate-400">Score</p><p className="text-sm font-bold text-slate-800">{numero(melhor.score, 1)} · <span style={{ color: FAIXA_COR[melhor.faixa] }}>{FAIXA_ROTULO[melhor.faixa] ?? melhor.faixa}</span></p></div>
               <div><p className="text-[10px] font-bold uppercase text-slate-400">Taxa de vitória</p><p className="text-sm font-bold text-slate-800">{numero(melhor.taxa, 1)}%</p></div>
-              <div><p className="text-[10px] font-bold uppercase text-slate-400">Prazo médio</p><p className="text-sm font-bold text-slate-800">{numero(melhor.prazo, 1)} dias</p></div>
+              <div><p className="text-[10px] font-bold uppercase text-slate-400">Prazo médio</p><p className="text-sm font-bold text-slate-800">{melhor.prazo != null ? `${numero(melhor.prazo, 1)} dias` : '—'}</p></div>
               <div><p className="text-[10px] font-bold uppercase text-slate-400">Competitividade</p><p className="text-sm font-bold text-slate-800">{melhor.competitividade != null ? `${numero(Number(melhor.competitividade), 1)}%` : '—'}</p></div>
-              <div><p className="text-[10px] font-bold uppercase text-slate-400">Cotações (90d)</p><p className="text-sm font-bold text-slate-800">{numero(melhor.cotacoes)}</p></div>
+              <div><p className="text-[10px] font-bold uppercase text-slate-400">Cotações (período)</p><p className="text-sm font-bold text-slate-800">{numero(melhor.cotacoes)}</p></div>
             </div>
           </section>
         )}
 
         <section className="bg-white border rounded-2xl p-5">
           <h2 className="font-bold text-slate-800 flex items-center gap-2"><BarChart3 size={16} className="text-emerald-600" /> Prazo × Taxa de vitória</h2>
-          <p className="text-xs text-slate-500 mt-1 mb-3">Cada ponto é um fornecedor (90 dias); o tamanho da bolha é o volume de cotações e a cor é a faixa do Supplier Score.</p>
-          {fornecedores.length === 0 ? <SemDado mensagem="Nenhum fornecedor com cotação respondida nos últimos 90 dias." /> : (
+          <p className="text-xs text-slate-500 mt-1 mb-3">Cada ponto é um fornecedor com prazo registrado no período; o tamanho da bolha é o volume de cotações e a cor é a faixa do Supplier Score.</p>
+          {fornecedoresComPrazo.length === 0 ? <SemDado mensagem="Nenhum fornecedor com prazo de entrega registrado no período filtrado." /> : (
             <>
               <ResponsiveContainer width="100%" height={320}>
                 <ScatterChart margin={{ top: 10, right: 20, bottom: 10, left: 0 }}>
@@ -119,7 +154,7 @@ export function Fornecedores() {
                   <Tooltip cursor={{ strokeDasharray: '3 3' }}
                     content={({ payload }) => {
                       if (!payload?.length) return null;
-                      const p = payload[0].payload as typeof fornecedores[number];
+                      const p = payload[0].payload as typeof fornecedoresComPrazo[number];
                       return (
                         <div className="bg-white border rounded-xl shadow-lg p-2.5 text-xs">
                           <p className="font-bold text-slate-800">{p.fornecedor}</p>
@@ -130,8 +165,8 @@ export function Fornecedores() {
                         </div>
                       );
                     }} />
-                  <Scatter data={fornecedores} fillOpacity={0.75}>
-                    {fornecedores.map((f, i) => <Cell key={i} fill={FAIXA_COR[f.faixa] ?? '#94a3b8'} />)}
+                  <Scatter data={fornecedoresComPrazo} fillOpacity={0.75}>
+                    {fornecedoresComPrazo.map((f, i) => <Cell key={i} fill={FAIXA_COR[f.faixa] ?? '#94a3b8'} />)}
                   </Scatter>
                 </ScatterChart>
               </ResponsiveContainer>
@@ -143,6 +178,9 @@ export function Fornecedores() {
                   </div>
                 ))}
               </div>
+              {fornecedoresComPrazo.length < fornecedores.length && (
+                <p className="text-[11px] text-slate-400 mt-2">{fornecedores.length - fornecedoresComPrazo.length} fornecedor(es) sem prazo de entrega registrado não aparece(m) no gráfico.</p>
+              )}
             </>
           )}
         </section>
@@ -161,6 +199,12 @@ export function Fornecedores() {
         </div>
         </div>
       </>
+    )}
+
+    {modalAberto && (
+      <ModalExpandido aberto={modalAberto !== null} onFechar={() => setModalAberto(null)} titulo={MODAL_CONFIG[modalAberto].titulo} subtitulo={MODAL_CONFIG[modalAberto].subtitulo}>
+        <TabelaInterativa linhas={linhasModal} />
+      </ModalExpandido>
     )}
   </div>;
 }
