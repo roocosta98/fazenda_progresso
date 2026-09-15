@@ -9,6 +9,13 @@ export type EntradaChangelog = { data: string; hora?: string; itens: string[] };
 export const CHANGELOG: EntradaChangelog[] = [
   {
     data: '15/09/2026',
+    hora: '17:08:43',
+    itens: [
+      'Inventário: as abas "Giro por produto" e "Itens sem movimentação" ganharam um gráfico de barra no topo (maior consumo por requisição no período e produtos parados há mais tempo), destacando o item nº 1 de cada lista — mesmo dado real que já aparecia na tabela abaixo.',
+    ],
+  },
+  {
+    data: '15/09/2026',
     hora: '17:01:10',
     itens: [
       'Corrigido filtro de grupos de produto sem relevância de estoque (material de escritório, imobilizado, serviços etc): antes só excluía quem era filho direto de um desses grupos; agora sobe toda a árvore, então um grupo aninhado mais fundo (ex.: item de vinícola dentro de um grupo-neto de "Alimentos/cozinha/limpeza") também é excluído das telas de Estoque.',
