@@ -9,6 +9,13 @@ export type EntradaChangelog = { data: string; hora?: string; itens: string[] };
 export const CHANGELOG: EntradaChangelog[] = [
   {
     data: '15/09/2026',
+    hora: '17:24:10',
+    itens: [
+      'Corrigido: o ajuste anterior no filtro de grupos de produto zerou o Dashboard de Estoque inteiro (ruptura, giro, cotações, tudo em 0) — revertido pro filtro que já funcionava antes. O caso do item de vinícola aparecendo como crítico continua pendente, será corrigido com mais cuidado numa próxima atualização.',
+    ],
+  },
+  {
+    data: '15/09/2026',
     hora: '17:08:43',
     itens: [
       'Inventário: as abas "Giro por produto" e "Itens sem movimentação" ganharam um gráfico de barra no topo (maior consumo por requisição no período e produtos parados há mais tempo), destacando o item nº 1 de cada lista — mesmo dado real que já aparecia na tabela abaixo.',
