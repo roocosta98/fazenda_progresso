@@ -9,6 +9,14 @@ export type EntradaChangelog = { data: string; hora?: string; itens: string[] };
 export const CHANGELOG: EntradaChangelog[] = [
   {
     data: '15/09/2026',
+    hora: '16:51:58',
+    itens: [
+      'Central de Ações redesenhada: 5 indicadores (Críticos, Rupturas, Risco em 15 dias, Excesso de estoque, Sem giro 90+ dias — o de Excesso é novo, com uma consulta nova no Sankhya pra achar itens acima do máximo), filtros por categoria em vez do antigo segmentado, colunas de Curva ABC e Cobertura (dias) na tabela, e um resumo por categoria no fim da tela.',
+      'Análises redesenhada: cards de resumo (risco de ruptura, capital parado em excesso, valor parado sem giro), Curva ABC em rosca, e "Produtos mais críticos"/"Produtos sem giro" como listas com barra de progresso em vez de gráfico de barras — tudo com número real, sem previsão nem tendência inventada.',
+    ],
+  },
+  {
+    data: '15/09/2026',
     hora: '16:42:09',
     itens: [
       'Fornecedores redesenhada: cards de KPI, cartão de "Melhor fornecedor" com badges e metodologia, gráfico Preço × Prazo × Taxa de Vitória com legenda lateral e filtro por fornecedor, e ranking com busca, ordenação por coluna, paginação e comparação entre fornecedores selecionados — tudo usando os mesmos dados reais de sempre (nenhum número novo foi inventado).',
