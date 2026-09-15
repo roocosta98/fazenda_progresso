@@ -16,6 +16,20 @@ export const CHANGELOG: EntradaChangelog[] = [
   },
   {
     data: '15/09/2026',
+    hora: '17:21:53',
+    itens: [
+      'Compras & Cotações com visual mais limpo: quebra por situação agora em pílulas coloridas (Aberta, Enviada, Precificada, Cancelada) e a tabela ganhou um cabeçalho de seção — mesmos números de sempre, só a apresentação mudou.',
+    ],
+  },
+  {
+    data: '15/09/2026',
+    hora: '17:14:14',
+    itens: [
+      'Novo botão "Configurar colunas" nas tabelas de Estoque (Inventário, Cotações, Central de Ações etc.): mostra/esconde qualquer coluna já existente na lista, sem precisar rolar a tela pros lados.',
+    ],
+  },
+  {
+    data: '15/09/2026',
     hora: '17:08:43',
     itens: [
       'Inventário: as abas "Giro por produto" e "Itens sem movimentação" ganharam um gráfico de barra no topo (maior consumo por requisição no período e produtos parados há mais tempo), destacando o item nº 1 de cada lista — mesmo dado real que já aparecia na tabela abaixo.',

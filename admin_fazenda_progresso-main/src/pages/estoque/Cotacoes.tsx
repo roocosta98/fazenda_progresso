@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { BarChart3, Boxes, CalendarClock, Sparkles, TriangleAlert } from 'lucide-react';
+import { BarChart3, Boxes, CalendarClock, ListChecks, Sparkles, TriangleAlert } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { TabelaInterativa, comSituacaoCotacao, numero, useEstoquePainel } from './estoqueShared';
 import { SugestoesAutomaticas } from './SugestoesAutomaticas';
@@ -15,6 +15,17 @@ function CardCotacoes({ Icon, cor, rotulo, valor, apoio }: { Icon: typeof Boxes;
     </div>
   );
 }
+
+// Situação por ITEM de cotação (STATUSPRODCOT do Sankhya, já traduzido no backend) — cores só de
+// identidade visual, cada rótulo vem direto do campo real "SITUACAO" da consulta cotacoesPorSituacao.
+const SITUACAO_ITEM_ESTILO: Record<string, string> = {
+  'Aberta': 'bg-blue-50 text-blue-700 border-blue-200',
+  'Enviada': 'bg-violet-50 text-violet-700 border-violet-200',
+  'Aprovada': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  'Precificada': 'bg-amber-50 text-amber-700 border-amber-200',
+  'Fechada': 'bg-slate-100 text-slate-600 border-slate-200',
+  'Cancelada': 'bg-rose-50 text-rose-700 border-rose-200',
+};
 
 export function Cotacoes() {
   const { dados, erro, carregando, insights } = useEstoquePainel();
@@ -62,20 +73,27 @@ export function Cotacoes() {
         <div className="xl:col-span-2 space-y-5">
 
         {!!dados.cotacoesPorSituacao?.length && (
-          <section className="bg-white border rounded-2xl p-4 flex flex-wrap gap-4">
-            {dados.cotacoesPorSituacao.map((linha) => (
-              <div key={String(linha.SITUACAO)}>
-                <p className="text-[11px] uppercase font-bold text-slate-400">{String(linha.SITUACAO)}</p>
-                <p className="text-lg font-bold text-slate-800">{numero(linha.TOTALITENS)} <span className="text-xs font-normal text-slate-400">itens</span></p>
-              </div>
-            ))}
+          <section className="bg-white border rounded-2xl p-4 flex flex-wrap gap-3">
+            {dados.cotacoesPorSituacao.map((linha) => {
+              const situacao = String(linha.SITUACAO);
+              return (
+                <div key={situacao} className={`flex items-center gap-2 px-3 py-2 rounded-xl border ${SITUACAO_ITEM_ESTILO[situacao] ?? 'bg-slate-100 text-slate-600 border-slate-200'}`}>
+                  <span className="text-[11px] uppercase font-bold">{situacao}</span>
+                  <span className="text-sm font-bold">{numero(linha.TOTALITENS)}</span>
+                  <span className="text-[11px] font-normal opacity-70">itens</span>
+                </div>
+              );
+            })}
           </section>
         )}
         <section className="bg-white rounded-2xl border border-slate-200/80 p-5">
-          {insights.cotacoes && <p className="text-xs text-emerald-700 mb-3 flex items-start gap-1.5"><Sparkles size={13} className="shrink-0 mt-0.5" />{insights.cotacoes}</p>}
-          {dados.erros.cotacoes
-            ? <p className="text-xs bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-3">Esta seção não pôde ser carregada: {dados.erros.cotacoes}</p>
-            : <TabelaInterativa linhas={cotacoesComSituacao} />}
+          <h2 className="font-bold text-slate-800 flex items-center gap-2"><ListChecks size={16} className="text-emerald-600" />Cotações em aberto</h2>
+          {insights.cotacoes && <p className="text-xs text-emerald-700 mt-2 mb-1 flex items-start gap-1.5"><Sparkles size={13} className="shrink-0 mt-0.5" />{insights.cotacoes}</p>}
+          <div className="mt-3">
+            {dados.erros.cotacoes
+              ? <p className="text-xs bg-amber-50 border border-amber-200 text-amber-800 rounded-xl p-3">Esta seção não pôde ser carregada: {dados.erros.cotacoes}</p>
+              : <TabelaInterativa linhas={cotacoesComSituacao} />}
+          </div>
         </section>
 
         </div>
