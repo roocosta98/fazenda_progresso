@@ -67,6 +67,25 @@ export const ROTULOS_COLUNAS: Record<string, string> = {
   QTD_COMPRAR: 'Qtd. sugerida p/ compra', CODLOCALPADRAO: 'Estoque local padrão', DESCRLOCAL_PADRAO: 'Local padrão (detalhe)',
   OUTROS_LOCAIS: 'Estoque outros locais', DESC_OUTROS_LOCAIS: 'Outros locais (detalhe)', TOTAL: 'Valor total',
   UTILIZADO: 'Último ano utilizado', DIAS_SEM_USO: 'Dias sem uso', ULTIMA_MOV: 'Última movimentação',
+  // Análise de Fornecedores (script da Fazenda Progresso) — Supplier Score e indicadores dos
+  // últimos 90 dias.
+  RANKING_GERAL: 'Ranking', SUPPLIER_SCORE: 'Supplier Score', FAIXA_SUPPLIER_SCORE: 'Faixa',
+  SCORE_VITORIA: 'Score vitória (35%)', SCORE_COMPETITIVIDADE: 'Score competitividade (30%)',
+  SCORE_PRAZO: 'Score prazo (15%)', SCORE_COBERTURA: 'Score cobertura (10%)', SCORE_VOLUME: 'Score volume (10%)',
+  TOTAL_COTACOES: 'Total de cotações (90d)', COTACOES_RESPONDIDAS: 'Cotações respondidas', COTACOES_VENCIDAS: 'Cotações vencidas',
+  COTACOES_SEM_VITORIA: 'Cotações sem vitória', ITENS_COTADOS: 'Itens cotados', ITENS_VENCIDOS: 'Itens vencidos',
+  ITENS_NAO_VENCIDOS: 'Itens não vencidos', TAXA_RESPOSTA_PCT: 'Taxa de resposta', TAXA_VITORIA_PCT: 'Taxa de vitória (itens)',
+  TAXA_VITORIA_COTACAO_PCT: 'Taxa de vitória (cotações)', PRAZO_MEDIO_DIAS: 'Prazo médio (dias)',
+  PRODUTOS_DISTINTOS: 'Produtos distintos', CATEGORIAS_DISTINTAS: 'Categorias distintas',
+  PRECO_MEDIO_FORNECEDOR: 'Preço médio do fornecedor', PRECO_MEDIO_CONCORRENTES: 'Preço médio dos concorrentes',
+  COMPETITIVIDADE_PRECO_PCT: 'Competitividade de preço', COMPETITIVIDADE_PRECO_MEDIA_PCT: 'Competitividade de preço (média)',
+  STATUS_COMPETITIVIDADE: 'Competitividade', ITENS_COM_COMPARACAO_PRECO: 'Itens com comparação de preço',
+  ECONOMIA_LIQUIDA_VS_MEDIA: 'Economia líquida vs. média', ECONOMIA_POSITIVA_VS_MEDIA: 'Economia (quando favorável)',
+  PRIMEIRA_COTACAO_PERIODO: 'Primeira cotação (90d)', ULTIMA_COTACAO: 'Última cotação',
+  RAZAOSOCIAL: 'Razão social', CNPJ_CPF: 'CNPJ/CPF', CODPARC: 'Código parceiro',
+  FORNECEDORES_ATIVOS_90D: 'Fornecedores ativos (90d)', MELHOR_PRAZO_MEDIO_90D: 'Melhor prazo médio (90d)',
+  MAIOR_TAXA_VITORIA_90D: 'Maior taxa de vitória (90d)', CATEGORIAS_ATENDIDAS_90D: 'Categorias atendidas (90d)',
+  ECONOMIA_ACUMULADA_90D: 'Economia acumulada (90d)',
 };
 export const rotuloColuna = (chave: string) => ROTULOS_COLUNAS[chave]
   ?? chave.replace(/_/g, ' ').toLowerCase().replace(/^\p{L}/u, (letra) => letra.toUpperCase());
@@ -127,6 +146,26 @@ const SITUACAO_COTACAO_ESTILO: Record<SituacaoCotacao, string> = {
 function BadgeSituacaoCotacao({ situacao }: { situacao: SituacaoCotacao }) {
   return <span className={`inline-flex items-center px-2 py-0.5 rounded-md border text-[11px] font-bold whitespace-nowrap ${SITUACAO_COTACAO_ESTILO[situacao]}`}>{situacao}</span>;
 }
+// Faixa do Supplier Score (script da Fazenda Progresso) — 'Atencao' vem sem acento direto do SQL.
+const FAIXA_SCORE_ESTILO: Record<string, string> = {
+  'Excelente': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  'Bom': 'bg-blue-50 text-blue-700 border-blue-200',
+  'Regular': 'bg-amber-50 text-amber-700 border-amber-200',
+  'Atencao': 'bg-rose-50 text-rose-700 border-rose-200',
+};
+function BadgeFaixaScore({ faixa }: { faixa: string }) {
+  const rotulo = faixa === 'Atencao' ? 'Atenção' : faixa;
+  return <span className={`inline-flex items-center px-2 py-0.5 rounded-md border text-[11px] font-bold whitespace-nowrap ${FAIXA_SCORE_ESTILO[faixa] ?? 'bg-slate-100 text-slate-600 border-slate-200'}`}>{rotulo}</span>;
+}
+
+const COMPETITIVIDADE_ESTILO: Record<string, string> = {
+  'Mais competitivo': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  'Mais caro': 'bg-rose-50 text-rose-700 border-rose-200',
+};
+function BadgeCompetitividade({ status }: { status: string }) {
+  return <span className={`inline-flex items-center px-2 py-0.5 rounded-md border text-[11px] font-bold whitespace-nowrap ${COMPETITIVIDADE_ESTILO[status] ?? 'bg-slate-100 text-slate-600 border-slate-200'}`}>{status}</span>;
+}
+
 function situacaoCotacao(dhfinal: unknown): SituacaoCotacao {
   if (dhfinal === null || dhfinal === undefined || dhfinal === '') return 'Sem prazo';
   const prazo = data(dhfinal);
@@ -151,14 +190,19 @@ export const valorCelula = (chave: string, valor: unknown): React.ReactNode => {
   if (chave === 'CLASSEABC' && typeof valor === 'string' && valor) return <BadgeClasseAbc classe={valor} />;
   if (chave === 'STATUS' && typeof valor === 'string' && valor) return <BadgeStatusEstoque status={valor as StatusEstoque} />;
   if (chave === 'SITUACAO_COTACAO' && typeof valor === 'string' && valor) return <BadgeSituacaoCotacao situacao={valor as SituacaoCotacao} />;
+  if (chave === 'FAIXA_SUPPLIER_SCORE' && typeof valor === 'string' && valor) return <BadgeFaixaScore faixa={valor} />;
+  if (chave === 'STATUS_COMPETITIVIDADE' && typeof valor === 'string' && valor) return <BadgeCompetitividade status={valor} />;
   if (valor === null || valor === undefined || valor === '') return '—';
-  if (/^TAXAVITORIA$/i.test(chave)) return `${numero(valor, 1)}%`;
+  if (/^TAXAVITORIA$/i.test(chave) || /_PCT$/i.test(chave)) return `${numero(valor, 1)}%`;
+  if (chave === 'SUPPLIER_SCORE' || /^SCORE_/i.test(chave)) return numero(valor, 1);
   // PRAZOMEDIO/PONTOPEDIDO são contagem (dias/quantidade), não dinheiro — só VALOR/CUSTO/
-  // CONFIAB/QUALIDADE são de fato monetários ou percentuais tratados como moeda aqui.
+  // CONFIAB/QUALIDADE são de fato monetários ou percentuais tratados como moeda aqui. PRECO_MEDIO_*
+  // e ECONOMIA_* (Análise de Fornecedores) também — mas ITENS_COM_COMPARACAO_PRECO é contagem,
+  // por isso o match de preço é só no prefixo "PRECO_MEDIO", não em qualquer coluna com "PRECO".
   // TOTAL isolado (estoque parado x custo) também é dinheiro — mas TOTALCOTACOES/TOTALVENCIDAS/
   // TOTALITENS/TOTALRUPTURA são contagem, então só o nome exato "TOTAL" entra aqui, não o prefixo.
-  if (/VALOR|CUSTO|CONFIAB|QUALIDADE/i.test(chave) || /^TOTAL$/i.test(chave)) return moeda(valor);
-  if (/DATA|DHINIC|DHFINAL|DTNEG|ULTIMA_MOV/i.test(chave)) return data(valor);
+  if (/VALOR|CUSTO|CONFIAB|QUALIDADE/i.test(chave) || /^PRECO_MEDIO/i.test(chave) || /^ECONOMIA_/i.test(chave) || /^TOTAL$/i.test(chave)) return moeda(valor);
+  if (/DATA|DHINIC|DHFINAL|DTNEG|ULTIMA_MOV|PRIMEIRA_COTACAO|ULTIMA_COTACAO/i.test(chave)) return data(valor);
   if (/PRAZO/i.test(chave)) return numero(valor, 1);
   if (typeof valor === 'number') return numero(valor, /GIRO/i.test(chave) ? 3 : 0);
   return String(valor);

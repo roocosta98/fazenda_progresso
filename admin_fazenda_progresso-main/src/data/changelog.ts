@@ -8,6 +8,14 @@ export type EntradaChangelog = { data: string; hora?: string; itens: string[] };
 
 export const CHANGELOG: EntradaChangelog[] = [
   {
+    data: '15/09/2026',
+    hora: '10:50:29',
+    itens: [
+      'Menu de Estoque: "Cotações" virou "Compras & Cotações" e mudou de posição (antes de Fornecedores), igual ao layout que o Marcos enviou.',
+      'Fornecedores reformulado com o Supplier Score real enviado pela Fazenda Progresso: pondera taxa de vitória, competitividade de preço contra os concorrentes na mesma cotação, prazo, cobertura e volume — com economia calculada item a item (não é estimativa, é a fórmula e os preços reais das cotações dos últimos 90 dias).',
+    ],
+  },
+  {
     data: '14/09/2026',
     hora: '18:30:42',
     itens: [

@@ -41,7 +41,7 @@ export function Cotacoes() {
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div>
         <p className="text-xs font-bold tracking-wider uppercase text-emerald-700">Estoque</p>
-        <h1 className="text-2xl font-bold text-slate-800">Cotações</h1>
+        <h1 className="text-2xl font-bold text-slate-800">Compras & Cotações</h1>
         <p className="text-sm text-slate-500 mt-1">Cotações com pelo menos um item ainda não fechado ou cancelado (empresa 01).</p>
       </div>
       <Link to="/logistica/estoque/dashboard" className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-slate-700 text-xs font-bold hover:bg-slate-50 transition-colors shrink-0">
