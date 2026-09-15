@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Truck, Boxes, Factory, Wrench, ShoppingCart, Wallet, Handshake, Calculator, Users, HardHat, ClipboardList, Receipt, PieChart, AlertTriangle } from 'lucide-react';
+import { Truck, Boxes, Factory, Wrench, ShoppingCart, Wallet, Handshake, Calculator, Users, HardHat, ClipboardList, Receipt, PieChart, AlertTriangle, Download, X } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { cabecalhoPerfil } from '../../utils/apiAuth';
 import { moeda, numero } from '../estoque/estoqueShared';
+import { usePwaInstall } from '../../hooks/usePwaInstall';
 import type { ModuloSistema } from '../../types';
 
 const API_URL = import.meta.env.VITE_API_URL ?? '';
@@ -132,6 +133,8 @@ const CARDS: CardModulo[] = [
 export function Inicio() {
   const { usuario } = useAuth();
   const navigate = useNavigate();
+  const { podeInstalar, instalar } = usePwaInstall();
+  const [avisoInstalarFechado, setAvisoInstalarFechado] = useState(false);
   const modulosDisponiveis = usuario?.tipoUsuario === 'admin'
     ? CARDS.map((c) => c.modulo)
     : (usuario?.modulos?.length ? usuario.modulos : ['logistica_frota']);
@@ -169,13 +172,32 @@ export function Inicio() {
   }, []);
 
   return (
-    <div className="max-w-5xl mx-auto pt-8 pb-12">
+    <div className="max-w-7xl mx-auto pt-8 pb-12">
       <div className="text-center mb-10">
         <p className="text-xs font-bold uppercase tracking-wider text-emerald-700">Fazenda Progresso</p>
         <h1 className="text-3xl font-bold text-slate-800 mt-1">Olá, {usuario?.nome?.split(' ')[0]}</h1>
         <p className="text-slate-500 mt-2">Escolha um módulo para começar.</p>
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      {podeInstalar && !avisoInstalarFechado && (
+        <div className="mb-8 flex flex-wrap items-center gap-4 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 sm:p-5">
+          <div className="w-11 h-11 rounded-xl bg-emerald-950 text-emerald-100 flex items-center justify-center shrink-0">
+            <Download size={20} />
+          </div>
+          <div className="flex-1 min-w-[220px]">
+            <p className="text-sm font-bold text-emerald-900">Instale o sistema no seu computador ou celular</p>
+            <p className="text-xs text-emerald-800/80 mt-0.5">Abre direto, sem precisar do navegador — como um aplicativo de verdade.</p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0 ml-auto">
+            <button onClick={instalar} className="px-4 py-2 rounded-xl bg-emerald-950 text-white text-xs font-bold hover:bg-emerald-900 transition-colors">
+              Instalar agora
+            </button>
+            <button onClick={() => setAvisoInstalarFechado(true)} className="p-2 rounded-lg text-emerald-700 hover:bg-emerald-100 transition-colors" aria-label="Fechar aviso">
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+      )}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
         {cards.map((card) => (
           <button
             key={card.modulo}

@@ -9,6 +9,14 @@ export type EntradaChangelog = { data: string; hora?: string; itens: string[] };
 export const CHANGELOG: EntradaChangelog[] = [
   {
     data: '15/09/2026',
+    hora: '11:00:47',
+    itens: [
+      'Telas de Estoque agora ocupam a largura toda (antes sobrava espaço vazio nas laterais em telas grandes) — mais espaço pra tabelas e gráficos.',
+      'Sistema agora pode ser instalado como aplicativo (PWA): aviso na tela Início e botão "Instalar app" no topo, quando o navegador oferece a instalação.',
+    ],
+  },
+  {
+    data: '15/09/2026',
     hora: '10:50:29',
     itens: [
       'Menu de Estoque: "Cotações" virou "Compras & Cotações" e mudou de posição (antes de Fornecedores), igual ao layout que o Marcos enviou.',
