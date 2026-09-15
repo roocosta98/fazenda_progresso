@@ -52,7 +52,7 @@ export function DashboardEstoque() {
   const parados = useMemo(() => paradosTudo.slice(0, 8), [paradosTudo]);
 
   const fornecedoresTudo = useMemo(() => (dados?.fornecedores ?? [])
-    .map((l) => ({ fornecedor: String(l.FORNECEDOR ?? ''), taxa: Number(l.TAXAVITORIA ?? 0), cotacoes: Number(l.TOTALCOTACOES ?? 0) }))
+    .map((l) => ({ fornecedor: String(l.FORNECEDOR ?? ''), taxa: Number(l.TAXA_VITORIA_PCT ?? 0), cotacoes: Number(l.TOTAL_COTACOES ?? 0) }))
     .sort((a, b) => b.cotacoes - a.cotacoes), [dados]);
   const fornecedores = useMemo(() => fornecedoresTudo.slice(0, 8), [fornecedoresTudo]);
 
