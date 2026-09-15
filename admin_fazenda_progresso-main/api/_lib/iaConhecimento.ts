@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import sql from 'mssql';
 import { getMssqlPool } from './mssql.js';
 import { validarSomenteLeitura } from './querySistema.js';
+import { QUERIES_CONECTADAS } from './queriesConectadas.js';
 
 // Mesmo padrão de admin usado em usuariosSistema.ts: o proxy de autenticação do frontend
 // sobrescreve este header a partir da sessão logada — nunca é o navegador quem decide.
@@ -48,6 +49,28 @@ async function colunaChaveQueryExiste(pool: sql.ConnectionPool): Promise<boolean
   }
 }
 
+// Pré-cadastra (uma vez só, por chave) a query que já está de verdade plugada no backend (ver
+// QUERIES_CONECTADAS/querySistema.ts) — assim que a migração da coluna ChaveQuery rodar, ela já
+// aparece sozinha na lista, INATIVA, sem precisar clicar em "Usar modelo". Fica inativa de
+// propósito: a query do código continua valendo até alguém revisar e ativar essa entrada.
+async function semearQueriesConectadas(pool: sql.ConnectionPool): Promise<void> {
+  for (const query of QUERIES_CONECTADAS) {
+    try {
+      const existente = await pool.request().input('chaveQuery', sql.NVarChar, query.chaveQuery)
+        .query(`SELECT TOP 1 1 AS ok FROM dbo.ConfiguracaoIA WHERE Tipo='query' AND ChaveQuery=@chaveQuery`);
+      if (existente.recordset.length > 0) continue;
+      await pool.request()
+        .input('titulo', sql.NVarChar, query.titulo)
+        .input('conteudo', sql.NVarChar(sql.MAX), query.conteudo)
+        .input('modulo', sql.NVarChar, query.modulo)
+        .input('chaveQuery', sql.NVarChar, query.chaveQuery)
+        .query(`INSERT INTO dbo.ConfiguracaoIA(Titulo,Conteudo,Modulo,Tipo,ChaveQuery,Ativo,CriadoPor) VALUES(@titulo,@conteudo,@modulo,'query',@chaveQuery,0,'Auto-cadastro (query já conectada)')`);
+    } catch (error) {
+      console.error(`Falha ao pré-cadastrar a query conectada '${query.chaveQuery}' (seguindo sem ela):`, error);
+    }
+  }
+}
+
 export async function configuracaoIA(req: VercelRequest, res: VercelResponse) {
   res.setHeader('Cache-Control', 'no-store, max-age=0');
   if (!exigirAdmin(req, res)) return;
@@ -56,6 +79,7 @@ export async function configuracaoIA(req: VercelRequest, res: VercelResponse) {
     const temChaveQuery = await colunaChaveQueryExiste(pool);
 
     if (req.method === 'GET') {
+      if (temChaveQuery) await semearQueriesConectadas(pool);
       const resultado = temChaveQuery
         ? await pool.request().query(`SELECT ConfiguracaoIAId, Titulo, Conteudo, Modulo, Tipo, ChaveQuery, Ativo, CriadoEm, AtualizadoEm, CriadoPor FROM dbo.ConfiguracaoIA ORDER BY AtualizadoEm DESC`)
         : await pool.request().query(`SELECT ConfiguracaoIAId, Titulo, Conteudo, Modulo, Tipo, Ativo, CriadoEm, AtualizadoEm, CriadoPor FROM dbo.ConfiguracaoIA ORDER BY AtualizadoEm DESC`);
